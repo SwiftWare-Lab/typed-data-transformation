@@ -1,351 +1,85 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 12,
-   "id": "bdbde1ab",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "ERROR: Could not find file /tmp/ipykernel_113139/1432986955.py\n",
-      "Index(['Age', 'MPV', 'BASO#', 'BASO%', 'EO#', 'EO%', 'MCH', 'RDW', 'PDW',\n",
-      "       'HGB', 'LYM#', 'LYM%', 'MONO#', 'MONO%', 'PLT', 'NEU', 'RBC', 'PCT',\n",
-      "       'HCT', 'MCV'],\n",
-      "      dtype='object')\n",
-      "Training Accuracy: 0.837175\n",
-      "Training Precision: 1.0\n",
-      "Training Log Loss: 0.44425196871586614\n",
-      "Training Recall: 0.008373934226552984\n",
-      "Precision: 1.0000\n",
-      "Recall: 0.0109\n",
-      "F1: 0.0215\n",
-      "Log Loss: 5.6575\n",
-      "Execution time: 0.054433345794677734 seconds\n"
-     ]
-    }
-   ],
-   "source": [
-    "import pandas as pd\n",
-    "from sklearn.model_selection import train_test_split\n",
-    "from sklearn.preprocessing import StandardScaler\n",
-    "from sklearn.linear_model import LogisticRegression\n",
-    "from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, log_loss\n",
-    "from memory_profiler import profile\n",
-    "import time\n",
-    "\n",
-    "# Load the data\n",
-    "data = pd.read_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_50k.csv')\n",
-    "\n",
-    "\n",
-    "# Process y based on TYPE.1 values\n",
-    "for i in range(len(data)):\n",
-    "    if data['TYPE'].iloc[i] != 0 and data['TYPE'].iloc[i] != 1:\n",
-    "        data.iloc[i] = 1 if data['TYPE.1'].iloc[i] == 'OC' else 0\n",
-    "\n",
-    "\n",
-    "data_frame = data.iloc[:, :-1]  # Assuming the last column is not part of the features\n",
-    "\n",
-    "@profile\n",
-    "def train_and_evaluate(data_frame):\n",
-    "    start_time = time.time()\n",
-    "\n",
-    "    # Define features and target\n",
-    "    feature_column_names = data_frame.columns[:-1]  # Excluding the last column for featuresprint\n",
-    "    print(feature_column_names)\n",
-    "    predicted_class_name = 'TYPE'\n",
-    "    #type_1_column = 'TYPE.1'  # Adjust this based on your DataFrame structure\n",
-    "\n",
-    "    X = data_frame[feature_column_names].values\n",
-    "    y = data_frame[predicted_class_name].values\n",
-    "\n",
-    "    \n",
-    "    # Splitting the dataset into training and testing sets\n",
-    "    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n",
-    "\n",
-    "    # Standardizing the data\n",
-    "    sc = StandardScaler()\n",
-    "    X_train = sc.fit_transform(X_train)\n",
-    "    X_test = sc.transform(X_test)\n",
-    "\n",
-    "    # Training the Logistic Regression model\n",
-    "    model = LogisticRegression()\n",
-    "    model.fit(X_train, y_train.ravel())\n",
-    "\n",
-    "    # Predictions and metrics\n",
-    "    y_train_pred = model.predict(X_train)\n",
-    "    training_accuracy = accuracy_score(y_train, y_train_pred)\n",
-    "    training_precision = precision_score(y_train, y_train_pred)\n",
-    "    y_train_prob = model.predict_proba(X_train)\n",
-    "    training_log_loss = log_loss(y_train, y_train_prob)\n",
-    "    training_recall = recall_score(y_train, y_train_pred)\n",
-    "\n",
-    "    # Printing training results\n",
-    "    print(\"Training Accuracy:\", training_accuracy)\n",
-    "    print(\"Training Precision:\", training_precision)\n",
-    "    print(\"Training Log Loss:\", training_log_loss)\n",
-    "    print(\"Training Recall:\", training_recall)\n",
-    "\n",
-    "    # Testing metrics\n",
-    "    y_pred = model.predict(X_test)\n",
-    "    precision = precision_score(y_test, y_pred)\n",
-    "    recall = recall_score(y_test, y_pred)\n",
-    "    f1 = f1_score(y_test, y_pred)\n",
-    "    logloss = log_loss(y_test, y_pred)\n",
-    "\n",
-    "    # Printing testing metrics\n",
-    "    print(\"Precision: {0:.4f}\".format(precision))\n",
-    "    print(\"Recall: {0:.4f}\".format(recall))\n",
-    "    print(\"F1: {0:.4f}\".format(f1))\n",
-    "    print(\"Log Loss: {0:.4f}\".format(logloss))\n",
-    "\n",
-    "    end_time = time.time()\n",
-    "    print(f\"Execution time: {end_time - start_time} seconds\")\n",
-    "\n",
-    "# Execute the function\n",
-    "train_and_evaluate(data_frame)\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 2,
-   "id": "e4796346",
-   "metadata": {},
-   "outputs": [
-    {
-     "data": {
-      "text/html": [
-       "<div>\n",
-       "<style scoped>\n",
-       "    .dataframe tbody tr th:only-of-type {\n",
-       "        vertical-align: middle;\n",
-       "    }\n",
-       "\n",
-       "    .dataframe tbody tr th {\n",
-       "        vertical-align: top;\n",
-       "    }\n",
-       "\n",
-       "    .dataframe thead th {\n",
-       "        text-align: right;\n",
-       "    }\n",
-       "</style>\n",
-       "<table border=\"1\" class=\"dataframe\">\n",
-       "  <thead>\n",
-       "    <tr style=\"text-align: right;\">\n",
-       "      <th></th>\n",
-       "      <th>Age</th>\n",
-       "      <th>MPV</th>\n",
-       "      <th>BASO#</th>\n",
-       "      <th>BASO%</th>\n",
-       "      <th>EO#</th>\n",
-       "      <th>EO%</th>\n",
-       "      <th>MCH</th>\n",
-       "      <th>RDW</th>\n",
-       "      <th>PDW</th>\n",
-       "      <th>HGB</th>\n",
-       "      <th>...</th>\n",
-       "      <th>MONO#</th>\n",
-       "      <th>MONO%</th>\n",
-       "      <th>PLT</th>\n",
-       "      <th>NEU</th>\n",
-       "      <th>RBC</th>\n",
-       "      <th>PCT</th>\n",
-       "      <th>HCT</th>\n",
-       "      <th>MCV</th>\n",
-       "      <th>TYPE</th>\n",
-       "      <th>TYPE.1</th>\n",
-       "    </tr>\n",
-       "  </thead>\n",
-       "  <tbody>\n",
-       "    <tr>\n",
-       "      <th>0</th>\n",
-       "      <td>49</td>\n",
-       "      <td>8.536380</td>\n",
-       "      <td>0.047026</td>\n",
-       "      <td>0.654522</td>\n",
-       "      <td>0.048062</td>\n",
-       "      <td>0.576982</td>\n",
-       "      <td>26.461064</td>\n",
-       "      <td>12.631568</td>\n",
-       "      <td>11.938870</td>\n",
-       "      <td>127.666745</td>\n",
-       "      <td>...</td>\n",
-       "      <td>0.421787</td>\n",
-       "      <td>5.471432</td>\n",
-       "      <td>193</td>\n",
-       "      <td>79.261810</td>\n",
-       "      <td>4.359684</td>\n",
-       "      <td>0.242083</td>\n",
-       "      <td>0.322482</td>\n",
-       "      <td>83.475573</td>\n",
-       "      <td>1</td>\n",
-       "      <td>OC</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>1</th>\n",
-       "      <td>77</td>\n",
-       "      <td>11.119725</td>\n",
-       "      <td>0.002271</td>\n",
-       "      <td>1.297594</td>\n",
-       "      <td>0.083524</td>\n",
-       "      <td>0.825905</td>\n",
-       "      <td>33.038512</td>\n",
-       "      <td>10.603854</td>\n",
-       "      <td>13.254762</td>\n",
-       "      <td>127.286097</td>\n",
-       "      <td>...</td>\n",
-       "      <td>0.248899</td>\n",
-       "      <td>2.917735</td>\n",
-       "      <td>178</td>\n",
-       "      <td>85.643245</td>\n",
-       "      <td>4.467213</td>\n",
-       "      <td>0.281850</td>\n",
-       "      <td>0.304869</td>\n",
-       "      <td>89.307190</td>\n",
-       "      <td>0</td>\n",
-       "      <td>BOT</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>2</th>\n",
-       "      <td>33</td>\n",
-       "      <td>13.735773</td>\n",
-       "      <td>0.035312</td>\n",
-       "      <td>0.651510</td>\n",
-       "      <td>0.093631</td>\n",
-       "      <td>-1.471487</td>\n",
-       "      <td>25.577833</td>\n",
-       "      <td>10.768878</td>\n",
-       "      <td>16.775991</td>\n",
-       "      <td>129.380417</td>\n",
-       "      <td>...</td>\n",
-       "      <td>0.311275</td>\n",
-       "      <td>8.809445</td>\n",
-       "      <td>314</td>\n",
-       "      <td>66.260997</td>\n",
-       "      <td>4.665605</td>\n",
-       "      <td>0.172549</td>\n",
-       "      <td>0.378842</td>\n",
-       "      <td>88.323105</td>\n",
-       "      <td>0</td>\n",
-       "      <td>OC</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>3</th>\n",
-       "      <td>44</td>\n",
-       "      <td>11.153068</td>\n",
-       "      <td>-0.000913</td>\n",
-       "      <td>0.644668</td>\n",
-       "      <td>-0.059499</td>\n",
-       "      <td>3.553366</td>\n",
-       "      <td>30.462279</td>\n",
-       "      <td>13.770408</td>\n",
-       "      <td>9.761238</td>\n",
-       "      <td>128.734614</td>\n",
-       "      <td>...</td>\n",
-       "      <td>0.407752</td>\n",
-       "      <td>5.819958</td>\n",
-       "      <td>250</td>\n",
-       "      <td>53.736208</td>\n",
-       "      <td>4.692370</td>\n",
-       "      <td>0.267942</td>\n",
-       "      <td>0.402355</td>\n",
-       "      <td>98.531160</td>\n",
-       "      <td>0</td>\n",
-       "      <td>BOT</td>\n",
-       "    </tr>\n",
-       "    <tr>\n",
-       "      <th>4</th>\n",
-       "      <td>30</td>\n",
-       "      <td>10.485324</td>\n",
-       "      <td>0.021639</td>\n",
-       "      <td>0.868862</td>\n",
-       "      <td>-0.074601</td>\n",
-       "      <td>1.371623</td>\n",
-       "      <td>34.402963</td>\n",
-       "      <td>12.405891</td>\n",
-       "      <td>14.655505</td>\n",
-       "      <td>142.350050</td>\n",
-       "      <td>...</td>\n",
-       "      <td>0.388538</td>\n",
-       "      <td>7.277522</td>\n",
-       "      <td>372</td>\n",
-       "      <td>62.756700</td>\n",
-       "      <td>4.046041</td>\n",
-       "      <td>0.145886</td>\n",
-       "      <td>0.383369</td>\n",
-       "      <td>85.247451</td>\n",
-       "      <td>0</td>\n",
-       "      <td>OC</td>\n",
-       "    </tr>\n",
-       "  </tbody>\n",
-       "</table>\n",
-       "<p>5 rows × 22 columns</p>\n",
-       "</div>"
-      ],
-      "text/plain": [
-       "   Age        MPV     BASO#     BASO%       EO#       EO%        MCH  \\\n",
-       "0   49   8.536380  0.047026  0.654522  0.048062  0.576982  26.461064   \n",
-       "1   77  11.119725  0.002271  1.297594  0.083524  0.825905  33.038512   \n",
-       "2   33  13.735773  0.035312  0.651510  0.093631 -1.471487  25.577833   \n",
-       "3   44  11.153068 -0.000913  0.644668 -0.059499  3.553366  30.462279   \n",
-       "4   30  10.485324  0.021639  0.868862 -0.074601  1.371623  34.402963   \n",
-       "\n",
-       "         RDW        PDW         HGB  ...     MONO#     MONO%  PLT        NEU  \\\n",
-       "0  12.631568  11.938870  127.666745  ...  0.421787  5.471432  193  79.261810   \n",
-       "1  10.603854  13.254762  127.286097  ...  0.248899  2.917735  178  85.643245   \n",
-       "2  10.768878  16.775991  129.380417  ...  0.311275  8.809445  314  66.260997   \n",
-       "3  13.770408   9.761238  128.734614  ...  0.407752  5.819958  250  53.736208   \n",
-       "4  12.405891  14.655505  142.350050  ...  0.388538  7.277522  372  62.756700   \n",
-       "\n",
-       "        RBC       PCT       HCT        MCV  TYPE  TYPE.1  \n",
-       "0  4.359684  0.242083  0.322482  83.475573     1      OC  \n",
-       "1  4.467213  0.281850  0.304869  89.307190     0     BOT  \n",
-       "2  4.665605  0.172549  0.378842  88.323105     0      OC  \n",
-       "3  4.692370  0.267942  0.402355  98.531160     0     BOT  \n",
-       "4  4.046041  0.145886  0.383369  85.247451     0      OC  \n",
-       "\n",
-       "[5 rows x 22 columns]"
-      ]
-     },
-     "execution_count": 2,
-     "metadata": {},
-     "output_type": "execute_result"
-    }
-   ],
-   "source": [
-    "data.head()"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "1b62900b",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.9.12"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, log_loss
+from memory_profiler import profile
+import time
+
+# Load the data
+data = pd.read_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_50k.csv')
+
+
+# Process y based on TYPE.1 values
+for i in range(len(data)):
+    if data['TYPE'].iloc[i] != 0 and data['TYPE'].iloc[i] != 1:
+        data.iloc[i] = 1 if data['TYPE.1'].iloc[i] == 'OC' else 0
+
+
+data_frame = data.iloc[:, :-1]  # Assuming the last column is not part of the features
+
+@profile
+def train_and_evaluate(data_frame):
+    start_time = time.time()
+
+    # Define features and target
+    feature_column_names = data_frame.columns[:-1]  # Excluding the last column for featuresprint
+    print(feature_column_names)
+    predicted_class_name = 'TYPE'
+    #type_1_column = 'TYPE.1'  # Adjust this based on your DataFrame structure
+
+    X = data_frame[feature_column_names].values
+    y = data_frame[predicted_class_name].values
+
+    
+    # Splitting the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Standardizing the data
+    sc = StandardScaler()
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+
+    # Training the Logistic Regression model
+    model = LogisticRegression()
+    model.fit(X_train, y_train.ravel())
+
+    # Predictions and metrics
+    y_train_pred = model.predict(X_train)
+    training_accuracy = accuracy_score(y_train, y_train_pred)
+    training_precision = precision_score(y_train, y_train_pred)
+    y_train_prob = model.predict_proba(X_train)
+    training_log_loss = log_loss(y_train, y_train_prob)
+    training_recall = recall_score(y_train, y_train_pred)
+
+    # Printing training results
+    print("Training Accuracy:", training_accuracy)
+    print("Training Precision:", training_precision)
+    print("Training Log Loss:", training_log_loss)
+    print("Training Recall:", training_recall)
+
+    # Testing metrics
+    y_pred = model.predict(X_test)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    logloss = log_loss(y_test, y_pred)
+
+    # Printing testing metrics
+    print("Precision: {0:.4f}".format(precision))
+    print("Recall: {0:.4f}".format(recall))
+    print("F1: {0:.4f}".format(f1))
+    print("Log Loss: {0:.4f}".format(logloss))
+
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
+
+# Execute the function
+train_and_evaluate(data_frame)
+
