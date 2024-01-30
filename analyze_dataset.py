@@ -1,4 +1,5 @@
-
+import os
+import sys
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,12 +8,12 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score
-from imblearn.over_sampling import SMOTE
 from memory_profiler import memory_usage
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from lightgbm import LGBMClassifier
+
 
 # Function to train SVM and measure memory usage
 def train_svm(X_train, y_train, param_grid):
@@ -25,6 +26,7 @@ def train_svm(X_train, y_train, param_grid):
     end_time = time.time()
     return clf, end_time - start_time
 
+
 # Function to train Logistic Regression and measure memory usage
 def train_logistic_regression(X_train, y_train, grid_values):
     start_time = time.time()
@@ -35,6 +37,7 @@ def train_logistic_regression(X_train, y_train, grid_values):
     clf.fit(X_train, y_train)
     end_time = time.time()
     return clf, end_time - start_time
+
 
 # Additional functions for new classifiers
 def train_decision_tree(X_train, y_train, param_dict):
@@ -47,6 +50,7 @@ def train_decision_tree(X_train, y_train, param_dict):
     end_time = time.time()
     return clf, end_time - start_time
 
+
 def train_xgboost(X_train, y_train, parameters):
     start_time = time.time()
     clf = XGBClassifier(**parameters)
@@ -56,6 +60,7 @@ def train_xgboost(X_train, y_train, parameters):
     clf.fit(X_train, y_train)
     end_time = time.time()
     return clf, end_time - start_time
+
 
 def train_random_forest(X_train, y_train, param_grid):
     start_time = time.time()
@@ -67,12 +72,14 @@ def train_random_forest(X_train, y_train, param_grid):
     end_time = time.time()
     return clf, end_time - start_time
 
+
 def train_lightgbm(X_train, y_train, params):
     start_time = time.time()
     clf = LGBMClassifier(**params)
     clf.fit(X_train, y_train)
     end_time = time.time()
     return clf, end_time - start_time
+
 
 # Function to evaluate a classifier and return metrics
 def evaluate_classifier(classifier, X_train, y_train, X_test, y_test):
@@ -82,9 +89,15 @@ def evaluate_classifier(classifier, X_train, y_train, X_test, y_test):
     recall = recall_score(y_test, classifier.predict(X_test))
     return train_accuracy, test_accuracy, precision, recall
 
+
 # Load data
-data_real = pd.read_csv('/home/jamalids/Downloads/OC_Blood_Routine (2).csv')
-datasets = [{"name": "Real Data", "data": data_real}]
+if len(sys.argv) != 2:
+    print("Usage: python analyze_dataset.py <dataset_name>")
+    sys.exit(1)
+dataset_name = sys.argv[1]
+dataset_name_striped = dataset_name.split('/')[-1].split('.')[0]
+data_real = pd.read_csv(dataset_name)
+datasets = [{"name": dataset_name_striped, "data": data_real}]
 
 # Initialize results dictionary
 results = {
@@ -105,7 +118,10 @@ param_dict_dt = {"criterion": ['gini', 'entropy'], "max_depth": [150, 155, 160],
 parameters_xgb = {'objective': ['binary:logistic'],'nthread': [4],'seed': [42],'max_depth': range(2, 10, 1),'n_estimators': range(60, 220, 40),
     'learning_rate': [0.1, 0.01, 0.05]}
 param_grid_rf = {'n_estimators': [200, 500], 'max_features': ['auto', 'sqrt', 'log2'], 'max_depth': [4, 5, 6, 7, 8], 'criterion': ['gini', 'entropy']}
-params_lgbm = {'application': 'binary', 'boosting': 'gbdt', 'num_iterations': 100, 'learning_rate': 0.05, 'num_leaves': 62, 'device': 'cpu', 'max_depth': -1, 'max_bin': 510, 'lambda_l1': 5, 'lambda_l2': 10, 'metric': 'binary_error', 'subsample_for_bin': 200, 'subsample': 1, 'colsample_bytree': 0.8, 'min_split_gain': 0.5, 'min_child_weight': 1, 'min_child_samples': 5}
+params_lgbm = {'application': 'binary', 'boosting': 'gbdt', 'num_iterations': 100, 'learning_rate': 0.05,
+               'num_leaves': 62, 'device': 'cpu', 'max_depth': -1, 'max_bin': 510, 'lambda_l1': 5, 'lambda_l2': 10,
+               'metric': 'binary_error', 'subsample_for_bin': 200, 'subsample': 1, 'colsample_bytree': 0.8,
+               'min_split_gain': 0.5, 'min_child_weight': 1, 'min_child_samples': 5}
 
 # Loop over datasets
 for dataset_info in datasets:
@@ -162,7 +178,12 @@ results_df = pd.DataFrame(results)
 
 # Print and save results
 print(results_df)
-results_df.to_csv('/home/jamalids/Downloads/result_Crossvalidation_all.csv', index=False)
+# create output directory if it doesn't exist
+if not os.path.exists('./output'):
+    os.makedirs('./output')
+# create output file name
+output_file_name = os.path.join('output' , dataset_name_striped+'_result_cross_validation.csv')
+results_df.to_csv(output_file_name, index=False)
 # Group the results by Model and calculate the mean for each metric
 grouped_results = results_df.groupby('Model').mean()
 # Extract accuracy, training time, and memory usage
@@ -196,7 +217,13 @@ plt.xticks(models)
 plt.legend()
 # Adjust layout and show plot
 plt.tight_layout()
-plt.savefig('/home/jamalids/Downloads/plot_all.jpg')
+# make plot directory if it doesn't exist
+if not os.path.exists('./plot'):
+    os.makedirs('./plot')
+# make output plot name from datasetname
+# strip dataset name from postfix and path
+out_plot = os.path.join('plot', dataset_name_striped + '_plot.png')
+plt.savefig(out_plot)
 plt.show()
 
 

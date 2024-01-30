@@ -6,7 +6,7 @@ from scipy.stats import norm
 import numpy as np
 
 # Load the real data from the CSV file
-data = pd.read_csv('/home/jamalids/Downloads/OC_Blood_Routine (1).csv')
+data = pd.read_csv('./data/OC_Blood_Routine.csv')
 #Analyzing Data Distributions
 data_description = data.describe()
 data.hist(figsize=(12, 10))
@@ -29,7 +29,8 @@ for column in data.columns:
     synthetic_data[column] = synthetic_data[column].astype(data[column].dtype)
 
 # Save or use the synthetic data
-synthetic_data.to_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_50k1.csv', index=False)
+# TODO store it in the data folder
+synthetic_data.to_csv('./data/Synthetic_OC_Blood_Routine_50k1.csv', index=False)
 
 
 

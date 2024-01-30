@@ -40,7 +40,7 @@ data_real = pd.read_csv('/home/jamalids/Downloads/OC_Blood_Routine (2).csv')
 
 datasets = [
     {"name": "Real Data", "data": data_real},
-    {"name": "Synthetic Data (50k)", "data": data_50k}
+    {"name": "Synthetic Data (50k)", "data": data_50k},
     {"name": "Synthetic Data (1000k)", "data": data_1000k}
 ]
 
