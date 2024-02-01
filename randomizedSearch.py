@@ -16,46 +16,53 @@ from lightgbm import LGBMClassifier
 import warnings
 from sklearn.exceptions import FitFailedWarning
 import re
+from scipy.stats import uniform
+from scipy.stats import expon
+from sklearn.model_selection import RandomizedSearchCV
 
 
 
 # Function to train SVM and measure memory usage
-def train_svm(X_train, y_train, param_grid):
-    print("Training SVM  model, please wait...")
+def train_svm(X_train, y_train, param_distributions, n_iter=10):
+    print("Training SVM model, please wait...")
     start_time = time.time()
     clf = SVC(kernel='linear')
-    grid_search = GridSearchCV(estimator=clf, param_grid=param_grid, scoring='accuracy', cv=5, n_jobs=1)
-    grid_search.fit(X_train, y_train)
-    clf = grid_search.best_estimator_
+    random_search = RandomizedSearchCV(estimator=clf, param_distributions=param_distributions, 
+                                       n_iter=n_iter, scoring='accuracy', cv=5, n_jobs=-1)
+    random_search.fit(X_train, y_train)
+    clf = random_search.best_estimator_
     clf.fit(X_train, y_train)
     end_time = time.time()
     print("SVM model training completed.")
     return clf, end_time - start_time
 
+
+
+
 # Function to train Logistic Regression and measure memory usage
-def train_logistic_regression(X_train, y_train, grid_values):
-    print("Training logistic Regression  model, please wait...")
+def train_logistic_regression(X_train, y_train, param_distributions, n_iter=10):
+    print("Training Logistic Regression model...")
     start_time = time.time()
-    clf = LogisticRegression()
-    grid_search = GridSearchCV(estimator=clf, param_grid=grid_values, scoring='accuracy', cv=5, n_jobs=1)
-    grid_search.fit(X_train, y_train)
-    clf = grid_search.best_estimator_
+    clf = LogisticRegression(solver='saga', max_iter=1000)
+    random_search = RandomizedSearchCV(clf, param_distributions, n_iter=n_iter, scoring='accuracy', cv=5, n_jobs=-1, random_state=42)
+    random_search.fit(X_train, y_train)
+    clf = random_search.best_estimator_
     clf.fit(X_train, y_train)
     end_time = time.time()
-    print("logistic Regression model training completed.")
+    print("Logistic Regression training completed.")
     return clf, end_time - start_time
 
 # Additional functions for new classifiers
-def train_decision_tree(X_train, y_train, param_dict):
-    print("Training Decision Tree  model, please wait...")
+def train_decision_tree(X_train, y_train, param_distributions, n_iter=10):
+    print("Training Decision Tree model...")
     start_time = time.time()
     clf = DecisionTreeClassifier()
-    grid_search = GridSearchCV(estimator=clf, param_grid=param_dict, cv=5, scoring='accuracy', n_jobs=1)
-    grid_search.fit(X_train, y_train)
-    clf = grid_search.best_estimator_
+    random_search = RandomizedSearchCV(clf, param_distributions, n_iter=n_iter, scoring='accuracy', cv=5, n_jobs=-1, random_state=42)
+    random_search.fit(X_train, y_train)
+    clf = random_search.best_estimator_
     clf.fit(X_train, y_train)
     end_time = time.time()
-    print("logistic Decision Tree model training completed.")
+    print("Decision Tree training completed.")
     return clf, end_time - start_time
 
 
@@ -72,16 +79,16 @@ def train_xgboost(X_train, y_train, parameters):
     return clf, end_time - start_time
 
 
-def train_random_forest(X_train, y_train, param_grid):
-    print("Training Random Forest  model, please wait...")
+def train_random_forest(X_train, y_train, param_distributions, n_iter=10):
+    print("Training Random Forest model...")
     start_time = time.time()
     clf = RandomForestClassifier()
-    grid_search = GridSearchCV(estimator=clf, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=1)
-    grid_search.fit(X_train, y_train)
-    clf = grid_search.best_estimator_
+    random_search = RandomizedSearchCV(clf, param_distributions, n_iter=n_iter, scoring='accuracy', cv=5, n_jobs=-1, random_state=42)
+    random_search.fit(X_train, y_train)
+    clf = random_search.best_estimator_
     clf.fit(X_train, y_train)
     end_time = time.time()
-    print("logistic Random Forest model training completed.")
+    print("Random Forest training completed.")
     return clf, end_time - start_time
 
 
@@ -114,11 +121,32 @@ csv_file_path = input("Please enter the path to your CSV file: ")
 data_real = pd.read_csv(csv_file_path)
 datasets = [{"name": "Real Data", "data": data_real}]
 
+param_distributions_dt = {
+    'max_depth': [None, 10, 20, 30, 40, 50],
+    'min_samples_split': uniform(0.1, 1.0),
+    'min_samples_leaf': uniform(0.1, 0.5)
+}
+param_distributions_rf = {
+    'n_estimators': range(100, 1001, 100),
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'max_depth': [None, 10, 20, 30, 40, 50],
+    'min_samples_split': uniform(0.1, 1.0),
+    'min_samples_leaf': uniform(0.1, 0.5)
+}
+parameters_xgb = {'objective': ['binary:logistic'],'nthread': [4],'seed': [42],'max_depth': range(2, 10, 1),'n_estimators': range(60, 220, 40),
+    'learning_rate': [0.1, 0.01, 0.05]}
+params_lgbm = {'application': 'binary', 'boosting': 'gbdt', 'num_iterations': 100, 'learning_rate': 0.05, 'num_leaves': 62, 'device': 'cpu', 'max_depth': -1, 'max_bin': 510, 'lambda_l1': 5, 'lambda_l2': 10, 'metric': 'binary_error', 'subsample_for_bin': 200, 'subsample': 1, 'colsample_bytree': 0.8, 'min_split_gain': 0.5, 'min_child_weight': 1, 'min_child_samples': 5}
+
+param_distributions_svm = {
+    'C': expon(scale=100), 
+    'gamma': expon(scale=.1), 
+    'kernel': ['linear']
+}
+
 # Initialize results dictionary
 results = {
     "Dataset": [],
-    "Method": [],
-    "Model": [],
+     "Model": [],
     "Accuracy": [],
     "Precision": [],
     "Recall": [],
@@ -127,13 +155,13 @@ results = {
 }
 
 # Hyperparameters for GridSearchCV
-param_grid_svm = {'C': [0.1, 1, 10, 100, 1000], 'gamma': [1, 0.1, 0.01, 0.001, 0.0001], 'kernel': ['linear']}
-grid_values_lr = {'penalty': ['l1', 'l2'], 'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000]}
-param_dict_dt = {"criterion": ['gini', 'entropy'], "max_depth": [150, 155, 160], "min_samples_split": range(1, 10), "min_samples_leaf": range(1, 5)}
-parameters_xgb = {'objective': ['binary:logistic'],'nthread': [4],'seed': [42],'max_depth': range(2, 10, 1),'n_estimators': range(60, 220, 40),
-    'learning_rate': [0.1, 0.01, 0.05]}
-param_grid_rf = {'n_estimators': [200, 500], 'max_features': ['auto', 'sqrt', 'log2'], 'max_depth': [4, 5, 6, 7, 8], 'criterion': ['gini', 'entropy']}
-params_lgbm = {'application': 'binary', 'boosting': 'gbdt', 'num_iterations': 100, 'learning_rate': 0.05, 'num_leaves': 62, 'device': 'cpu', 'max_depth': -1, 'max_bin': 510, 'lambda_l1': 5, 'lambda_l2': 10, 'metric': 'binary_error', 'subsample_for_bin': 200, 'subsample': 1, 'colsample_bytree': 0.8, 'min_split_gain': 0.5, 'min_child_weight': 1, 'min_child_samples': 5}
+# Use a smaller number of iterations for RandomizedSearchCV
+n_iter = 10
+param_distributions_svm = {'C': [0.1, 1, 10, 100, 1000], 'gamma': [1, 0.1, 0.01, 0.001, 0.0001]}
+param_distributions_lr = {
+    'C': uniform(loc=0, scale=4),
+    'penalty': ['l2', 'none']
+}
 
 warnings.filterwarnings('ignore', category=FitFailedWarning)
 warnings.filterwarnings('ignore', message="No further splits with positive gain")
@@ -165,11 +193,11 @@ for dataset_info in datasets:
     X_test = sc.transform(X_test)
     # Train and evaluate models
     models = [
-       # ("SVM", train_svm, param_grid_svm),
-        ("Logistic Regression", train_logistic_regression, grid_values_lr),
-        ("Decision Tree", train_decision_tree, param_dict_dt),
+        #("SVM", train_svm, param_distributions_svm),
+        ("Logistic Regression", train_logistic_regression, param_distributions_lr),
+        ("Decision Tree", train_decision_tree, param_distributions_dt),
         ("XGBoost", train_xgboost, parameters_xgb),
-        ("Random Forest", train_random_forest, param_grid_rf),
+        ("Random Forest", train_random_forest, param_distributions_rf),
         ("LightGBM", train_lightgbm, params_lgbm)
     ]
 
@@ -182,7 +210,6 @@ for dataset_info in datasets:
 
         # Store results
         results["Dataset"].append(dataset_name)
-        results["Method"].append("With Cross-Validation")
         results["Model"].append(model_name)
         results["Accuracy"].append(test_accuracy)
         results["Precision"].append(precision)
@@ -232,6 +259,9 @@ results_df.to_csv(csv_save_path, index=False)
 save_plot_path = input("Please enter the path where you want to save the plot (including filename and extension): ")
 plt.savefig(save_plot_path )
 plt.show()
+
+
+# In[ ]:
 
 
 

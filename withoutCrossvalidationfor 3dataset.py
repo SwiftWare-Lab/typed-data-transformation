@@ -33,8 +33,8 @@ def evaluate_classifier(classifier, X_train, y_train, X_test, y_test):
     return train_accuracy, test_accuracy
 
 # Define the dataset 
-data_50k = pd.read_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_50k.csv')
-data_1000k = pd.read_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_1000k.csv')
+#data_50k = pd.read_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_50k.csv')
+#data_1000k = pd.read_csv('/home/jamalids/Downloads/Synthetic_OC_Blood_Routine_1000k.csv')
 data_real = pd.read_csv('/home/jamalids/Downloads/OC_Blood_Routine (2).csv')
 
 
