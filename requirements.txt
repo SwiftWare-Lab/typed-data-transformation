@@ -1,0 +1,11 @@
+numpy>=1.19.5
+PyArrow>=15.0.0
+pandas>=1.1.5
+scikit-learn
+scipy
+seaborn
+matplotlib>=3.3.4
+memory_profiler
+xgboost
+lightgbm
+

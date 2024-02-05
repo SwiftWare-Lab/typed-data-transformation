@@ -1,4 +1,18 @@
-# biomedical
+# Bi data for Health
+
+## Ovarian Cancer Data Analysis
+
+### Requirements
+- numpy>=1.19.5
+- scipy>=1.5.4
+### Installation
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+```
+
 
 
 
