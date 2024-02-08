@@ -9,6 +9,9 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+feature_importance_plots/
+output/
+plot/
 develop-eggs/
 dist/
 downloads/
