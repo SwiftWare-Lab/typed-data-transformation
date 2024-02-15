@@ -69,7 +69,7 @@ def pipeline(
     # make the plots path
     if not os.path.exists(plt_directory):
         os.makedirs(plt_directory)
-    plt.savefig(os.path.join(plt_directory, dataset_name+'.png'))
+    plt.savefig(os.path.join(plt_directory, dataset_name+'frequencybins.png'))
     plt.close()
 
     # max and mean and min
