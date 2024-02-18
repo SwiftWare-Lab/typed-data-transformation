@@ -1,4 +1,4 @@
-numpy>=1.19.5
+numpy
 PyArrow>=15.0.0
 pandas>=1.1.5
 scikit-learn
@@ -8,4 +8,7 @@ matplotlib>=3.3.4
 memory_profiler
 xgboost
 lightgbm
-
+tslearn
+aeon
+blosc
+zstandard
