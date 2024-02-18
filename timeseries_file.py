@@ -228,38 +228,6 @@ if __name__ == '__main__':
     
 
 
-# In[5]:
-
-
-ts_list, y_true, _, _ = UCR_UEA_datasets().load_dataset('Libras')
-
-
-# In[12]:
-
-
-import pandas as pd
-import numpy as np
-
-
-flattened_list = [ts.flatten() for ts in ts_list]
-
-df = pd.DataFrame(flattened_list)
-
-
-# In[13]:
-
-
-df.head()
-
-
-# In[23]:
-
-
-all_results
-
-
-# In[ ]:
-
 
 
 
