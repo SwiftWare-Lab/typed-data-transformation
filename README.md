@@ -1,4 +1,4 @@
-# Bi data for Health
+# Big data for Health
 
 ## Ovarian Cancer Data Analysis
 
@@ -25,3 +25,10 @@ python3 analyze_dataset.py ./data/OC_Blood_Routine.csv
 ```
 
 TODO: add more details like seed number, etc.
+
+## Running on Narval
+You will need to modify `run_narval.sh` and put the script you want to execute and then run:
+```bash
+sbatch run_narval.sh
+```
+
