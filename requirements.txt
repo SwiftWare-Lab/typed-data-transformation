@@ -1,5 +1,4 @@
 numpy
-PyArrow>=15.0.0
 pandas>=1.1.5
 scikit-learn
 scipy
