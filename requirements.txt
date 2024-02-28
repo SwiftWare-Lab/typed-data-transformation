@@ -12,3 +12,4 @@ tslearn
 aeon
 blosc
 zstandard
+torch
