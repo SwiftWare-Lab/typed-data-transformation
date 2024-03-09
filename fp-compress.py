@@ -134,7 +134,8 @@ def plot_one_pair(df, plot_name, output_dir=None):
     plt.plot(df['precision'], baseline/df['zlib corr comp'], label='zlib corr comp')
     plt.plot(df['precision'], baseline/df['zlib shifted comp'], label='zlib shifted comp')
     plt.xlabel('precision')
-    plt.ylabel('compressed size')
+    plt.ylabel('uncompressed size / compressed size')
+    plt.yscale('log')
     plt.title(plot_name)
     plt.legend()
     if output_dir is not None:
@@ -171,9 +172,9 @@ def electricity_bench(in_file, precision_range):
     #df = (df - df.mean()) / df.std()
 
     corr_matrix = df.corr(numeric_only=True)
-    print(corr_matrix)
+    #print(corr_matrix)
     # find unique location of values more than .60 in the correlation matrix
-    locs = np.where(corr_matrix > 0.80)
+    locs = np.where(corr_matrix > 0.95)
     # for every location, extract the row and column and calculate the correlation coefficient
     for i in range(len(locs[0])):
         row = locs[0][i]
@@ -182,17 +183,11 @@ def electricity_bench(in_file, precision_range):
         b = df[df.columns[col]].values
         rho = corr_matrix.iloc[row, col]
         df_log = evaluate_compression(a, b, rho, precision_range)
-        plot_one_pair(df_log, 'col1_{}_col2_{}_rho_{}'.format(df.columns[row], df.columns[row], rho), './correlation/')
-
+        plot_one_pair(df_log, 'col1_{}_col2_{}_rho_{}'.format(df.columns[row], df.columns[col], rho), './correlation/')
 
 
 # main entry point
 if __name__ == '__main__':
-
-    a, b = np.array([4.1, 4.2], dtype=np.float32), np.array([4.1, 4.4], dtype=np.float32)
-    r = xor_float(a, b)
-    tr = xor_float(r, b)
-    print(r)
     synth_df = synthetic_bench([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1],
                                [0, 2, 3, 4, 5, 6, 7, 8])
     # plot synthetic data
