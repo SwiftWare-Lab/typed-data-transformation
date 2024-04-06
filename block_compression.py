@@ -1,15 +1,7 @@
 
-import sys
 
-import numba
 import numpy as np
-from scipy.io import mmread
-import math
-import os
-import datetime
-#from numba import njit, prange, jit
-from scipy.sparse import csr_matrix
-from multiprocessing import Pool
+
 
 
 def verify_mining(mat, pat_list, occurence):
