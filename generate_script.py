@@ -30,7 +30,7 @@ def generate_sbatch_header(time, num_tasks, email, memory="64000M", name="Compre
 
 # generate module loads for the given modules
 def generate_module_loads(modules):
-    return "\n".join([f"module load {module}\n" for module in modules])
+    return "\n".join([f"module load {module}\n" for module in modules]) + "\nsource venv/bin/activate\n\n"
 
 
 # generate a command line parser
