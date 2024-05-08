@@ -55,7 +55,7 @@ def partition_by_size_files(file_list, num_partition):
     # sum of all file sizes
     total_size = sum(file_sizes)
     # average size of each partition, 0.1 to account for the last partition
-    partition_size = (total_size + 0.00001*total_size) // num_partition
+    partition_size = total_size  // num_partition
     # current partition size
     current_partition_size = 0
     # current partition
@@ -68,6 +68,7 @@ def partition_by_size_files(file_list, num_partition):
             partitioned_files.append(current_partition)
             current_partition = [file]
             current_partition_size = size
+    partitioned_files.append(current_partition)
     return partitioned_files
 
 
