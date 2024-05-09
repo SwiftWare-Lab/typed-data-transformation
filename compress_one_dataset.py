@@ -10,13 +10,18 @@ import fpzip
 import snappy
 import zstandard as zstd
 import lz4.frame
+
+
 def float_to_bin_array(a):
     array = []
     for f in a:
         array.append(float_to_bin(f))
     return array
+
+
 def float_to_bin(f):
     return format(struct.unpack('!I', struct.pack('!f', f))[0], '032b')
+
 
 def float_to_bin1(value, m, n):
     
@@ -24,6 +29,7 @@ def float_to_bin1(value, m, n):
     binary_representation = format(struct.unpack('!I', struct.pack('!f', value))[0], '032b')
     # Remove the leading '0b' and zero fill it to the desired length
     return binary_representation.zfill(m * n)
+
 
 def bin_to_image(b):
     img = []
@@ -33,61 +39,44 @@ def bin_to_image(b):
         for j in range(len(b[0])):
             row.append(int(b[i][j]))
         img.append(row)
-    
     return img
+
+
 def generate_patterns_from_data(data,m,n):
-    
     pattern_set = set()
     #print(data,m,n)
-    
     unique_patterns = []
-    
     for i in range(0, len(data), m):
-        
         for j in range(0,len(data[0]) ,n):
-            
             pattern = [data[i + r][j:j + n] for r in range(m)]
-                       
             pattern_tuple = tuple(map(tuple, pattern))
-                       
             if pattern_tuple not in pattern_set:
                 unique_patterns.append(pattern)
                 pattern_set.add(pattern_tuple)
-              
-       
     return unique_patterns
 
+
 def generate_patterns_from_data_all(data, m, n):
-    
     pattern_set = set()
-        
     unique_patterns = []
-    
-    
     for i in range(len(data) - m + 1):
-        
         for j in range(len(data[0]) - n + 1):
             # Extract a sub-pattern of size m x n
             pattern = [data[i + r][j:j + n] for r in range(m)]
-            
             # Ensure the pattern is of size m x n
             if all(len(row) == n for row in pattern):
                 # Convert the sub-pattern to a tuple to use in the set
                 pattern_tuple = tuple(map(tuple, pattern))
-                
-               
                 if pattern_tuple not in pattern_set:
                     unique_patterns.append(pattern)
                     pattern_set.add(pattern_tuple)
-    
     return unique_patterns
 
-
- 
 
 def hash_pattern(pattern):
     # Convert the pattern array to a string representation
     return hash(pattern.tostring())
+
 
 def get_pattern_occurance_non_overlapping(mat, pattern_list,lookup_table):
     #print("mat",mat)
@@ -97,19 +86,13 @@ def get_pattern_occurance_non_overlapping(mat, pattern_list,lookup_table):
     matched_binary_representations = [] 
     # Calculate hash values for patterns
     pattern_hashes = [hash_pattern(pattern) for pattern in pattern_list]
-    
     # Go over each row in the matrix
     for i in range(0, mat.shape[0], pm):
-       
         j = 0
-        
         for j in range(0, mat.shape[1], pn):
-        
             for k, pattern in enumerate(pattern_list):
-               
                 pattern_hash = pattern_hashes[k]
                 pm, pn = pattern.shape[0], pattern.shape[1]
-               
                 if (i + pm <= mat.shape[0]) and (j + pn <= mat.shape[1]):
                     if hash_pattern(mat[i:i + pm, j:j + pn]) == pattern_hash:
                         pattern_occurance[pattern_hash] = pattern_occurance.get(pattern_hash, 0) + 1
@@ -131,8 +114,8 @@ def get_pattern_occurance_non_overlapping(mat, pattern_list,lookup_table):
 
     # Convert hash codes to pattern occurrences
     pattern_occurance_list = [pattern_occurance.get(pattern_hash, 0) for pattern_hash in pattern_hashes]
-    
     return pattern_occurance_list,matched_binary_representations
+
 
 def calculate_min_bits(patterns_list):
     # Determine the maximum index of the patterns
@@ -140,9 +123,11 @@ def calculate_min_bits(patterns_list):
     min_bits = math.ceil(math.log2(max_index + 1))
     return min_bits
 
+
 def to_n_bit_binary(index, n):
     # Convert an index to an n-bit binary string
     return f"{index:0{n}b}"
+
 
 def compress_block_based(mat, m, n,pattern_list,lookup_table):
     stats = {}
@@ -176,31 +161,26 @@ def compress_block_based(mat, m, n,pattern_list,lookup_table):
     stats['size_uniform_code'] = size_uniform_code
     stats['size_uniform_bit_roundup'] = size_uniform_bit_roundup
     stats['size_unifrom_byte_roundup'] = size_unifrom_byte_roundup
-  
-    
     return stats, pattern_occurance,matched_binary_representations,pattern_list,lookup_table
+
 
 def reverse_lookup_table(lookup_table):
     # Create a reverse lookup table from binary codes back to matrix patterns
     return {v: k for k, v in lookup_table.items()}
+
+
 def decompress_data(binary_representations, reverse_table, img_shape, m, n, num_cols):
-    
     reconstructed_img = np.zeros(img_shape, dtype=int)
-    
-    
     block_index = 0
-    
     # Place each block in its correct position
     for i in range(0, img_shape[0], m):
         for j in range(0, img_shape[1], n):
-            
             if block_index < len(binary_representations):
                 # Get the binary representation of the current block
                 binary = binary_representations[block_index]
                 # Fetch the pattern using reverse lookup
                 pattern = np.array(reverse_table[binary])
-                
-                
+
                 actual_m = min(m, img_shape[0] - i)
                 actual_n = min(n, img_shape[1] - j)
                 
@@ -212,9 +192,8 @@ def decompress_data(binary_representations, reverse_table, img_shape, m, n, num_
 
     return reconstructed_img
 
+
 def process_and_compress_by_chunks(data, chunk_size, m, n, pattern_list):
-    
-    
     total_rows = data.shape[0]
     compressed_data_all = []
     total_original_size = 0
@@ -264,8 +243,6 @@ def process_and_compress_by_chunks(data, chunk_size, m, n, pattern_list):
     }
 
 
-
-
 def calculate_compression_ratios(result, pattern_list, min_bits):
     ideal_ratio = result['total_original_size'] / result['total_compressed_size']
     base_ratio = result['total_original_size'] / (result['total_compressed_size'] + (pattern_list.shape[0] * pattern_list[0].shape[1] + 16))
@@ -274,9 +251,8 @@ def calculate_compression_ratios(result, pattern_list, min_bits):
    
     return ideal_ratio, base_ratio, lookup_ratio
 # Function to process a single feature
+
 def process_feature(dataset_name, feature_idx, feature_data3):
-   
-       
     chunk_size = 10
     data= feature_data3
     
@@ -312,8 +288,7 @@ def process_feature(dataset_name, feature_idx, feature_data3):
     pattern_list = np.array(patterns_from_data)
     #print("len(pattern_list)",len(pattern_list))
     # Compress the data
-   
-    
+
     result = process_and_compress_by_chunks(feature_data1, chunk_size, m, n, pattern_list)
     
     # Calculate compression ratios
@@ -322,6 +297,8 @@ def process_feature(dataset_name, feature_idx, feature_data3):
     
     return dataset_name, feature_idx, ratios,result
 ########################
+
+
 def apply_padding(data, chunk_size):
     
     # Calculate the padding needed to make rows divisible by chunk_size
@@ -331,8 +308,9 @@ def apply_padding(data, chunk_size):
         data = np.pad(data, ((0, rows_needed), (0, 0)), mode='constant', constant_values=0)
     return data
 
+
 ##################################################################################################
-def read_and_describe_dataset(dataset_path):
+def read_and_compress_dataset(dataset_path):
     results = []
 
     if not os.path.exists(dataset_path):
@@ -341,7 +319,6 @@ def read_and_describe_dataset(dataset_path):
 
     try:
         ts_data = pd.read_csv(dataset_path, delimiter='\t', header=None)
-
         # Split the DataFrame based on the first column
         groups = ts_data.groupby(0)
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
@@ -349,7 +326,6 @@ def read_and_describe_dataset(dataset_path):
             group = group.drop(columns=0)
             group.fillna(0, inplace=True)
             group = group.astype(float)
-
             
             n_samples, n_timesteps = group.shape
             
@@ -364,7 +340,8 @@ def read_and_describe_dataset(dataset_path):
         print(f"Error processing dataset: {e}")
     
     return results 
-    
+
+
 def read_and_describe_dataset_all(dataset_path):
     results = []
     if not os.path.exists(dataset_path):
@@ -384,7 +361,6 @@ def read_and_describe_dataset_all(dataset_path):
         n_samples, n_timesteps = ts_data.shape
         
         feature_data1 = ts_data
-        
         result = process_feature(dataset_name, 1,  feature_data1)
         
         results.append(result)
@@ -392,7 +368,9 @@ def read_and_describe_dataset_all(dataset_path):
         
     except Exception as e:
         print(f"Failed to read the dataset. Error: {e}")
-    return results     
+    return results
+
+
 #######################################################OTHER TOOLS################################
 class GorillaCompressor:
     def __init__(self):
@@ -424,11 +402,14 @@ class GorillaCompressor:
         original_size_bits = len(self.compressed_data) * 32
         return original_size_bits / self.compressed_size_bits
 
+
 def float_to_bits(f):
     return struct.unpack('>Q', struct.pack('>d', f))[0]
 
+
 def bits_to_float(b):
     return struct.unpack('>d', struct.pack('>Q', b))[0]
+
 
 def compress_float_fpzip(input_data, precision=0):
     if not isinstance(input_data, np.ndarray) or not np.issubdtype(input_data.dtype, np.floating):
@@ -447,6 +428,8 @@ def arg_parser():
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
     parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
+
+
 def read_and_describe_dataset_othertools(dataset_path):
     results = []
     if not os.path.exists(dataset_path):
@@ -502,6 +485,7 @@ def read_and_describe_dataset_othertools(dataset_path):
 
     return pd.concat(results, ignore_index=True)
 
+
 if __name__ == "__main__":
     parser = arg_parser()
     args = parser.parse_args()
@@ -510,12 +494,12 @@ if __name__ == "__main__":
     pattern = args.pattern
     log_file = args.log_file
     num_threads = args.num_threads
-    mode=args.mode
+    mode = args.mode
 
     print(f"Compressing dataset: {dataset_path} with variant: {comp_variant} and pattern: {pattern}..., log file: {log_file}..., num_threads: {num_threads}...,mode:{mode}")
 
     if mode == 'signal':
-        results = read_and_describe_dataset(dataset_path)
+        results = read_and_compress_dataset(dataset_path)
         results_other =read_and_describe_dataset_othertools(dataset_path)
         
     elif mode == 'all':
@@ -538,9 +522,8 @@ if __name__ == "__main__":
     Combined_df = pd.merge(results_df, results_other, on=['Dataset Name', 'Feature Index'], how='inner')
     print(Combined_df)
     # Check if the file exists to decide whether to write headers
-    if not os.path.exists(log_file):
-        Combined_df.to_csv(log_file, mode='a', index=False, header=True)
-    else:
-        Combined_df.to_csv(log_file, mode='a', index=False, header=False)
+
+    Combined_df.to_csv(log_file, index=False, header=True)
+
 
     print(f"Results have been saved to {log_file}")

@@ -6,7 +6,10 @@ def generate_python_command(datasets, script_name, output_csv_path, num_threads=
     script_content = ""
     for dataset in datasets:
         script_content += f"echo 'Processing {dataset}'\n"
-        script_content += f"python3 {script_name} --dataset={dataset} --outcsv={output_csv_path} --nthreads={num_threads}\n\n"
+        # extract dataset name
+        dataset_name = dataset.split("/")[-1].split(".")[0]
+        output_csv_path = f"output_{dataset_name}.csv"
+        script_content += f"python3 {script_name} --dataset={dataset} --outcsv={os.path.join(output_csv_path,output_csv_path)} --nthreads={num_threads}\n\n"
     return script_content
 
 
@@ -55,7 +58,7 @@ def partition_by_size_files(file_list, num_partition):
     # sum of all file sizes
     total_size = sum(file_sizes)
     # average size of each partition, 0.1 to account for the last partition
-    partition_size = total_size  // num_partition
+    partition_size = total_size // num_partition
     # current partition size
     current_partition_size = 0
     # current partition
@@ -94,8 +97,8 @@ if __name__ == "__main__":
         sbatch_script_ucr_content += generate_sbatch_header("05:00:00", num_threads, "samira@mcmaster.ca")
         sbatch_script_ucr_content += generate_module_loads(["StdEnv", "python/3.10"])
 
-        output_csv_path = f"output_{i}.csv"
-        sbatch_script_ucr_content += generate_python_command(dataset_group, script_name, os.path.join(csv_output_dir,output_csv_path))
+
+        sbatch_script_ucr_content += generate_python_command(dataset_group, script_name, csv_output_dir)
 
         # Write the shell script
         sbatch_script_name = f"run_ucr_datasets_{i}.sh"
