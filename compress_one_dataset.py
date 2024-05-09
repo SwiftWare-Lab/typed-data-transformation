@@ -363,7 +363,14 @@ if __name__ == "__main__":
     results = read_and_describe_dataset(dataset_path)
 
     # Save results to CSV
-    results_df = pd.DataFrame(results)
+    results_df = pd.DataFrame({
+      'Dataset Name': [result[0] for result in results],
+      'Ideal Ratio': [result[2][0] for result in results],
+      'Base Ratio': [result[2][1] for result in results],
+      'Lookup Ratio': [result[2][2] for result in results],
+     })
+   
+    
     print(results_df)
 
     if not os.path.exists(log_file):
