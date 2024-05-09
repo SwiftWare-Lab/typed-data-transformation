@@ -5,6 +5,11 @@ import pandas as pd
 import numpy as np
 import math
 import argparse
+import zlib
+import fpzip
+import snappy
+import zstandard as zstd
+import lz4.frame
 def float_to_bin_array(a):
     array = []
     for f in a:
@@ -388,8 +393,49 @@ def read_and_describe_dataset_all(dataset_path):
     except Exception as e:
         print(f"Failed to read the dataset. Error: {e}")
     return results     
-# TODO: please add all other compression tools
+#######################################################OTHER TOOLS################################
+class GorillaCompressor:
+    def __init__(self):
+        self.compressed_data = []
+        self.prev_value = None
+        self.compressed_size_bits = 0
 
+    def compress(self, value):
+        if not isinstance(value, float):
+            raise ValueError(f"Expected a float, got {type(value)} with value {value}")
+        if self.prev_value is None:
+            self.compressed_data.append(float_to_bits(value))
+            self.compressed_size_bits += 32
+        else:
+            xor_result = float_to_bits(value) ^ float_to_bits(self.prev_value)
+            if xor_result == 0:
+                self.compressed_data.append(0)
+                self.compressed_size_bits += 1
+            else:
+                self.compressed_data.append(1)
+                self.compressed_data.append(xor_result)
+                self.compressed_size_bits += 1 + 32
+        self.prev_value = value
+
+    def get_compressed_data(self):
+        return self.compressed_data
+
+    def get_compression_ratio(self):
+        original_size_bits = len(self.compressed_data) * 32
+        return original_size_bits / self.compressed_size_bits
+
+def float_to_bits(f):
+    return struct.unpack('>Q', struct.pack('>d', f))[0]
+
+def bits_to_float(b):
+    return struct.unpack('>d', struct.pack('>Q', b))[0]
+
+def compress_float_fpzip(input_data, precision=0):
+    if not isinstance(input_data, np.ndarray) or not np.issubdtype(input_data.dtype, np.floating):
+        raise TypeError("FPZIP compression requires input data to be a numpy floating-point array.")
+    compressed_data = fpzip.compress(input_data, precision=precision)
+    compressed_size = len(compressed_data)
+    return compressed_data, compressed_size
 
 
 def arg_parser():
@@ -401,6 +447,60 @@ def arg_parser():
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
     parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
+def read_and_describe_dataset_othertools(dataset_path):
+    results = []
+    if not os.path.exists(dataset_path):
+        print(f"File not found: {dataset_path}")
+        return pd.DataFrame()  # Return an empty DataFrame if file not found
+
+    try:
+        ts_data = pd.read_csv(dataset_path, delimiter='\t', header=None)
+        groups = ts_data.groupby(0)
+        dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
+        
+        for group_id, group in groups:
+            group = group.drop(columns=0)
+            group.fillna(0, inplace=True)
+            group = group.astype(float)
+            n_samples, n_timesteps = group.shape
+            print(f"Group {group_id}: {n_samples} rows, {n_timesteps} columns")
+            
+            data_bytes = group.to_numpy().tobytes()
+            original_size = len(data_bytes)
+            
+            # Compression methods application
+            compressed_data_snappy = snappy.compress(data_bytes)
+            compressed_data_fpzip, compressed_size_fpzip = compress_float_fpzip(group.to_numpy())
+            compressor = GorillaCompressor()
+            for value in np.nditer(group):
+                compressor.compress(float(value))
+            compressed_data_gorilla = compressor.get_compressed_data()
+            compressed_data_zstd = zstd.compress(data_bytes)
+            compressed_data_lz4 = lz4.frame.compress(data_bytes)
+
+            # Calculate compression ratios
+            compression_ratios = [
+                original_size / len(compressed_data_snappy),
+                original_size / compressed_size_fpzip,
+                original_size / len(compressed_data_gorilla),
+                original_size / len(compressed_data_zstd),
+                original_size / len(compressed_data_lz4)
+            ]
+            
+            # Create DataFrame for this group
+            df_group = pd.DataFrame([compression_ratios], columns=["Snappy", "FPZIP", "Gorilla", "zstd", "LZ4"])
+            df_group['Feature Index'] = group_id
+            df_group['Dataset Name'] = dataset_name
+            results.append(df_group)
+
+    except Exception as e:
+        print(f"Error processing dataset: {e}")
+    
+    if not results:  
+        print("No valid data to process")
+        return pd.DataFrame()  # Return an empty DataFrame if no groups were processed
+
+    return pd.concat(results, ignore_index=True)
 
 if __name__ == "__main__":
     parser = arg_parser()
@@ -416,6 +516,8 @@ if __name__ == "__main__":
 
     if mode == 'signal':
         results = read_and_describe_dataset(dataset_path)
+        results_other =read_and_describe_dataset_othertools(dataset_path)
+        
     elif mode == 'all':
         results =read_and_describe_dataset_all(dataset_path)
     else:
@@ -432,12 +534,13 @@ if __name__ == "__main__":
       'Lookup Ratio': [result[2][2] for result in results],
      })
    
-    
-    print(results_df)
+   
+    Combined_df = pd.merge(results_df, results_other, on=['Dataset Name', 'Feature Index'], how='inner')
+    print(Combined_df)
     # Check if the file exists to decide whether to write headers
     if not os.path.exists(log_file):
-        results_df.to_csv(log_file, mode='a', index=False, header=True)
+        Combined_df.to_csv(log_file, mode='a', index=False, header=True)
     else:
-        results_df.to_csv(log_file, mode='a', index=False, header=False)
+        Combined_df.to_csv(log_file, mode='a', index=False, header=False)
 
     print(f"Results have been saved to {log_file}")
