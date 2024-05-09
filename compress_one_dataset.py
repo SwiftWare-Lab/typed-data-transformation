@@ -220,19 +220,24 @@ def process_and_compress_by_chunks(data, chunk_size, m, n, pattern_list):
     for index, pattern in enumerate(pattern_list)}
     
     for start_row in range(0, total_rows, chunk_size):
-       
+        #print("start_row",start_row)
         end_row = min(start_row + chunk_size, total_rows)
-        
+        # Select the chunk of data
         data_chunk = data[start_row:end_row]
+        #print("data_chunk",data_chunk)
         
-        # Convert float data to binary 
+        # Convert float data to binary image
+        if isinstance(data_chunk, pd.DataFrame):
+            data_chunk = data_chunk.to_numpy()
         str_array = float_to_bin_array(data_chunk.flatten())
         img_orig = bin_to_image(str_array)
         img_array = np.array(img_orig)
         total_original_size += img_array.size 
-        
+        #print("img_array",img_array)
+        # Compress the chunk
         stats, pattern_occurance, matched_binary_representations, _, lookup_table = compress_block_based(img_array, m, n,pattern_list,lookup_table)
-       
+        #print("matched_binary_representations",matched_binary_representations)
+        # Compute compressed size for the chunk
         min_bits = calculate_min_bits(np.array(pattern_list))
         compressed_size_chunk = len(matched_binary_representations) * min_bits
         total_compressed_size += compressed_size_chunk
@@ -254,6 +259,8 @@ def process_and_compress_by_chunks(data, chunk_size, m, n, pattern_list):
     }
 
 
+
+
 def calculate_compression_ratios(result, pattern_list, min_bits):
     ideal_ratio = result['total_original_size'] / result['total_compressed_size']
     base_ratio = result['total_original_size'] / (result['total_compressed_size'] + (pattern_list.shape[0] * pattern_list[0].shape[1] + 16))
@@ -269,12 +276,25 @@ def process_feature(dataset_name, feature_idx, feature_data3):
     data= feature_data3
     
     feature_data1= apply_padding(data, chunk_size)
-    
-    
-    feature_data = feature_data1.reshape(-1)
-    print(len(feature_data))
-
-    
+    #print((feature_data1))
+    ##########################
+    try:
+        # Attempt to reshape using NumPy if the data is already an array
+        feature_data1 = apply_padding(data, chunk_size)
+        
+        # If feature_data1 is a DataFrame, this will raise AttributeError
+        feature_data = feature_data1.reshape(-1)
+        
+    except AttributeError:
+        
+        if isinstance(feature_data1, pd.DataFrame):
+           
+            feature_data = feature_data1.to_numpy().reshape(-1)
+        else:
+            print(" another type that doesn't support reshape")
+            raise
+    ###########################
+    #feature_data = feature_data1.reshape(-1)
     
     str_array = float_to_bin_array(feature_data)
     
@@ -309,6 +329,39 @@ def apply_padding(data, chunk_size):
 ##################################################################################################
 def read_and_describe_dataset(dataset_path):
     results = []
+
+    if not os.path.exists(dataset_path):
+        print(f"File not found: {dataset_path}")
+        return
+
+    try:
+        ts_data = pd.read_csv(dataset_path, delimiter='\t', header=None)
+
+        # Split the DataFrame based on the first column
+        groups = ts_data.groupby(0)
+        dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
+        for group_id, group in groups:
+            group = group.drop(columns=0)
+            group.fillna(0, inplace=True)
+            group = group.astype(float)
+
+            
+            n_samples, n_timesteps = group.shape
+            
+            print(f"Group {group_id}: {n_samples} rows, {n_timesteps} columns")
+
+            result = process_feature(os.path.basename(dataset_path).replace('.tsv', ''), group_id, group)
+            #print(result)
+            results.append( result)
+       # print("results")
+       # print(results)
+    except Exception as e:
+        print(f"Error processing dataset: {e}")
+    
+    return results 
+    
+def read_and_describe_dataset_all(dataset_path):
+    results = []
     if not os.path.exists(dataset_path):
         print(f"File not found: {dataset_path}")
         return
@@ -334,8 +387,7 @@ def read_and_describe_dataset(dataset_path):
         
     except Exception as e:
         print(f"Failed to read the dataset. Error: {e}")
-    return results
-
+    return results     
 # TODO: please add all other compression tools
 
 
@@ -347,6 +399,7 @@ def arg_parser():
     parser.add_argument('--pattern', dest='pattern', default="10*16", help='Pattern to match the files.')
     parser.add_argument('--outcsv', dest='log_file', default="./log_out.csv", help='Output directory for the sbatch scripts.')
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
+    parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
 
 if __name__ == "__main__":
@@ -357,14 +410,23 @@ if __name__ == "__main__":
     pattern = args.pattern
     log_file = args.log_file
     num_threads = args.num_threads
+    mode=args.mode
 
-    print(f"Compressing dataset: {dataset_path} with variant: {comp_variant} and pattern: {pattern}..., log file: {log_file}..., num_threads: {num_threads}...")
+    print(f"Compressing dataset: {dataset_path} with variant: {comp_variant} and pattern: {pattern}..., log file: {log_file}..., num_threads: {num_threads}...,mode:{mode}")
 
-    results = read_and_describe_dataset(dataset_path)
+    if mode == 'signal':
+        results = read_and_describe_dataset(dataset_path)
+    elif mode == 'all':
+        results =read_and_describe_dataset_all(dataset_path)
+    else:
+        print("Invalid mode. Use 'save' or 'read'.")
+        sys.exit(1)
 
-    # Save results to CSV
+    
+
     results_df = pd.DataFrame({
       'Dataset Name': [result[0] for result in results],
+      'Feature Index': [result[1] for result in results],
       'Ideal Ratio': [result[2][0] for result in results],
       'Base Ratio': [result[2][1] for result in results],
       'Lookup Ratio': [result[2][2] for result in results],
@@ -372,7 +434,7 @@ if __name__ == "__main__":
    
     
     print(results_df)
-
+    # Check if the file exists to decide whether to write headers
     if not os.path.exists(log_file):
         results_df.to_csv(log_file, mode='a', index=False, header=True)
     else:
