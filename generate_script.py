@@ -8,8 +8,8 @@ def generate_python_command(datasets, script_name, output_csv_path, num_threads=
         script_content += f"echo 'Processing {dataset}'\n"
         # extract dataset name
         dataset_name = dataset.split("/")[-1].split(".")[0]
-        output_csv_path = f"output_{dataset_name}.csv"
-        script_content += f"python3 {script_name} --dataset={dataset} --outcsv={os.path.join(output_csv_path,output_csv_path)} --nthreads={num_threads}\n\n"
+        output_csv_name = f"output_{dataset_name}.csv"
+        script_content += f"python3 {script_name} --dataset={dataset} --outcsv={os.path.join(output_csv_path, output_csv_name)} --nthreads={num_threads}\n\n"
     return script_content
 
 
