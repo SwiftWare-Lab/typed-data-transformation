@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import struct
 def generate_smooth_array(n, type=np.float32):
     import numpy as np
     a = np.linspace(0, 1, n).astype(type)
@@ -80,3 +80,35 @@ def int_to_bool(int_val, m, n):
 
 def bool_to_binary_string(bool_array):
     return ''.join(['1' if x else '0' for x in bool_array.flatten()])
+def float32_to_bool_array1(float_array):
+    # Convert float32 array to byte array
+    byte_array = float_array.view(np.uint8)
+    # Convert byte array to boolean array
+    bit_array = np.unpackbits(byte_array)
+    # Return only the original length of the bit array
+    return bit_array
+
+def bool_to_int1(bit_array):
+    # Convert boolean array to binary string
+    bit_string = ''.join(str(int(bit)) for bit in bit_array)
+    # Convert binary string to integer
+    value = int(bit_string, 2)
+    return value
+def int_to_bool1(value, m, n):
+    # Convert the integer to a binary string, zero-padded to the required length
+    bit_string = bin(value)[2:].zfill(m * n)
+    # Convert the binary string to a boolean array
+    bit_array = np.array([int(bit) for bit in bit_string], dtype=np.bool_)
+    return bit_array
+
+def bool_array_to_float321(bit_array):
+    # Ensure bit_array is a boolean array
+    bit_array = np.asarray(bit_array, dtype=np.bool_)
+    # Pack bits into bytes
+    byte_array = np.packbits(bit_array)
+    # Convert byte array to float32
+    # Make sure the length is divisible by 4 to match float32 size
+    if len(byte_array) % 4 != 0:
+        byte_array = np.pad(byte_array, (0, 4 - len(byte_array) % 4), 'constant')
+    float_array = np.frombuffer(byte_array, dtype=np.float32)
+    return float_array
