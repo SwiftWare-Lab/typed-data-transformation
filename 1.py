@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 import pickle
 import zstandard as zstd
-import snappy
+import struct
 from utils import bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
-
+import matplotlib.pyplot as plt
 
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
@@ -76,18 +76,17 @@ def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     actual_dict_byte = pickle.dumps(dict)
     #dict_bytes = len(actual_dict_byte)
     # # compress rectangles using zstd
-    cctx = zstd.ZstdCompressor(level=0)
+    cctx = zstd.ZstdCompressor(level=3)
     compressed_dict = cctx.compress(actual_dict_byte)
     total_ztd = len(compressed_dict) + comp_data_bytes
     #total = dict_bytes + comp_data_bytes
     total = actual_dict_size + comp_data_bytes
     #total_estimated = estimated_dict_size + comp_data_bytes
 
-    int_array_dict, comp_int_dict,compressed_dict_snappy = convert_dict_to_array(dict, m, n)
-   # assert len(int_array_dict.tobytes()) == (len(dict)*m*n)//8
+    int_array_dict, comp_int_dict = convert_dict_to_array(dict, m, n)
+    assert len(int_array_dict.tobytes()) == (len(dict)*m*n)//8
     total_zstd_int = len(comp_int_dict) + comp_data_bytes
-    total_snappy_int=len(compressed_dict_snappy) + comp_data_bytes
-    return total, total_ztd,  total_zstd_int,total_snappy_int
+    return total, total_ztd,  total_zstd_int
 
 
 def get_dict_size_in_bytes(dict_in, m, n, bit_length):
@@ -144,40 +143,20 @@ def get_total_size(obj, seen=None):
         size += sum(get_total_size(i, seen) for i in obj)
 
     return size
-def get_total_size(obj):
-    # Implement this function to get the total size of the dictionary
-    import sys
-    return sys.getsizeof(obj) + sum(sys.getsizeof(v) for v in obj.values())
-
-
 def convert_dict_to_array(dict_in, m, n):
-    dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')  # Correct shape to store both keys and values
+
+    dict_array = np.zeros(len(dict_in) * m, dtype='float32')
     for i, (key, value) in enumerate(dict_in.items()):
-        key_int = int(key, 2)  # Convert key from binary string to integer
-        key_bit_array = int_to_bool1(key_int, m, n)
-        value_bit_array = int_to_bool1(value, m, n)
-
-        key_float_array = bool_array_to_float321(key_bit_array, n)
-        value_float_array = bool_array_to_float321(value_bit_array, n)
-
-        if len(key_float_array) < m:
-            key_float_array = np.pad(key_float_array, (0, m - len(key_float_array)), 'constant')
-        elif len(key_float_array) > m:
-            key_float_array = key_float_array[:m]
-
-        if len(value_float_array) < m:
-            value_float_array = np.pad(value_float_array, (0, m - len(value_float_array)), 'constant')
-        elif len(value_float_array) > m:
-            value_float_array = value_float_array[:m]
-
-        dict_array[i * m * 2:(i * m * 2) + m] = key_float_array
-        dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
-
+        bit_array = int_to_bool1(value, m, n)
+        float_array = bool_array_to_float321(bit_array)
+        #print(f"Key1: {key}, Value1: {value}")
+        dict_array[i * m:(i + 1) * m] = float_array[:m]
+        #print(f"Float1: {dict_array}")
     cctx = zstd.ZstdCompressor(level=0)
-    compressed_dict_zstd = cctx.compress(dict_array.tobytes())
-    #print(f"dictionary sizes: {get_total_size(dict_in)}, compressed dictionary size-zstd: {len(compressed_dict_zstd)}")
-    compressed_dict_snappy = snappy.compress(dict_array.tobytes())
-    return dict_array, compressed_dict_zstd,compressed_dict_snappy
+    compressed_dict = cctx.compress(dict_array.tobytes())
+    print(f"dictionary sizes:{(get_total_size(dict_in))}, compressed dictionary size:{len(compressed_dict)} ")
+    return dict_array, compressed_dict
+
 
 
 def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
@@ -200,43 +179,44 @@ def pattern_based_decompressor(compressed_byte_array, inverse_cw_dict, cw_bit_le
     return uncompressed_data
 
 
+
 def decompress_dict_array(compressed_dict):
+
+    #Decompresses the compressed dictionary data back into an array usig Zstd.
+
+    # Create a decompression context
     dctx = zstd.ZstdDecompressor()
+    # Decompress the data
     decompressed_bytes = dctx.decompress(compressed_dict)
+
     dict_array = np.frombuffer(decompressed_bytes, dtype='float32')
     return dict_array
-def decompress_dict_snappy(compressed_dict):
-    decompressed_bytes = snappy.uncompress(compressed_dict)
-    dict_array_snappy = np.frombuffer(decompressed_bytes, dtype='float32')
-    return dict_array_snappy
 
-def reconstruct_dict_from_array(dict_array, m, n, bit_length):
-    num_entries = len(dict_array) // (m * 2)
+def reconstruct_dict_from_array(dict_array, m, n):
+    num_entries = len(dict_array) // m
+    bit_length = int(np.ceil(np.log2(num_entries)))
     reconstructed_dict = {}
 
     for i in range(num_entries):
-        key_float_segment = dict_array[i * m * 2:(i * m * 2) + m]
-        value_float_segment = dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)]
+        float_segment = dict_array[i*m:(i+1)*m]
+        bit_array = float32_to_bool_array1(float_segment)
+        int_key =bool_to_int1(bit_array)
+        cw_bits = bin(i)[2:].zfill(bit_length)
+        reconstructed_dict[cw_bits] = int_key
 
-        key_bit_array = float32_to_bool_array1(key_float_segment, m, n)
-        value_bit_array = float32_to_bool_array1(value_float_segment, m, n)
-
-        original_key = bool_to_int1(key_bit_array)
-        original_value = bool_to_int1(value_bit_array)
-
-        cw_bits = bin(original_key)[2:].zfill(bit_length)
-        reconstructed_dict[cw_bits] = original_value
+    # print(f"Key: {cw_bits}, Value: {int_key}")
 
     return reconstructed_dict
+
 def are_dicts_equal(dict1, dict2):
     return dict1 == dict2
 
 
 def run_and_collect_data():
     results = []
-    sizes = [1,10,100]
+    sizes = [1,100,200,1000,10000]
     ts_m = 10
-    m, n = 10,32
+    m, n = 10, 32
 
     for in_size in sizes:
         ts_n = in_size * 64
@@ -250,23 +230,13 @@ def run_and_collect_data():
         uncompressed_data = pattern_based_decompressor(compressed_char_array, inverse_cw_dict, cw_bit_len, m, n)
 
         # Decompress the dictionary
-        int_array_dict, comp_int_dict,compressed_dict_snappy = convert_dict_to_array(inverse_cw_dict, m, n)
+        int_array_dict, comp_int_dict = convert_dict_to_array(inverse_cw_dict, m, n)
         dict_array = decompress_dict_array(comp_int_dict)
-        dict_array_snappy=decompress_dict_snappy(compressed_dict_snappy)
-
-        reconstructed_dic = reconstruct_dict_from_array(dict_array_snappy, m, n, int(cw_bit_len))
-
+        reconstructed_dic = reconstruct_dict_from_array(dict_array, m, n)
 
         # Verify flags
-        verify_flag_zstd = np.array_equal(int_array_dict, dict_array)
-        verify_flag_snappy = np.array_equal(int_array_dict, dict_array_snappy)
-        print(f"verify_flag_zstd:{verify_flag_zstd}")
-        print(f"verify_flag_snappy:{verify_flag_snappy}")
-
         verify_flag_data = np.array_equal(bool_array, uncompressed_data)
         verify_flag_dict = are_dicts_equal(reconstructed_dic, inverse_cw_dict)
-       # print(f"reconstructed dict {reconstructed_dic}")
-       # print(f"inverse_cw_dict {inverse_cw_dict}")
 
         #  dictionary size if stored at bit level
         estimated_dict_size = get_dict_size_in_bytes(inverse_cw_dict, m, n, cw_bit_len)
@@ -274,16 +244,13 @@ def run_and_collect_data():
 
         # Compute the size of the compressed data
         compressed_bool_array = char_to_bool(compressed_char_array)
-        pattern_comp, pattern_comp_dict_zstd,  pattern_comp_dict_int_zstd ,pattern_comp_dict_int_snappy= compute_comp_size(compressed_bool_array, inverse_cw_dict, dictionary_size, m, n)
+        pattern_comp, pattern_comp_dict_zstd,  pattern_comp_dict_int_zstd = compute_comp_size(compressed_bool_array, inverse_cw_dict, dictionary_size, m, n)
 
         # Zstd compression of the original float array
         cctx = zstd.ZstdCompressor(level=3)
         compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
         original_size = len(bool_array.tobytes())
         zstd_comp_size = len(compressed_float_array_zstd)
-        # snappy compression of the original float array
-        compressed_dict_snappy = snappy.compress(bool_array.tobytes())
-        snappy_comp_size = len(compressed_dict_snappy)
 
         
         results.append({
@@ -297,9 +264,7 @@ def run_and_collect_data():
             "pattern_comp":pattern_comp,
             "pattern_comp_dict_zstd":pattern_comp_dict_zstd,
             "zstd_comp_size":zstd_comp_size,
-            "snappy_comp_size":snappy_comp_size,
-            "pattern_comp_dict_int_zstd":pattern_comp_dict_int_zstd,
-            "pattern_comp_dict_int_snappy":pattern_comp_dict_int_snappy
+            "pattern_comp_dict_int_zstd":pattern_comp_dict_int_zstd
         })
 
     return pd.DataFrame(results)
