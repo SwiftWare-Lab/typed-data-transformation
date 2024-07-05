@@ -116,3 +116,16 @@ def float32_to_bool_array1(float_array, m, n):
     bit_array = np.unpackbits(np.frombuffer(byte_array, dtype=np.uint8))
     # Return only the relevant bits (m * n)
     return bit_array[:m * n]
+#######################
+def floats_to_bool_arrays(float_list):
+    def float_to_bool_array(f):
+        # Convert a float to its binary representation
+        binary = format(np.float32(f).view(np.int32), '032b')
+        # Convert the binary string to a list of boolean values
+        return [bit == '1' for bit in binary]
+
+    # Convert each float in the list to a boolean array
+    bool_arrays = [float_to_bool_array(f) for f in float_list]
+    # Return as a numpy array
+    return np.array(bool_arrays, dtype=bool)
+import numpy as np
