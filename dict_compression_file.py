@@ -4,8 +4,9 @@ import numpy as np
 import pickle
 import zstandard as zstd
 import snappy
-from utils import bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
+from utils import floats_to_bool_arrays,bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
 import argparse
+from collections import Counter
 
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
@@ -123,7 +124,7 @@ def get_integer_size(value):
         raise TypeError("Value must be an integer.")
 
 def get_total_size(obj, seen=None):
-   ###Recursively finds the total size of an object in bits
+    ###Recursively finds the total size of an object in bits
     size = 0
     if seen is None:
         seen = set()
@@ -167,7 +168,7 @@ def convert_dict_to_array(dict_in, m, n):
         elif len(value_float_array) > m:
             value_float_array = value_float_array[:m]
 
-       # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
+        # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
         dict_array[i * m:(i * m) + m] = value_float_array
 
     cctx = zstd.ZstdCompressor(level=0)
@@ -270,7 +271,7 @@ def convert_values_to_array_delta(dict_in, m, n):
             value_float_array = np.pad(value_float_array, (0, m - len(value_float_array)), 'constant')
         elif len(value_float_array) > m:
             value_float_array = value_float_array[:m]
-       # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
+        # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
         dict_array[i * m:(i * m) + m]=value_float_array
 
     cctx = zstd.ZstdCompressor(level=0)
@@ -287,17 +288,40 @@ def delta_decode(deltas):
     for i in range(1, len(deltas)):
         data.append(data[-1] + deltas[i])
     return data
-
-def run_and_collect_data():
+def run_and_collect_data(dataset_path):
     results = []
-    sizes = [1,10,100,1000]
-    ts_m = 8
-    m, n = 8, 32
+    m, n = 10, 32
+    ts_n = 32
 
-    for in_size in sizes:
-        ts_n = in_size * 64
-        bool_array ,f= generate_boolean_array(ts_m, ts_n)
-        print(len(bool_array.tobytes()))
+    #dataset_path="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+    ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
+
+    ts_data1 = ts_data1.iloc[:, 1:]
+    # Get the shape of the data
+    row, col = ts_data1.shape
+    # Calculate the remainder
+    remainder = row % m
+    # Adjust h to be the largest number divisible by m if it's not already divisible
+    if remainder != 0:
+        row = row - remainder
+    # Select only the rows that are divisible by m
+    ts_data1 = ts_data1.iloc[:row, :]
+    ts_m = row
+    ts_data = ts_data1.T
+    ts_data.insert(0, "feature_index", 1)
+    # ts_data = ts_data.iloc[:, 0:101]
+    groups = ts_data.groupby("feature_index")
+    #dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
+
+    for group_id, group in groups:
+        group = group.drop(columns="feature_index")
+        group.fillna(0, inplace=True)
+        group=group
+        entropy = calculate_entropy(group)
+        print(f'Entropy: {entropy}')
+        group = group.astype(np.float32)
+
+        bool_array = floats_to_bool_arrays(group)
 
         print(len(bool_array.tobytes()))
 
@@ -320,12 +344,12 @@ def run_and_collect_data():
         verify_flag_zstd = np.array_equal(int_array_dict, dict_array)
         verify_flag_snappy = np.array_equal(int_array_dict, dict_array_snappy)
         #print(f"verify_flag_zstd:{verify_flag_zstd}")
-        #print(f"verify_flag_snappy:{verify_flag_snappy}")
+        # print(f"verify_flag_snappy:{verify_flag_snappy}")
 
         verify_flag_data = np.array_equal(bool_array, uncompressed_data)
         verify_flag_dict = are_dicts_equal(reconstructed_dic, inverse_cw_dict)
-        #print(f"reconstructed dict {reconstructed_dic}")
-        #print(f"inverse_cw_dict {inverse_cw_dict}")
+        # print(f"reconstructed dict {reconstructed_dic}")
+        # print(f"inverse_cw_dict {inverse_cw_dict}")
 
         #  dictionary size if stored at bit level
         estimated_dict_size = get_dict_size_in_bytes(inverse_cw_dict, m, n, cw_bit_len)
@@ -334,7 +358,6 @@ def run_and_collect_data():
         # Compute the size of the compressed data
         compressed_bool_array = char_to_bool(compressed_char_array)
         pattern_comp, pattern_comp_dict_zstd,  pattern_comp_dict_int_zstd ,pattern_comp_dict_int_snappy, pattern_comp_dict_int_zstd_delta ,pattern_comp_dict_int_snappy_delta= compute_comp_size(compressed_bool_array, inverse_cw_dict, dictionary_size, m, n)
-
 
         # Zstd compression of the original float array
         cctx = zstd.ZstdCompressor(level=3)
@@ -345,7 +368,7 @@ def run_and_collect_data():
         compressed_dict_snappy = snappy.compress(bool_array.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
         #save dictionary
-        with open('data.pkl', 'wb') as pickle_file:
+        with open('num_brain_f64.pkl', 'wb') as pickle_file:
             pickle.dump(inverse_cw_dict, pickle_file)
 
         results.append({
@@ -387,7 +410,7 @@ if __name__ == "__main__":
     log_file = args.log_file
     num_threads = args.num_threads
     mode = args.mode
-    df_results = run_and_collect_data()
+    df_results = run_and_collect_data(dataset_path)
     #df_results.to_csv('results.csv')
     df_results.to_csv(log_file, index=False, header=True)
 
