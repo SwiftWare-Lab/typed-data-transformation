@@ -1,4 +1,5 @@
 import sys
+from collections import Counter
 import pandas as pd
 import numpy as np
 import pickle
@@ -19,17 +20,15 @@ def get_dict(bool_array, m, n,ts_m, ts_n):
             #     print("dict building:\n pattern: ", rect, "dict: ", rect_int)
     return rectangles
 
-
 def create_cw_dicts(rectangle_dict):
     cw_dict, inverse_cw_dict = {}, {}
+    sorted_items = sorted(rectangle_dict.items())  # Sort the items in ascending order
     bit_length = np.ceil(np.log2(len(rectangle_dict)))
-    for i, (key, value) in enumerate(rectangle_dict.items()):
+    for i, (key, value) in enumerate(sorted_items):
         cw_bits = bin(i)[2:].zfill(int(bit_length))
         cw_dict[key] = cw_bits
         inverse_cw_dict[cw_bits] = key
     return cw_dict, inverse_cw_dict, bit_length
-
-
 def replace_patterns_with_cw(bool_array, rectangles, m, n):
     ts_m, ts_n = bool_array.shape
     # get the bit length of the code words
@@ -204,25 +203,51 @@ def decompress_dict_array(compressed_dict):
     decompressed_bytes = dctx.decompress(compressed_dict)
     dict_array = np.frombuffer(decompressed_bytes, dtype='float32')
     return dict_array
-def decompress_dict_snappy(compressed_dict):
-    decompressed_bytes = snappy.uncompress(compressed_dict)
-    dict_array_snappy = np.frombuffer(decompressed_bytes, dtype='float32')
-    return dict_array_snappy
 
-def reconstruct_dict_from_array(dict_array, m, n, bit_length):
+
+
+def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_check):
+    # Calculate the number of entries based on the size of dict_array and parameters m
     num_entries = len(dict_array) // (m * 2)
     reconstructed_dict = {}
+    original_values=[]
 
+    # First loop: convert all segments to original integer values
     for i in range(num_entries):
-        #value_float_segment = dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)]
-        value_float_segment =dict_array[i * m:(i * m) + m]
+        # Extract the float32 segment corresponding to the current entry
+        value_float_segment = dict_array[i * m:(i * m) + m]
 
+        # Convert the float32 array back to a boolean array
         value_bit_array = float32_to_bool_array1(value_float_segment, m, n)
 
+        # Convert the boolean array back to the original integer value
         original_value = bool_to_int1(value_bit_array)
 
+        # Append the original integer value to the list
+        original_values.append(original_value)
+
+    # Decode all original values at once to get the full sequence of decoded values
+    decoded_values = delta_decode(original_values)
+
+    # Verify if decoded values match the original values before any processing
+    # Check if the lengths are the same before comparing
+    if len(decoded_values) == len(original_values_check):
+        verification_result = (decoded_values == original_values_check)
+    else:
+        verification_result = False
+        print(
+            f"Error: Mismatched lengths. Decoded values length: {len(decoded_values)}, Original values length: {len(original_values_check)}")
+
+    print("Verification of Decoded Values Match the Original Values:", verification_result)
+
+    # Second loop: map each decoded value to its corresponding binary-coded key in the dictionary
+    reconstructed_dict = {}
+    for i, value in enumerate(decoded_values):
+        # Generate binary code with zero-padding according to bit_length
         cw_bits = bin(i)[2:].zfill(bit_length)
-        reconstructed_dict[cw_bits] = original_value
+
+        # Store the decoded value in the dictionary with cw_bits as the key
+        reconstructed_dict[cw_bits] = value
 
     return reconstructed_dict
 
@@ -242,55 +267,81 @@ def calculate_entropy(data):
 
     return entropy
 ####################################################
-def delta_encode(sorted_values):
-
-    if not sorted_values:
+def delta_encode(data):
+    if not data:
         return []
-    deltas = [sorted_values[0]]
-    for i in range(1, len(sorted_values)):
-        deltas.append(sorted_values[i] - sorted_values[i - 1])
+
+    deltas = [data[0]]
+    for i in range(1, len(data)):
+        delta = data[i] - data[i - 1]
+        deltas.append(delta)
     return deltas
 
-def convert_values_to_array_delta(dict_in, m, n):
-    # Extract and sort values from the dictionary
-    sorted_values = sorted(dict_in.values())
-
-    # Apply delta encoding to the sorted values
-    delta_encoded_values = delta_encode(sorted_values)
-
-    # Initialize array to store the converted data
-    #dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
-    dict_array = np.zeros(len(dict_in) * m , dtype='float32')
-
-    # Convert delta-encoded values to float arrays and store in dict_array
-    for i, value in enumerate(delta_encoded_values):
-        value_bit_array = int_to_bool1(value, m, n)
-        value_float_array = bool_array_to_float321(value_bit_array, n)
-        if len(value_float_array) < m:
-            value_float_array = np.pad(value_float_array, (0, m - len(value_float_array)), 'constant')
-        elif len(value_float_array) > m:
-            value_float_array = value_float_array[:m]
-       # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
-        dict_array[i * m:(i * m) + m]=value_float_array
-
-    cctx = zstd.ZstdCompressor(level=0)
-    compressed_dict_zstd = cctx.compress(dict_array.tobytes())
-    #print(f"dictionary sizes: {get_total_size(dict_in)}, compressed dictionary size-zstd: {len(compressed_dict_zstd)}")
-    compressed_dict_snappy = snappy.compress(dict_array.tobytes())
-    return dict_array, compressed_dict_zstd,compressed_dict_snappy
 
 def delta_decode(deltas):
     if not deltas:
         return []
-
     data = [deltas[0]]
     for i in range(1, len(deltas)):
-        data.append(data[-1] + deltas[i])
+        value = data[-1] + deltas[i]
+        data.append(value)
     return data
+
+
+def delta_decode(deltas):
+    if not deltas:
+        return []
+    data = [deltas[0]]
+    for i in range(1, len(deltas)):
+        value = data[-1] + deltas[i]
+        data.append(value)
+    return data
+
+def convert_values_to_array_delta(dict_in, m, n):
+    sorted_values = [value for key, value in dict_in.items()]
+    deltas = delta_encode(sorted_values)
+
+    dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
+    for i,  value in enumerate(deltas):
+        value_bit_array = int_to_bool1(value, m, n)
+        value_float_array = bool_array_to_float321(value_bit_array, n)
+
+        if len(value_float_array) < m:
+            value_float_array = np.pad(value_float_array, (0, m - len(value_float_array)), 'constant')
+        elif len(value_float_array) > m:
+            value_float_array = value_float_array[:m]
+
+        # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
+        dict_array[i * m:(i * m) + m] = value_float_array
+
+    cctx = zstd.ZstdCompressor(level=0)
+    compressed_dict_zstd = cctx.compress(dict_array.tobytes())
+    # print(f"dictionary sizes: {get_total_size(dict_in)}, compressed dictionary size-zstd: {len(compressed_dict_zstd)}")
+    compressed_dict_snappy = snappy.compress(dict_array.tobytes())
+    return dict_array, compressed_dict_zstd, compressed_dict_snappy
+
+
+
+def decompress_dict_snappy(compressed_data):
+    decompressed_data = snappy.uncompress(compressed_data)
+    return np.frombuffer(decompressed_data, dtype='float32')
+def decompress_dict_snappy(compressed_data):
+    decompressed_data = snappy.uncompress(compressed_data)
+    return np.frombuffer(decompressed_data, dtype='float32')
+
+def print_differences(original, decoded):
+    if len(original) != len(decoded):
+        print("Arrays have different lengths.")
+        return
+
+    for i, (orig, dec) in enumerate(zip(original, decoded)):
+        if not np.isclose(orig, dec, atol=1e-5):  # Use tighter tolerance
+            print(f"Difference at index {i}: original={orig}, decoded={dec}")
+
 
 def run_and_collect_data():
     results = []
-    sizes = [1,10,100,1000]
+    sizes = [1,2,100,1000]
     ts_m = 8
     m, n = 8, 32
 
@@ -309,18 +360,17 @@ def run_and_collect_data():
 
         # Decompress the dictionary
         int_array_dict, comp_int_dict,compressed_dict_snappy = convert_dict_to_array(inverse_cw_dict, m, n)
+        int_array_dict_d, comp_int_dict_d,compressed_dict_snappy_d=convert_values_to_array_delta(inverse_cw_dict, m, n)
 
         dict_array = decompress_dict_array(comp_int_dict)
-        dict_array_snappy=decompress_dict_snappy(compressed_dict_snappy)
+        dict_array_d = decompress_dict_array( comp_int_dict_d)
 
-        reconstructed_dic = reconstruct_dict_from_array(dict_array_snappy, m, n, int(cw_bit_len))
+        original_sorted_values = [value for key, value in inverse_cw_dict.items()]
+
+        reconstructed_dic = reconstruct_dict_from_array(dict_array_d, m, n, int(cw_bit_len),original_sorted_values)
 
 
         # Verify flags
-        verify_flag_zstd = np.array_equal(int_array_dict, dict_array)
-        verify_flag_snappy = np.array_equal(int_array_dict, dict_array_snappy)
-        #print(f"verify_flag_zstd:{verify_flag_zstd}")
-        #print(f"verify_flag_snappy:{verify_flag_snappy}")
 
         verify_flag_data = np.array_equal(bool_array, uncompressed_data)
         verify_flag_dict = are_dicts_equal(reconstructed_dic, inverse_cw_dict)
@@ -367,7 +417,6 @@ def run_and_collect_data():
         })
 
     return pd.DataFrame(results)
-
 def arg_parser():
     parser = argparse.ArgumentParser(description='Compress one dataset and store the log.')
     parser.add_argument('--dataset', dest='dataset_path', help='Path to the UCR dataset tsv/csv.')
