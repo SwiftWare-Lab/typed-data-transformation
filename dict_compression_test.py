@@ -1,5 +1,3 @@
-import sys
-from collections import Counter
 import pandas as pd
 import numpy as np
 import pickle
@@ -16,8 +14,7 @@ def get_dict(bool_array, m, n,ts_m, ts_n):
             rect_int = bool_to_int(rect)
             # increment the number of times we have seen this rectangle
             rectangles[rect_int] = rectangles.get(rect_int, 0) + 1
-            # if i == 0 and j == 0:
-            #     print("dict building:\n pattern: ", rect, "dict: ", rect_int)
+
     return rectangles
 
 def create_cw_dicts(rectangle_dict):
@@ -149,10 +146,6 @@ def get_total_size(obj, seen=None):
 
     return size
 
-def get_total_size(obj):
-    # get the total size of the dictionary
-    import sys
-    return sys.getsizeof(obj) + sum(sys.getsizeof(v) for v in obj.values())
 
 
 def convert_dict_to_array(dict_in, m, n):
@@ -174,9 +167,6 @@ def convert_dict_to_array(dict_in, m, n):
     #print(f"dictionary sizes: {get_total_size(dict_in)}, compressed dictionary size-zstd: {len(compressed_dict_zstd)}")
     compressed_dict_snappy = snappy.compress(dict_array.tobytes())
     return dict_array, compressed_dict_zstd,compressed_dict_snappy
-#############################################################################
-
-
 
 def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     # for each rectangle 4x8, convert it to an integer and udpate the dictionary
@@ -188,29 +178,23 @@ def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     # convert to bytes
     compressed_bool_array = char_to_bool(compressed_char_array)
     compressed_byte_array = bool_to_int(compressed_bool_array)
-    return compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len
+    # convert dictionary to array-dict
+    int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d = convert_values_to_array_delta(inverse_cw_dict, m, n)
+    return compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len,int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d
 
 
-def pattern_based_decompressor(compressed_byte_array, inverse_cw_dict, cw_bit_len, m, n):
-    # byte array to char array
-    # uncompress the data
-    uncompressed_data = replace_cw_with_pattern(compressed_byte_array, inverse_cw_dict, m, n, int(cw_bit_len))
-    return uncompressed_data
+def pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sorted_values,cw_bit_len, m, n):
 
-
-def decompress_dict_array(compressed_dict):
-    dctx = zstd.ZstdDecompressor()
-    decompressed_bytes = dctx.decompress(compressed_dict)
-    dict_array = np.frombuffer(decompressed_bytes, dtype='float32')
-    return dict_array
-
-
+    dict_array = decompress_dict_array(comp_int_dict)
+    reconstructed_dic = reconstruct_dict_from_array(dict_array, m, n, int(cw_bit_len), original_sorted_values)
+    uncompressed_data = replace_cw_with_pattern(compressed_char_array, reconstructed_dic, m, n, int(cw_bit_len))
+    return uncompressed_data,reconstructed_dic
 
 def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_check):
     # Calculate the number of entries based on the size of dict_array and parameters m
     num_entries = len(dict_array) // (m * 2)
     reconstructed_dict = {}
-    original_values=[]
+    original_values = [0] * num_entries  # Pre-allocate the list with zeros
 
     # First loop: convert all segments to original integer values
     for i in range(num_entries):
@@ -223,13 +207,12 @@ def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_ch
         # Convert the boolean array back to the original integer value
         original_value = bool_to_int1(value_bit_array)
 
-        # Append the original integer value to the list
-        original_values.append(original_value)
+        # Assign the original integer value to the list at the current index
+        original_values[i] = original_value
 
     # Decode all original values at once to get the full sequence of decoded values
     decoded_values = delta_decode(original_values)
 
-    # Verify if decoded values match the original values before any processing
     # Check if the lengths are the same before comparing
     if len(decoded_values) == len(original_values_check):
         verification_result = (decoded_values == original_values_check)
@@ -241,7 +224,6 @@ def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_ch
     print("Verification of Decoded Values Match the Original Values:", verification_result)
 
     # Second loop: map each decoded value to its corresponding binary-coded key in the dictionary
-    reconstructed_dict = {}
     for i, value in enumerate(decoded_values):
         # Generate binary code with zero-padding according to bit_length
         cw_bits = bin(i)[2:].zfill(bit_length)
@@ -251,50 +233,33 @@ def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_ch
 
     return reconstructed_dict
 
+def decompress_dict_array(compressed_dict):
+    dctx = zstd.ZstdDecompressor()
+    decompressed_bytes = dctx.decompress(compressed_dict)
+    dict_array = np.frombuffer(decompressed_bytes, dtype='float32')
+    return dict_array
+
 
 def are_dicts_equal(dict1, dict2):
     return dict1 == dict2
-####################
-def calculate_entropy(data):
-    # Count the frequency of each value in the dataset
-    data_count = Counter(data)
 
-    # Calculate the probability of each value
-    probabilities = [count / len(data) for count in data_count.values()]
-
-    # Calculate the entropy
-    entropy = -sum(p * np.log2(p) for p in probabilities if p > 0)
-
-    return entropy
-####################################################
 def delta_encode(data):
     if not data:
         return []
-
-    deltas = [data[0]]
-    for i in range(1, len(data)):
-        delta = data[i] - data[i - 1]
-        deltas.append(delta)
-    return deltas
+    # List comprehension to create deltas directly
+    deltas = [data[i] - data[i - 1] for i in range(1, len(data))]
+    return [data[0]] + deltas  # Prepend the first element to maintain the original structure
 
 
 def delta_decode(deltas):
     if not deltas:
         return []
-    data = [deltas[0]]
-    for i in range(1, len(deltas)):
-        value = data[-1] + deltas[i]
-        data.append(value)
-    return data
 
-
-def delta_decode(deltas):
-    if not deltas:
-        return []
+    # Initialize the first element
     data = [deltas[0]]
-    for i in range(1, len(deltas)):
-        value = data[-1] + deltas[i]
-        data.append(value)
+
+    # Use a list comprehension with cumulative sum approach
+    data.extend(data[i] + deltas[i + 1] for i in range(len(deltas) - 1))
     return data
 
 def convert_values_to_array_delta(dict_in, m, n):
@@ -311,7 +276,6 @@ def convert_values_to_array_delta(dict_in, m, n):
         elif len(value_float_array) > m:
             value_float_array = value_float_array[:m]
 
-        # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
         dict_array[i * m:(i * m) + m] = value_float_array
 
     cctx = zstd.ZstdCompressor(level=0)
@@ -320,28 +284,13 @@ def convert_values_to_array_delta(dict_in, m, n):
     compressed_dict_snappy = snappy.compress(dict_array.tobytes())
     return dict_array, compressed_dict_zstd, compressed_dict_snappy
 
-
-
 def decompress_dict_snappy(compressed_data):
     decompressed_data = snappy.uncompress(compressed_data)
     return np.frombuffer(decompressed_data, dtype='float32')
-def decompress_dict_snappy(compressed_data):
-    decompressed_data = snappy.uncompress(compressed_data)
-    return np.frombuffer(decompressed_data, dtype='float32')
-
-def print_differences(original, decoded):
-    if len(original) != len(decoded):
-        print("Arrays have different lengths.")
-        return
-
-    for i, (orig, dec) in enumerate(zip(original, decoded)):
-        if not np.isclose(orig, dec, atol=1e-5):  # Use tighter tolerance
-            print(f"Difference at index {i}: original={orig}, decoded={dec}")
-
 
 def run_and_collect_data():
     results = []
-    sizes = [1,2,100,1000]
+    sizes = [1,100,1000]
     ts_m = 8
     m, n = 8, 32
 
@@ -349,33 +298,20 @@ def run_and_collect_data():
         ts_n = in_size * 64
         bool_array ,f= generate_boolean_array(ts_m, ts_n)
         print(len(bool_array.tobytes()))
-
-        print(len(bool_array.tobytes()))
-
         # Compress the data
-        compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len = pattern_based_compressor(bool_array, m, n,ts_m,ts_n)
+        compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len ,int_array_dict, comp_int_dict, compressed_dict_snappy= pattern_based_compressor(bool_array, m, n,ts_m,ts_n)
 
         # Decompress the data
-        uncompressed_data = pattern_based_decompressor(compressed_char_array, inverse_cw_dict, cw_bit_len, m, n)
-
-        # Decompress the dictionary
-        int_array_dict, comp_int_dict,compressed_dict_snappy = convert_dict_to_array(inverse_cw_dict, m, n)
-        int_array_dict_d, comp_int_dict_d,compressed_dict_snappy_d=convert_values_to_array_delta(inverse_cw_dict, m, n)
-
-        dict_array = decompress_dict_array(comp_int_dict)
-        dict_array_d = decompress_dict_array( comp_int_dict_d)
-
         original_sorted_values = [value for key, value in inverse_cw_dict.items()]
-
-        reconstructed_dic = reconstruct_dict_from_array(dict_array_d, m, n, int(cw_bit_len),original_sorted_values)
-
+        uncompressed_data,reconstructed_dic = pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sorted_values,cw_bit_len, m, n)
 
         # Verify flags
-
         verify_flag_data = np.array_equal(bool_array, uncompressed_data)
         verify_flag_dict = are_dicts_equal(reconstructed_dic, inverse_cw_dict)
-        #print(f"reconstructed dict {reconstructed_dic}")
-        #print(f"inverse_cw_dict {inverse_cw_dict}")
+        print(f"verify_flag_data: {verify_flag_data}")
+        print(f"verify_flag_dict: {verify_flag_dict}")
+       # print(f"reconstructed dict {reconstructed_dic}")
+       # print(f"inverse_cw_dict {inverse_cw_dict}")
 
         #  dictionary size if stored at bit level
         estimated_dict_size = get_dict_size_in_bytes(inverse_cw_dict, m, n, cw_bit_len)
@@ -437,6 +373,6 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data()
-    #df_results.to_csv('results.csv')
-    df_results.to_csv(log_file, index=False, header=True)
+    df_results.to_csv('results.csv')
+    #df_results.to_csv(log_file, index=False, header=True)
 
