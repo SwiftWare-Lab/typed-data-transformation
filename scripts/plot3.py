@@ -2,7 +2,7 @@ import pickle
 import matplotlib.pyplot as plt
 
 # Reading the dictionary back from the pickle file
-with open('num_brain_f64.pkl', 'rb') as pickle_file:
+with open('../num_brain_f64.pkl', 'rb') as pickle_file:
     dict_data_loaded = pickle.load(pickle_file)
 
 dict_in = dict_data_loaded

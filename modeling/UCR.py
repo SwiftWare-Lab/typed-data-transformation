@@ -190,6 +190,7 @@ def pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sor
     uncompressed_data = replace_cw_with_pattern(compressed_char_array, reconstructed_dic, m, n, int(cw_bit_len))
     return uncompressed_data,reconstructed_dic
 
+
 def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_check):
     # Calculate the number of entries based on the size of dict_array and parameters m
     num_entries = len(dict_array) // (m * 2)
@@ -233,6 +234,7 @@ def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_ch
 
     return reconstructed_dict
 
+
 def decompress_dict_array(compressed_dict):
     dctx = zstd.ZstdDecompressor()
     decompressed_bytes = dctx.decompress(compressed_dict)
@@ -242,6 +244,7 @@ def decompress_dict_array(compressed_dict):
 
 def are_dicts_equal(dict1, dict2):
     return dict1 == dict2
+
 
 def delta_encode(data):
     if not data:
@@ -261,6 +264,7 @@ def delta_decode(deltas):
     # Use a list comprehension with cumulative sum approach
     data.extend(data[i] + deltas[i + 1] for i in range(len(deltas) - 1))
     return data
+
 
 def convert_values_to_array_delta(dict_in, m, n):
     sorted_values = [value for key, value in dict_in.items()]
@@ -358,7 +362,7 @@ def run_and_collect_data(dataset_path):
         compressed_dict_snappy = snappy.compress(bool_array.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
         #save dictionary
-        with open('num_brain_f64.pkl', 'wb') as pickle_file:
+        with open('../num_brain_f64.pkl', 'wb') as pickle_file:
             pickle.dump(inverse_cw_dict, pickle_file)
 
         results.append({
