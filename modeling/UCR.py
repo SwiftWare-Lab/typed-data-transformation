@@ -6,6 +6,7 @@ import zstandard as zstd
 import snappy
 from utils import floats_to_bool_arrays,bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
 import argparse
+from scipy.stats import entropy
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
     for i in range(0, ts_n, n):
@@ -292,9 +293,46 @@ def decompress_dict_snappy(compressed_data):
     decompressed_data = snappy.uncompress(compressed_data)
     return np.frombuffer(decompressed_data, dtype='float32')
 
+
+def calculate_entropy_with_scipy(data):
+    # Ensure the input is a NumPy array of float type
+    data = np.array(data, dtype=float)
+
+    # Remove NaN or Inf values
+    if np.any(np.isnan(data)) or np.any(np.isinf(data)):
+        raise ValueError("Input data contains NaN or Inf values which cannot be used to calculate entropy.")
+
+    # Filter out zero values
+    data = data[data > 0]
+
+    # Check if data is empty after filtering zeros
+    if len(data) == 0:
+        return 0.0
+
+    # Calculate probability distribution
+    total_sum = np.sum(data)
+    probabilities = data / total_sum
+
+    # Compute entropy using scipy
+    ent = entropy(probabilities, base=2)
+
+    return ent
+
+
+def calculate_shannon_entropy(time_series):
+    # Convert the time series to a histogram
+    value, counts = np.unique(time_series, return_counts=True)
+
+    # Calculate the probabilities
+    probabilities = counts / len(time_series)
+
+    # Calculate the Shannon entropy
+    shannon_entropy = entropy(probabilities, base=2)
+
+    return shannon_entropy
 def run_and_collect_data(dataset_path):
     results = []
-    m, n = 10, 32
+    m, n = 8, 32
     ts_n = 32
 
     #dataset_path="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
@@ -302,15 +340,7 @@ def run_and_collect_data(dataset_path):
 
    # ts_data1 = ts_data1.iloc[:, 1:]
     # Get the shape of the data
-    row, col = ts_data1.shape
-    # Calculate the remainder
-    remainder = row % m
-    # Adjust h to be the largest number divisible by m if it's not already divisible
-    if remainder != 0:
-        row = row - remainder
-    # Select only the rows that are divisible by m
-    ts_data1 = ts_data1.iloc[:row, :]
-   # ts_m = row
+
     ts_data = ts_data1
     groups = ts_data.groupby(0)
     # ts_data = ts_data.iloc[:, 0:101]
@@ -319,9 +349,17 @@ def run_and_collect_data(dataset_path):
 
     for group_id, group in groups:
         group = group.drop(columns=0)
+        row, col = group.shape
+        # Calculate the remainder
+        remainder = row % m
+        # Adjust h to be the largest number divisible by m if it's not already divisible
+        if remainder != 0:
+            row = row - remainder
+        # Select only the rows that are divisible by m
+        group = group.iloc[:row, :]
+        # ts_m = row
         group.fillna(0, inplace=True)
         group = group.to_numpy().reshape(-1)
-        ts_m = group.shape[0]
 
 
         group = group.astype(np.float32)
@@ -361,12 +399,18 @@ def run_and_collect_data(dataset_path):
         # snappy compression of the original float array
         compressed_dict_snappy = snappy.compress(bool_array.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
+        # Calculate entropy for the group and original_sorted_values
+        group_entropy = calculate_entropy_with_scipy(group)
+        en = np.array(original_sorted_values, dtype=float)
+        sorted_values_entropy = calculate_entropy_with_scipy(en)
+
+
         #save dictionary
-        with open('../num_brain_f64.pkl', 'wb') as pickle_file:
+        with open('data1.pkl', 'wb') as pickle_file:
             pickle.dump(inverse_cw_dict, pickle_file)
 
         results.append({
-
+            "group_id":group_id,
             "Original Size (bytes)": original_size,
             "Dictionary Size (bytes)": dictionary_size,
             "estimated_dict_size ":estimated_dict_size,
@@ -380,7 +424,10 @@ def run_and_collect_data(dataset_path):
             "pattern_comp_dict_int_zstd":pattern_comp_dict_int_zstd,
             "pattern_comp_dict_int_snappy":pattern_comp_dict_int_snappy,
             "pattern_comp_dict_int_zstd_delta":pattern_comp_dict_int_zstd_delta ,
-            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta
+            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta,
+            "group_entropy":group_entropy,
+            "sorted_values_entropy":sorted_values_entropy
+
         })
 
     return pd.DataFrame(results)
@@ -391,6 +438,7 @@ def arg_parser():
     parser.add_argument('--variant', dest='variant', default="dictionary", help='Variant of the algorithm.')
     parser.add_argument('--pattern', dest='pattern', default="10*16", help='Pattern to match the files.')
     parser.add_argument('--outcsv', dest='log_file', default="./log_out.csv", help='Output directory for the sbatch scripts.')
+    parser.add_argument('--out1', dest='log_file1', default="./log_out1.pkl", help='Output directory for the sbatch scripts.')
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
     parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
@@ -402,8 +450,10 @@ if __name__ == "__main__":
     comp_variant = args.variant
     pattern = args.pattern
     log_file = args.log_file
+    log_file1 = args.log_file
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data(dataset_path)
-    df_results.to_csv('results.csv')
-# df_results.to_csv(log_file, index=False, header=True)
+    #df_results.to_csv('results.csv')
+    df_results.to_csv(log_file, index=False, header=True)
+

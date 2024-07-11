@@ -21,6 +21,10 @@ def create_cw_dicts(rectangle_dict):
     cw_dict, inverse_cw_dict = {}, {}
     sorted_items = sorted(rectangle_dict.items())  # Sort the items in ascending order
     bit_length = np.ceil(np.log2(len(rectangle_dict)))
+    if bit_length == 0:
+        bit_length = 1  # Ensure bit length is at least 1
+
+    #min_bits = math.ceil(math.log2(max_index + 1))
     for i, (key, value) in enumerate(sorted_items):
         cw_bits = bin(i)[2:].zfill(int(bit_length))
         cw_dict[key] = cw_bits
@@ -30,6 +34,9 @@ def replace_patterns_with_cw(bool_array, rectangles, m, n):
     ts_m, ts_n = bool_array.shape
     # get the bit length of the code words
     bit_length = int(np.ceil(np.log2(len(rectangles))))
+    if bit_length == 0:
+        bit_length = 1  # Ensure bit length is at least 1
+
     # make a numpy char array of zeros
     compressed_char_array_loc = np.zeros((int(ts_m/m), int(ts_n/n)*bit_length), dtype='S1')
     for i in range(0, ts_n, n):
@@ -53,8 +60,10 @@ def replace_patterns_with_cw(bool_array, rectangles, m, n):
 def replace_cw_with_pattern(compressed_bool_array, dict_in, m, n, cw_bit_len):
     ts_m, ts_n = compressed_bool_array.shape
     # create compressed bool array
-    bool_array = np.zeros((ts_m * m, (ts_n//cw_bit_len) * n), dtype='bool')
-    for i in range(0, ts_n, cw_bit_len):
+
+    bool_array = np.zeros((ts_m * m, ts_n // cw_bit_len * n), dtype='bool')
+
+    for i in range(0, ts_n, 1):
         for j in range(0, ts_m, 1):
             cw = compressed_bool_array[j:j + 1, i:i + cw_bit_len]
             # convert cw to binary strings of 0 and 1
@@ -67,6 +76,8 @@ def replace_cw_with_pattern(compressed_bool_array, dict_in, m, n, cw_bit_len):
             i_uncomp = (i//cw_bit_len) * n
             bool_array[j_uncomp:j_uncomp + m, i_uncomp:i_uncomp + n] = rect_bool
     return bool_array
+
+
 
 def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     comp_data_bytes = len(comp_data.flatten()) // 8
@@ -82,13 +93,14 @@ def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     #total_estimated = estimated_dict_size + comp_data_bytes
 
     int_array_dict, comp_int_dict,compressed_dict_snappy = convert_dict_to_array(dict, m, n)
-    int_array_dict_d, comp_int_dict_d,compressed_dict_snappy_d = convert_values_to_array_delta(dict, m, n)
+    int_array_dict_d, comp_int_dict_d,compressed_dict_snappy_d,compressed_dict_zstd1 = convert_values_to_array_delta(dict, m, n)
     # assert len(int_array_dict.tobytes()) == (len(dict)*m*n)//8
     total_zstd_int = len(comp_int_dict) + comp_data_bytes
     total_snappy_int=len(compressed_dict_snappy) + comp_data_bytes
     total_zstd_int_d = len(comp_int_dict_d) + comp_data_bytes
     total_snappy_int_d=len(compressed_dict_snappy_d) + comp_data_bytes
-    return total, total_ztd,  total_zstd_int,total_snappy_int ,total_zstd_int_d,total_snappy_int_d
+    total_zstd_dict=len(compressed_dict_zstd1)+comp_data_bytes
+    return total, total_ztd,  total_zstd_int,total_snappy_int ,total_zstd_int_d,total_snappy_int_d,total_zstd_dict
 
 
 def get_dict_size_in_bytes(dict_in, m, n, bit_length):
@@ -179,8 +191,8 @@ def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     compressed_bool_array = char_to_bool(compressed_char_array)
     compressed_byte_array = bool_to_int(compressed_bool_array)
     # convert dictionary to array-dict
-    int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d = convert_values_to_array_delta(inverse_cw_dict, m, n)
-    return compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len,int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d
+    int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d ,compressed_dict_zstd1= convert_values_to_array_delta(inverse_cw_dict, m, n)
+    return compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len,int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d,compressed_dict_zstd1
 
 
 def pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sorted_values,cw_bit_len, m, n):
@@ -263,7 +275,11 @@ def delta_decode(deltas):
     return data
 
 def convert_values_to_array_delta(dict_in, m, n):
+    cctx = zstd.ZstdCompressor(level=3)
     sorted_values = [value for key, value in dict_in.items()]
+    sorted_values_array = np.array(sorted_values)
+    compressed_dict_zstd1 = cctx.compress(sorted_values_array.tobytes())
+
     deltas = delta_encode(sorted_values)
 
     dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
@@ -278,88 +294,134 @@ def convert_values_to_array_delta(dict_in, m, n):
 
         dict_array[i * m:(i * m) + m] = value_float_array
 
-    cctx = zstd.ZstdCompressor(level=0)
+
     compressed_dict_zstd = cctx.compress(dict_array.tobytes())
     # print(f"dictionary sizes: {get_total_size(dict_in)}, compressed dictionary size-zstd: {len(compressed_dict_zstd)}")
     compressed_dict_snappy = snappy.compress(dict_array.tobytes())
-    return dict_array, compressed_dict_zstd, compressed_dict_snappy
+    return dict_array, compressed_dict_zstd, compressed_dict_snappy,compressed_dict_zstd1
 
 def decompress_dict_snappy(compressed_data):
     decompressed_data = snappy.uncompress(compressed_data)
     return np.frombuffer(decompressed_data, dtype='float32')
 
+
+def compress_integer_with_zstd(value):
+    # Ensure value is an integer
+    if not isinstance(value, int):
+        raise TypeError("Expected an integer")
+
+    # Determine the number of bytes needed to represent the integer
+    num_bytes = (value.bit_length() + 7) // 8
+
+    # Convert the integer to bytes
+    value_bytes = value.to_bytes(num_bytes, byteorder='big', signed=True)
+
+    # Compress the bytes using Zstd with default settings
+    compressed_bytes = zstd.compress(value_bytes)
+
+    return compressed_bytes
+
+
+def list_to_integer_digit_based(digit_list):
+    # Ensure the list contains only integers and each element is a digit (0-9)
+
+
+    # Convert the list of digits to a single integer
+    integer_value = int(''.join(map(str, digit_list)))
+    return integer_value
+
+
 def run_and_collect_data():
     results = []
-    sizes = [1,100,1000]
-    ts_m = 8
-    m, n = 8, 32
+    sizes = [1]
+    ts_m = 256
+
 
     for in_size in sizes:
-        ts_n = in_size * 64
-        bool_array ,f= generate_boolean_array(ts_m, ts_n)
-        print(len(bool_array.tobytes()))
-        # Compress the data
-        compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len ,int_array_dict, comp_int_dict, compressed_dict_snappy= pattern_based_compressor(bool_array, m, n,ts_m,ts_n)
-
-        # Decompress the data
-        original_sorted_values = [value for key, value in inverse_cw_dict.items()]
-        uncompressed_data,reconstructed_dic = pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sorted_values,cw_bit_len, m, n)
-
-        # Verify flags
-        verify_flag_data = np.array_equal(bool_array, uncompressed_data)
-        verify_flag_dict = are_dicts_equal(reconstructed_dic, inverse_cw_dict)
-        print(f"verify_flag_data: {verify_flag_data}")
-        print(f"verify_flag_dict: {verify_flag_dict}")
-       # print(f"reconstructed dict {reconstructed_dic}")
-       # print(f"inverse_cw_dict {inverse_cw_dict}")
-
-        #  dictionary size if stored at bit level
-        estimated_dict_size = get_dict_size_in_bytes(inverse_cw_dict, m, n, cw_bit_len)
-        dictionary_size = get_total_size(inverse_cw_dict)
-
-        # Compute the size of the compressed data
-        compressed_bool_array = char_to_bool(compressed_char_array)
-        pattern_comp, pattern_comp_dict_zstd,  pattern_comp_dict_int_zstd ,pattern_comp_dict_int_snappy, pattern_comp_dict_int_zstd_delta ,pattern_comp_dict_int_snappy_delta= compute_comp_size(compressed_bool_array, inverse_cw_dict, dictionary_size, m, n)
-
-
-        # Zstd compression of the original float array
-        cctx = zstd.ZstdCompressor(level=3)
-        compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
+        ts_n = in_size * 32
+        bool_array, f = generate_boolean_array(ts_m, ts_n)
         original_size = len(bool_array.tobytes())
-        zstd_comp_size = len(compressed_float_array_zstd)
-        # snappy compression of the original float array
-        compressed_dict_snappy = snappy.compress(bool_array.tobytes())
-        snappy_comp_size = len(compressed_dict_snappy)
-        #save dictionary
-        with open('data.pkl', 'wb') as pickle_file:
-            pickle.dump(inverse_cw_dict, pickle_file)
 
-        results.append({
+        row, col = bool_array.shape
+        for m in range(255, row + 1):
+            if row % m != 0:
+                continue
+            for n in [ 32]:
+                # Compress the data
+                compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len, int_array_dict, comp_int_dict, compressed_dict_snappy ,compressed_dict_zstd11= pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
 
-            "Original Size (bytes)": original_size,
-            "Dictionary Size (bytes)": dictionary_size,
-            "estimated_dict_size ":estimated_dict_size,
-            "Compressed Dictionary Size (bytes)": len(comp_int_dict),
-            "Verify Flag Data": verify_flag_data,
-            "Verify Flag Dictionary": verify_flag_dict,
-            "pattern_comp":pattern_comp,
-            "pattern_comp_dict_zstd":pattern_comp_dict_zstd,
-            "zstd_comp_size":zstd_comp_size,
-            "snappy_comp_size":snappy_comp_size,
-            "pattern_comp_dict_int_zstd":pattern_comp_dict_int_zstd,
-            "pattern_comp_dict_int_snappy":pattern_comp_dict_int_snappy,
-            "pattern_comp_dict_int_zstd_delta":pattern_comp_dict_int_zstd_delta ,
-            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta
-        })
+                # Decompress the data
+                original_sorted_values = [value for key, value in inverse_cw_dict.items()]
+                uncompressed_data, reconstructed_dic = pattern_based_decompressor(compressed_char_array, comp_int_dict, original_sorted_values, cw_bit_len, m, n)
+
+                # Verify flags
+                verify_flag_data = np.array_equal(bool_array, uncompressed_data)
+                verify_flag_dict = are_dicts_equal(reconstructed_dic, inverse_cw_dict)
+                print(f"verify_flag_data: {verify_flag_data}")
+                print(f"verify_flag_dict: {verify_flag_dict}")
+                print(inverse_cw_dict)
+                print(reconstructed_dic)
+
+                # Dictionary size if stored at bit level
+                estimated_dict_size = get_dict_size_in_bytes(inverse_cw_dict, m, n, cw_bit_len)
+                dictionary_size = get_total_size(inverse_cw_dict)
+
+                # Compute the size of the compressed data
+                compressed_bool_array = char_to_bool(compressed_char_array)
+                pattern_comp, pattern_comp_dict_zstd, pattern_comp_dict_int_zstd, pattern_comp_dict_int_snappy, pattern_comp_dict_int_zstd_delta, pattern_comp_dict_int_snappy_delta,compressed_dict_zstd12 = compute_comp_size(compressed_bool_array, inverse_cw_dict, dictionary_size, m, n)
+
+                # Zstd compression of the original float array
+                cctx = zstd.ZstdCompressor(level=3)
+                compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
+                zstd_comp_size = len(compressed_float_array_zstd)
+
+
+                original_sorted_values_array =original_sorted_values
+                integer_value = list_to_integer_digit_based(original_sorted_values_array)
+                compressed_value = compress_integer_with_zstd(integer_value)
+                zstd_comp_size_dic=len(compressed_value)
+
+
+
+
+                # Snappy compression of the original float array
+                compressed_dict_snappy = snappy.compress(bool_array.tobytes())
+                snappy_comp_size = len(compressed_dict_snappy)
+
+                # Save dictionary
+                with open('data.pkl', 'wb') as pickle_file:
+                    pickle.dump(inverse_cw_dict, pickle_file)
+
+                results.append({
+                    "m": m,
+                    "n": n,
+                    "Original Size (bytes)": original_size,
+                    "Dictionary Size (bytes)": dictionary_size,
+                    "Estimated Dictionary Size (bytes)": estimated_dict_size,
+                    "Compressed Dictionary Size (bytes)": len(comp_int_dict),
+                    "Verify Flag Data": verify_flag_data,
+                    "Verify Flag Dictionary": verify_flag_dict,
+                    "Pattern Comp": pattern_comp,
+                    "Pattern Comp Dict Zstd": pattern_comp_dict_zstd,
+                    "Zstd Comp Size": zstd_comp_size,
+                    "Snappy Comp Size": snappy_comp_size,
+                    "Pattern Comp Dict Int Zstd": pattern_comp_dict_int_zstd,
+                    "Pattern Comp Dict Int Snappy": pattern_comp_dict_int_snappy,
+                    "Pattern Comp Dict Int Zstd Delta": pattern_comp_dict_int_zstd_delta,
+                    "Pattern Comp Dict Int Snappy Delta": pattern_comp_dict_int_snappy_delta,
+                    "compressed_dict_zstd1":zstd_comp_size_dic
+
+                })
 
     return pd.DataFrame(results)
+
 def arg_parser():
     parser = argparse.ArgumentParser(description='Compress one dataset and store the log.')
     parser.add_argument('--dataset', dest='dataset_path', help='Path to the UCR dataset tsv/csv.')
     parser.add_argument('--variant', dest='variant', default="dictionary", help='Variant of the algorithm.')
     parser.add_argument('--pattern', dest='pattern', default="10*16", help='Pattern to match the files.')
     parser.add_argument('--outcsv', dest='log_file', default="./log_out.csv", help='Output directory for the sbatch scripts.')
-    parser.add_argument('--outcsv1', dest='log_file1', default="./log_out1.pkl", help='Output directory for the sbatch scripts.')
+    parser.add_argument('--out1', dest='log_file1', default="./log_out1.pkl", help='Output directory for the sbatch scripts.')
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
     parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
@@ -371,9 +433,9 @@ if __name__ == "__main__":
     comp_variant = args.variant
     pattern = args.pattern
     log_file = args.log_file
+    log_file1 = args.log_file
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data()
-    df_results.to_csv('results.csv')
-    #df_results.to_csv(log_file, index=False, header=True)
-
+    #df_results.to_csv('results.csv')
+    df_results.to_csv(log_file, index=False, header=True)
