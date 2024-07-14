@@ -1,22 +1,40 @@
+import sys
+
 import pandas as pd
 import numpy as np
 import pickle
 import zstandard as zstd
 import snappy
-from utils import bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
+from utils import generate_smooth_array,floats_to_bool_arrays, bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
 import argparse
+
 
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
+    rectangles1 = {}
     for i in range(0, ts_n, n):
         for j in range(0, ts_m, m):
             rect = bool_array[j:j + m, i:i + n]
+            rect1=rect.T
             rect_int = bool_to_int(rect)
+            rect_int1 = bool_to_int(rect1)
             # increment the number of times we have seen this rectangle
             rectangles[rect_int] = rectangles.get(rect_int, 0) + 1
+            rectangles1[rect_int1] = rectangles1.get(rect_int1, 0) + 1
 
-    return rectangles
+    print("rectangles",rectangles)
+    print("rectangles1" , rectangles1)
+    digit_counts = {key: count_digits(key) for key, value in rectangles.items()}
+    digit_counts1 = {key: count_digits(key) for key, value in rectangles1.items()}
 
+    print("digit_counts",digit_counts)
+    print("digit_counts1",digit_counts1)
+
+    return rectangles1
+def count_digits(value):
+    # Convert the value to a string, remove the decimal point and minus sign if present
+    str_value = str(abs(value)).replace('.', '')
+    return len(str_value)
 def create_cw_dicts(rectangle_dict):
     cw_dict, inverse_cw_dict = {}, {}
     sorted_items = sorted(rectangle_dict.items())  # Sort the items in ascending order
@@ -42,6 +60,9 @@ def replace_patterns_with_cw(bool_array, rectangles, m, n):
     for i in range(0, ts_n, n):
         for j in range(0, ts_m, m):
             rect = bool_array[j:j + m, i:i + n]
+            #############
+            rect=rect.T
+            ##################
             rect_int = bool_to_int(rect)
             cw = rectangles[rect_int]
             # if i == 0 and j == 0:
@@ -71,12 +92,16 @@ def replace_cw_with_pattern(compressed_bool_array, dict_in, m, n, cw_bit_len):
             # convert cw to binary strings of 0 and 1
             cw_bit_string = cw.flatten().tobytes().decode('utf-8')
             rect = dict_in[cw_bit_string]
-            rect_bool = int_to_bool(rect, m, n)
-            #if i == 0 and j == 0:
+
+
+            rect_bool = int_to_bool(rect, n, m)
+            rect_bool=rect_bool.T
+
             #    print("decomp:\n pattern: ", rect_bool, "dict: ", rect, "cw: ", cw_bit_string)
             j_uncomp = j * m
             i_uncomp = (i//cw_bit_len) * n
             bool_array[j_uncomp:j_uncomp + m, i_uncomp:i_uncomp + n] = rect_bool
+
     return bool_array
 
 
@@ -88,7 +113,7 @@ def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     dict_bytes = len(actual_dict_byte)
     actual_dict_size=dict_bytes
     # # compress rectangles using zstd
-    cctx = zstd.ZstdCompressor(level=0)
+    cctx = zstd.ZstdCompressor(level=3)
     compressed_dict = cctx.compress(actual_dict_byte)
     total_ztd = len(compressed_dict) + comp_data_bytes
     #total = dict_bytes + comp_data_bytes
@@ -134,7 +159,7 @@ def get_integer_size(value):
         raise TypeError("Value must be an integer.")
 
 def get_total_size(obj, seen=None):
-   ###Recursively finds the total size of an object in bits
+    ###Recursively finds the total size of an object in bits
     size = 0
     if seen is None:
         seen = set()
@@ -164,7 +189,7 @@ def get_total_size(obj, seen=None):
 
 
 def convert_dict_to_array(dict_in, m, n):
-    dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
+    dict_array = np.zeros(len(dict_in) * m , dtype='float32')
     for i, (key, value) in enumerate(dict_in.items()):
         value_bit_array = int_to_bool1(value, m, n)
         value_float_array = bool_array_to_float321(value_bit_array, n)
@@ -174,7 +199,7 @@ def convert_dict_to_array(dict_in, m, n):
         elif len(value_float_array) > m:
             value_float_array = value_float_array[:m]
 
-       # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
+        # dict_array[(i * m * 2) + m:(i * m * 2) + (2 * m)] = value_float_array
         dict_array[i * m:(i * m) + m] = value_float_array
 
     cctx = zstd.ZstdCompressor(level=0)
@@ -185,7 +210,7 @@ def convert_dict_to_array(dict_in, m, n):
 
 def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     # for each rectangle 4x8, convert it to an integer and udpate the dictionary
-    rectangles = get_dict(original_data_bool, m, n,ts_m, ts_n)
+    rectangles= get_dict(original_data_bool, m, n,ts_m, ts_n)
     # create a dictionary of code words
     cw_dict, inverse_cw_dict, cw_bit_len = create_cw_dicts(rectangles)
     # replace the rectangles with code words
@@ -207,7 +232,7 @@ def pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sor
 
 def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_check):
     # Calculate the number of entries based on the size of dict_array and parameters m
-    num_entries = len(dict_array) // (m * 2)
+    num_entries = len(dict_array) // (m )
     reconstructed_dict = {}
     original_values = [0] * num_entries  # Pre-allocate the list with zeros
 
@@ -285,8 +310,9 @@ def convert_values_to_array_delta(dict_in, m, n):
 
     deltas = delta_encode(sorted_values)
 
-    dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
+    dict_array = np.zeros(len(dict_in) * m , dtype='float32')
     for i,  value in enumerate(deltas):
+        # for i, (key, value) in enumerate(dict_in.items()):
         value_bit_array = int_to_bool1(value, m, n)
         value_float_array = bool_array_to_float321(value_bit_array, n)
 
@@ -309,23 +335,34 @@ def decompress_dict_snappy(compressed_data):
 
 
 
-
 def run_and_collect_data():
     results = []
-    sizes = [1,20]
-    ts_m = 256
+    sizes = [1]
+    ts_m =100
 
 
     for in_size in sizes:
         ts_n = in_size * 32
-        bool_array, float_array = generate_boolean_array(ts_m, ts_n)
+        bool_array1, float_array = generate_boolean_array(ts_m, ts_n)
+        #float_array=generate_smooth_array(ts_m)
+
         original_size = len(float_array.tobytes())
+        print ("AAAAAAAAAAAAAAAAAA",float_array.nbytes)
+        bool_array = floats_to_bool_arrays(float_array)
+
+       # bool_array = floats_to_bool_arrays(float_array)
+
+        #verify_flag_convert = np.array_equal(bool_array, binl_array1)
+
+
 
         row, col = bool_array.shape
-        for m in range(255, row + 1):
+
+        for m in range(4, row + 1):
             if row % m != 0:
                 continue
             for n in [ 32]:
+
                 # Compress the data
                 compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len, int_array_dict, comp_int_dict, compressed_dict_snappy ,compressed_dict_zstd11= pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
 
@@ -353,6 +390,14 @@ def run_and_collect_data():
                 cctx = zstd.ZstdCompressor(level=3)
                 compressed_float_array_zstd = cctx.compress(float_array.tobytes())
                 zstd_comp_size = len(compressed_float_array_zstd)
+
+                sorted_floatarray=sorted(float_array)
+                sorted_floatarray_np = np.array(sorted_floatarray, dtype=np.float32)
+                compressed_float_array_zstd_s = cctx.compress(sorted_floatarray_np .tobytes())
+                zstd_comp_size_s= len(compressed_float_array_zstd_s)
+                ########################
+                arrays_equal = np.array_equal(sorted_floatarray_np, int_array_dict)
+                print("sorted_values_array", arrays_equal)
 
 
 
@@ -382,7 +427,8 @@ def run_and_collect_data():
                     "Pattern Comp Dict Int Zstd": pattern_comp_dict_int_zstd,
                     "Pattern Comp Dict Int Snappy": pattern_comp_dict_int_snappy,
                     "Pattern Comp Dict Int Zstd Delta": pattern_comp_dict_int_zstd_delta,
-                    "Pattern Comp Dict Int Snappy Delta": pattern_comp_dict_int_snappy_delta
+                    "Pattern Comp Dict Int Snappy Delta": pattern_comp_dict_int_snappy_delta,
+                    "zstd_comp_size_s":zstd_comp_size_s
 
                 })
 
@@ -410,5 +456,5 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data()
-    #df_results.to_csv('results.csv')
-    df_results.to_csv(log_file, index=False, header=True)
+    df_results.to_csv('results1-r.csv')
+    #df_results.to_csv(log_file, index=False, header=True)

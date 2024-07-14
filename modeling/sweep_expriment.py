@@ -60,10 +60,12 @@ def replace_patterns_with_cw(bool_array, rectangles, m, n):
 def replace_cw_with_pattern(compressed_bool_array, dict_in, m, n, cw_bit_len):
     ts_m, ts_n = compressed_bool_array.shape
     # create compressed bool array
+    if cw_bit_len == 0:
+        cw_bit_len = 1  # Ensure bit length is at least 1
 
     bool_array = np.zeros((ts_m * m, ts_n // cw_bit_len * n), dtype='bool')
 
-    for i in range(0, ts_n, 1):
+    for i in range(0, ts_n, cw_bit_len):
         for j in range(0, ts_m, 1):
             cw = compressed_bool_array[j:j + 1, i:i + cw_bit_len]
             # convert cw to binary strings of 0 and 1
@@ -83,7 +85,8 @@ def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     comp_data_bytes = len(comp_data.flatten()) // 8
     # convert the dictionary to bytes
     actual_dict_byte = pickle.dumps(dict)
-    #dict_bytes = len(actual_dict_byte)
+    dict_bytes = len(actual_dict_byte)
+    actual_dict_size=dict_bytes
     # # compress rectangles using zstd
     cctx = zstd.ZstdCompressor(level=0)
     compressed_dict = cctx.compress(actual_dict_byte)
@@ -305,42 +308,18 @@ def decompress_dict_snappy(compressed_data):
     return np.frombuffer(decompressed_data, dtype='float32')
 
 
-def compress_integer_with_zstd(value):
-    # Ensure value is an integer
-    if not isinstance(value, int):
-        raise TypeError("Expected an integer")
-
-    # Determine the number of bytes needed to represent the integer
-    num_bytes = (value.bit_length() + 7) // 8
-
-    # Convert the integer to bytes
-    value_bytes = value.to_bytes(num_bytes, byteorder='big', signed=True)
-
-    # Compress the bytes using Zstd with default settings
-    compressed_bytes = zstd.compress(value_bytes)
-
-    return compressed_bytes
-
-
-def list_to_integer_digit_based(digit_list):
-    # Ensure the list contains only integers and each element is a digit (0-9)
-
-
-    # Convert the list of digits to a single integer
-    integer_value = int(''.join(map(str, digit_list)))
-    return integer_value
 
 
 def run_and_collect_data():
     results = []
-    sizes = [1]
+    sizes = [1,20]
     ts_m = 256
 
 
     for in_size in sizes:
         ts_n = in_size * 32
-        bool_array, f = generate_boolean_array(ts_m, ts_n)
-        original_size = len(bool_array.tobytes())
+        bool_array, float_array = generate_boolean_array(ts_m, ts_n)
+        original_size = len(float_array.tobytes())
 
         row, col = bool_array.shape
         for m in range(255, row + 1):
@@ -372,20 +351,15 @@ def run_and_collect_data():
 
                 # Zstd compression of the original float array
                 cctx = zstd.ZstdCompressor(level=3)
-                compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
+                compressed_float_array_zstd = cctx.compress(float_array.tobytes())
                 zstd_comp_size = len(compressed_float_array_zstd)
 
-
-                original_sorted_values_array =original_sorted_values
-                integer_value = list_to_integer_digit_based(original_sorted_values_array)
-                compressed_value = compress_integer_with_zstd(integer_value)
-                zstd_comp_size_dic=len(compressed_value)
 
 
 
 
                 # Snappy compression of the original float array
-                compressed_dict_snappy = snappy.compress(bool_array.tobytes())
+                compressed_dict_snappy = snappy.compress(float_array.tobytes())
                 snappy_comp_size = len(compressed_dict_snappy)
 
                 # Save dictionary
@@ -396,7 +370,7 @@ def run_and_collect_data():
                     "m": m,
                     "n": n,
                     "Original Size (bytes)": original_size,
-                    "Dictionary Size (bytes)": dictionary_size,
+                    #"Dictionary Size (bytes)": dictionary_size,
                     "Estimated Dictionary Size (bytes)": estimated_dict_size,
                     "Compressed Dictionary Size (bytes)": len(comp_int_dict),
                     "Verify Flag Data": verify_flag_data,
@@ -408,8 +382,7 @@ def run_and_collect_data():
                     "Pattern Comp Dict Int Zstd": pattern_comp_dict_int_zstd,
                     "Pattern Comp Dict Int Snappy": pattern_comp_dict_int_snappy,
                     "Pattern Comp Dict Int Zstd Delta": pattern_comp_dict_int_zstd_delta,
-                    "Pattern Comp Dict Int Snappy Delta": pattern_comp_dict_int_snappy_delta,
-                    "compressed_dict_zstd1":zstd_comp_size_dic
+                    "Pattern Comp Dict Int Snappy Delta": pattern_comp_dict_int_snappy_delta
 
                 })
 
