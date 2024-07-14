@@ -6,7 +6,7 @@ from skimage import io
 import numpy as np
 from utils import generate_smooth_array, generate_oscillating_2d_array, floats_to_bool_arrays
 from huffman_code import create_huffman_tree, create_huffman_codes, encode, decode
-
+import pandas as pd
 
 # compress with zstd
 def compress_with_zstd(data, level=3):
@@ -109,16 +109,20 @@ def profile_data(image_smooth, binary_patterns, binary_code, data_name):
     # sum of all counts
     assert np.sum(sm_pat_count)*binary_patterns[0].shape[0] == image_smooth.shape[0] * image_smooth.shape[1]
     est_size, est_tot_size = compute_huffman_code(sm_pat_count, binary_code)
-    print((image_smooth.shape[0] * image_smooth.shape[1]) /  est_size, " -- ", (image_smooth.shape[0] * image_smooth.shape[1]) / est_tot_size)
+    print(data_name, ": ", (image_smooth.shape[0] * image_smooth.shape[1]) /  est_size,
+          " -- ", (image_smooth.shape[0] * image_smooth.shape[1]) / est_tot_size)
     # plot the count
     plt.bar(np.arange(len(sm_pat_count)), sm_pat_count, color='b')
     plt.title(data_name)
     #plt.show()
     #plt.close()
+    return est_size, est_tot_size
 
 
 array_size = int(sys.argv[1])
 pattern_size = int(sys.argv[2])
+# make array size to be a multiple of pattern size
+array_size = array_size + (pattern_size - array_size % pattern_size)
 binary_patterns, binary_code = create_binary_patterns(pattern_size)
 # Load the image
 #image = io.imread("texture.jpg", grayscale=True)  # Assuming grayscale image
@@ -136,15 +140,33 @@ oscilate_array = generate_oscillating_2d_array((array_size, 1))
 bool_array = floats_to_bool_arrays(oscilate_array[:, 0])
 image_oscilate = b_array_to_int_array(bool_array)
 profile_data(image_oscilate, binary_patterns, binary_code, "Oscilating TS")
-zstd_compressed, comp_ratio = compress_with_zstd(oscilate_array)
+zstd_compressed_osc, comp_ratio = compress_with_zstd(oscilate_array)
 print("zstd:", comp_ratio)
 
 random_array = generate_random_array(array_size)
 bool_array = floats_to_bool_arrays(random_array)
 image_random = b_array_to_int_array(bool_array)
 profile_data(image_random, binary_patterns, binary_code, "Random TS")
-zstd_compressed, comp_ratio = compress_with_zstd(random_array)
-print("zstd:", comp_ratio)
+zstd_compressed_rand, comp_ratio = compress_with_zstd(random_array)
+print("zstd:", comp_ratio, "\n")
+
+if len(sys.argv) >= 4:
+    path_tsv = sys.argv[3]
+    # load tsf in df
+    ts_dataset = pd.read_csv(path_tsv, delimiter="\t")
+    # drop the first column
+    ts_dataset.drop(ts_dataset.columns[0], axis=1, inplace=True)
+    # convert to numpy array
+    ts_array = ts_dataset.to_numpy().flatten().astype(np.float32)
+    new_array_size = ts_array.shape[0] - ts_array.shape[0] % pattern_size
+    ts_array = ts_array[:new_array_size]
+    bool_array = floats_to_bool_arrays(ts_array)
+    image_ts = b_array_to_int_array(bool_array)
+    profile_data(image_ts, binary_patterns, binary_code, "TS: "+path_tsv)
+    zstd_compressed_ts, comp_ratio = compress_with_zstd(ts_array)
+    print("zstd:", comp_ratio)
+
+
 
 
 
