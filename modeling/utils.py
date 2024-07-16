@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+
 import struct
 def generate_smooth_array(n, type=np.float32):
     import numpy as np

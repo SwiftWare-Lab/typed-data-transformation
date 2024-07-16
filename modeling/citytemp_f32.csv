@@ -1,0 +1,2 @@
+,Original Size (bytes),Dictionary Size (bytes),estimated_dict_size ,Compressed Dictionary Size (bytes),Verify Flag Data,Verify Flag Dictionary,pattern_comp,pattern_comp_dict_zstd,zstd_comp_size,snappy_comp_size,pattern_comp_dict_int_zstd,pattern_comp_dict_int_snappy,pattern_comp_dict_int_zstd_delta,pattern_comp_dict_int_snappy_delta
+0,11625280,93855266,12090435.0,4689293,True,True,18667954,5978601,4361779,7240881,5725600,6808780,5379544,6694315

@@ -6,7 +6,6 @@ import zstandard as zstd
 import snappy
 from utils import floats_to_bool_arrays,bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
 import argparse
-from scipy.stats import entropy
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
     for i in range(0, ts_n, n):
@@ -288,17 +287,7 @@ def convert_values_to_array_delta(dict_in, m, n):
 def decompress_dict_snappy(compressed_data):
     decompressed_data = snappy.uncompress(compressed_data)
     return np.frombuffer(decompressed_data, dtype='float32')
-def calculate_shannon_entropy(time_series):
-    # Convert the time series to a histogram
-    value, counts = np.unique(time_series, return_counts=True)
 
-    # Calculate the probabilities
-    probabilities = counts / len(time_series)
-
-    # Calculate the Shannon entropy
-    shannon_entropy = entropy(probabilities, base=2)
-
-    return shannon_entropy
 def run_and_collect_data(dataset_path):
     results = []
     m, n = 10, 32
@@ -330,10 +319,14 @@ def run_and_collect_data(dataset_path):
         group=group
 
         group = group.astype(np.float32)
+        group = group.to_numpy().reshape(-1)
 
         bool_array = floats_to_bool_arrays(group)
 
+        print(len(group.tobytes()))
+        print(len(group))
         print(len(bool_array.tobytes()))
+        print(len(bool_array))
 
         # Compress the data
         compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len, int_array_dict, comp_int_dict, compressed_dict_snappy = pattern_based_compressor(
@@ -360,17 +353,14 @@ def run_and_collect_data(dataset_path):
 
         # Zstd compression of the original float array
         cctx = zstd.ZstdCompressor(level=3)
-        compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
-        original_size = len(bool_array.tobytes())
+        compressed_float_array_zstd = cctx.compress(group.tobytes())
+        original_size = len(group.tobytes())
         zstd_comp_size = len(compressed_float_array_zstd)
         # snappy compression of the original float array
-        compressed_dict_snappy = snappy.compress(bool_array.tobytes())
+        compressed_dict_snappy = snappy.compress(group.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
-        #entropy
-        entropy_data = calculate_shannon_entropy(group)
-        entropy_dict = calculate_shannon_entropy(original_sorted_values)
         #save dictionary
-        with open(log_file1, 'wb') as pickle_file:
+        with open('num_control_f64.pkl', 'wb') as pickle_file:
             pickle.dump(inverse_cw_dict, pickle_file)
 
         results.append({
@@ -388,9 +378,7 @@ def run_and_collect_data(dataset_path):
             "pattern_comp_dict_int_zstd":pattern_comp_dict_int_zstd,
             "pattern_comp_dict_int_snappy":pattern_comp_dict_int_snappy,
             "pattern_comp_dict_int_zstd_delta":pattern_comp_dict_int_zstd_delta ,
-            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta,
-            "entropy_data":entropy_data,
-            "entropy_dict":entropy_dict
+            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta
         })
 
     return pd.DataFrame(results)
@@ -401,7 +389,6 @@ def arg_parser():
     parser.add_argument('--variant', dest='variant', default="dictionary", help='Variant of the algorithm.')
     parser.add_argument('--pattern', dest='pattern', default="10*16", help='Pattern to match the files.')
     parser.add_argument('--outcsv', dest='log_file', default="./log_out.csv", help='Output directory for the sbatch scripts.')
-    parser.add_argument('--out1', dest='log_file1', default="./log_out1.pkl", help='Output directory for the sbatch scripts.')
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
     parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
@@ -413,10 +400,9 @@ if __name__ == "__main__":
     comp_variant = args.variant
     pattern = args.pattern
     log_file = args.log_file
-    log_file1 = args.log_file1
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data(dataset_path)
-    #df_results.to_csv('results.csv')
-    df_results.to_csv(log_file, index=False, header=True)
+    df_results.to_csv('num_control_f64.csv')
+   # df_results.to_csv(log_file, index=False, header=True)
 
