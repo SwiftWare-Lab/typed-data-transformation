@@ -316,13 +316,13 @@ def run_and_collect_data(dataset_path):
     for group_id, group in groups:
         group = group.drop(columns="feature_index")
         group.fillna(0, inplace=True)
-        group=group
+        row,col=group.shape
 
         group = group.astype(np.float32)
 
         bool_array = floats_to_bool_arrays(group)
-
-        print(len(bool_array.tobytes()))
+        print(len(bool_array))
+        print(row,col)
 
         # Compress the data
         compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len, int_array_dict, comp_int_dict, compressed_dict_snappy = pattern_based_compressor(
@@ -349,11 +349,11 @@ def run_and_collect_data(dataset_path):
 
         # Zstd compression of the original float array
         cctx = zstd.ZstdCompressor(level=3)
-        compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
-        original_size = len(bool_array.tobytes())
+        compressed_float_array_zstd = cctx.compress(group.tobytes())
+        original_size = len(group.tobytes())
         zstd_comp_size = len(compressed_float_array_zstd)
         # snappy compression of the original float array
-        compressed_dict_snappy = snappy.compress(bool_array.tobytes())
+        compressed_dict_snappy = snappy.compress(group.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
         #save dictionary
         with open('num_control_f64.pkl', 'wb') as pickle_file:

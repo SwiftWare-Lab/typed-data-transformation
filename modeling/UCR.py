@@ -4,23 +4,45 @@ import numpy as np
 import pickle
 import zstandard as zstd
 import snappy
-from utils import floats_to_bool_arrays,bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
+from utils import generate_smooth_array,floats_to_bool_arrays, bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
 import argparse
+from scipy.stats import entropy
+
+sys.set_int_max_str_digits(100000000)
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
+    rectangles1 = {}
     for i in range(0, ts_n, n):
         for j in range(0, ts_m, m):
             rect = bool_array[j:j + m, i:i + n]
+            rect1=rect.T
             rect_int = bool_to_int(rect)
+            rect_int1 = bool_to_int(rect1)
             # increment the number of times we have seen this rectangle
             rectangles[rect_int] = rectangles.get(rect_int, 0) + 1
+            rectangles1[rect_int1] = rectangles1.get(rect_int1, 0) + 1
 
-    return rectangles
+   # print("rectangles",rectangles)
+    #print("rectangles1" , rectangles1)
+    digit_counts = {key: count_digits(key) for key, value in rectangles.items()}
+    digit_counts1 = {key: count_digits(key) for key, value in rectangles1.items()}
 
+    #print("digit_counts",digit_counts)
+    #print("digit_counts1",digit_counts1)
+
+    return rectangles1
+def count_digits(value):
+    # Convert the value to a string, remove the decimal point and minus sign if present
+    str_value = str(abs(value)).replace('.', '')
+    return len(str_value)
 def create_cw_dicts(rectangle_dict):
     cw_dict, inverse_cw_dict = {}, {}
     sorted_items = sorted(rectangle_dict.items())  # Sort the items in ascending order
     bit_length = np.ceil(np.log2(len(rectangle_dict)))
+    if bit_length == 0:
+        bit_length = 1  # Ensure bit length is at least 1
+
+    #min_bits = math.ceil(math.log2(max_index + 1))
     for i, (key, value) in enumerate(sorted_items):
         cw_bits = bin(i)[2:].zfill(int(bit_length))
         cw_dict[key] = cw_bits
@@ -30,11 +52,17 @@ def replace_patterns_with_cw(bool_array, rectangles, m, n):
     ts_m, ts_n = bool_array.shape
     # get the bit length of the code words
     bit_length = int(np.ceil(np.log2(len(rectangles))))
+    if bit_length == 0:
+        bit_length = 1  # Ensure bit length is at least 1
+
     # make a numpy char array of zeros
     compressed_char_array_loc = np.zeros((int(ts_m/m), int(ts_n/n)*bit_length), dtype='S1')
     for i in range(0, ts_n, n):
         for j in range(0, ts_m, m):
             rect = bool_array[j:j + m, i:i + n]
+            #############
+            rect=rect.T
+            ##################
             rect_int = bool_to_int(rect)
             cw = rectangles[rect_int]
             # if i == 0 and j == 0:
@@ -53,28 +81,39 @@ def replace_patterns_with_cw(bool_array, rectangles, m, n):
 def replace_cw_with_pattern(compressed_bool_array, dict_in, m, n, cw_bit_len):
     ts_m, ts_n = compressed_bool_array.shape
     # create compressed bool array
-    bool_array = np.zeros((ts_m * m, (ts_n//cw_bit_len) * n), dtype='bool')
+    if cw_bit_len == 0:
+        cw_bit_len = 1  # Ensure bit length is at least 1
+
+    bool_array = np.zeros((ts_m * m, ts_n // cw_bit_len * n), dtype='bool')
+
     for i in range(0, ts_n, cw_bit_len):
         for j in range(0, ts_m, 1):
             cw = compressed_bool_array[j:j + 1, i:i + cw_bit_len]
             # convert cw to binary strings of 0 and 1
             cw_bit_string = cw.flatten().tobytes().decode('utf-8')
             rect = dict_in[cw_bit_string]
-            rect_bool = int_to_bool(rect, m, n)
-            #if i == 0 and j == 0:
+
+
+            rect_bool = int_to_bool(rect, n, m)
+            rect_bool=rect_bool.T
+
             #    print("decomp:\n pattern: ", rect_bool, "dict: ", rect, "cw: ", cw_bit_string)
             j_uncomp = j * m
             i_uncomp = (i//cw_bit_len) * n
             bool_array[j_uncomp:j_uncomp + m, i_uncomp:i_uncomp + n] = rect_bool
+
     return bool_array
+
+
 
 def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     comp_data_bytes = len(comp_data.flatten()) // 8
     # convert the dictionary to bytes
     actual_dict_byte = pickle.dumps(dict)
-    #dict_bytes = len(actual_dict_byte)
+    dict_bytes = len(actual_dict_byte)
+    actual_dict_size=dict_bytes
     # # compress rectangles using zstd
-    cctx = zstd.ZstdCompressor(level=0)
+    cctx = zstd.ZstdCompressor(level=3)
     compressed_dict = cctx.compress(actual_dict_byte)
     total_ztd = len(compressed_dict) + comp_data_bytes
     #total = dict_bytes + comp_data_bytes
@@ -82,12 +121,13 @@ def compute_comp_size(comp_data, dict, actual_dict_size, m, n):
     #total_estimated = estimated_dict_size + comp_data_bytes
 
     int_array_dict, comp_int_dict,compressed_dict_snappy = convert_dict_to_array(dict, m, n)
-    int_array_dict_d, comp_int_dict_d,compressed_dict_snappy_d = convert_values_to_array_delta(dict, m, n)
+    int_array_dict_d, comp_int_dict_d,compressed_dict_snappy_d,compressed_dict_zstd1 ,ent= convert_values_to_array_delta(dict, m, n)
     # assert len(int_array_dict.tobytes()) == (len(dict)*m*n)//8
     total_zstd_int = len(comp_int_dict) + comp_data_bytes
     total_snappy_int=len(compressed_dict_snappy) + comp_data_bytes
     total_zstd_int_d = len(comp_int_dict_d) + comp_data_bytes
     total_snappy_int_d=len(compressed_dict_snappy_d) + comp_data_bytes
+    total_zstd_dict=len(compressed_dict_zstd1)+comp_data_bytes
     return total, total_ztd,  total_zstd_int,total_snappy_int ,total_zstd_int_d,total_snappy_int_d
 
 
@@ -149,7 +189,7 @@ def get_total_size(obj, seen=None):
 
 
 def convert_dict_to_array(dict_in, m, n):
-    dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
+    dict_array = np.zeros(len(dict_in) * m , dtype='float32')
     for i, (key, value) in enumerate(dict_in.items()):
         value_bit_array = int_to_bool1(value, m, n)
         value_float_array = bool_array_to_float321(value_bit_array, n)
@@ -170,7 +210,7 @@ def convert_dict_to_array(dict_in, m, n):
 
 def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     # for each rectangle 4x8, convert it to an integer and udpate the dictionary
-    rectangles = get_dict(original_data_bool, m, n,ts_m, ts_n)
+    rectangles= get_dict(original_data_bool, m, n,ts_m, ts_n)
     # create a dictionary of code words
     cw_dict, inverse_cw_dict, cw_bit_len = create_cw_dicts(rectangles)
     # replace the rectangles with code words
@@ -179,8 +219,8 @@ def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     compressed_bool_array = char_to_bool(compressed_char_array)
     compressed_byte_array = bool_to_int(compressed_bool_array)
     # convert dictionary to array-dict
-    int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d = convert_values_to_array_delta(inverse_cw_dict, m, n)
-    return compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len,int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d
+    int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d ,compressed_dict_zstd1,entropy_dict= convert_values_to_array_delta(inverse_cw_dict, m, n)
+    return compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len,int_array_dict_d, comp_int_dict_d, compressed_dict_snappy_d,entropy_dict
 
 
 def pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sorted_values,cw_bit_len, m, n):
@@ -190,10 +230,9 @@ def pattern_based_decompressor(compressed_char_array, comp_int_dict,original_sor
     uncompressed_data = replace_cw_with_pattern(compressed_char_array, reconstructed_dic, m, n, int(cw_bit_len))
     return uncompressed_data,reconstructed_dic
 
-
 def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_check):
     # Calculate the number of entries based on the size of dict_array and parameters m
-    num_entries = len(dict_array) // (m * 2)
+    num_entries = len(dict_array) // (m )
     reconstructed_dict = {}
     original_values = [0] * num_entries  # Pre-allocate the list with zeros
 
@@ -234,7 +273,6 @@ def reconstruct_dict_from_array(dict_array, m, n, bit_length, original_values_ch
 
     return reconstructed_dict
 
-
 def decompress_dict_array(compressed_dict):
     dctx = zstd.ZstdDecompressor()
     decompressed_bytes = dctx.decompress(compressed_dict)
@@ -244,7 +282,6 @@ def decompress_dict_array(compressed_dict):
 
 def are_dicts_equal(dict1, dict2):
     return dict1 == dict2
-
 
 def delta_encode(data):
     if not data:
@@ -265,13 +302,17 @@ def delta_decode(deltas):
     data.extend(data[i] + deltas[i + 1] for i in range(len(deltas) - 1))
     return data
 
-
 def convert_values_to_array_delta(dict_in, m, n):
+    cctx = zstd.ZstdCompressor(level=3)
     sorted_values = [value for key, value in dict_in.items()]
+    sorted_values_array = np.array(sorted_values)
+    compressed_dict_zstd1 = cctx.compress(sorted_values_array.tobytes())
+
     deltas = delta_encode(sorted_values)
 
-    dict_array = np.zeros(len(dict_in) * m * 2, dtype='float32')
+    dict_array = np.zeros(len(dict_in) * m , dtype='float32')
     for i,  value in enumerate(deltas):
+        # for i, (key, value) in enumerate(dict_in.items()):
         value_bit_array = int_to_bool1(value, m, n)
         value_float_array = bool_array_to_float321(value_bit_array, n)
 
@@ -282,16 +323,31 @@ def convert_values_to_array_delta(dict_in, m, n):
 
         dict_array[i * m:(i * m) + m] = value_float_array
 
-    cctx = zstd.ZstdCompressor(level=0)
+    entropy_dict=calculate_shannon_entropy(dict_array.reshape(-1))
+    print("entropy_dict",entropy_dict)
     compressed_dict_zstd = cctx.compress(dict_array.tobytes())
     # print(f"dictionary sizes: {get_total_size(dict_in)}, compressed dictionary size-zstd: {len(compressed_dict_zstd)}")
     compressed_dict_snappy = snappy.compress(dict_array.tobytes())
-    return dict_array, compressed_dict_zstd, compressed_dict_snappy
+    return dict_array, compressed_dict_zstd, compressed_dict_snappy,compressed_dict_zstd1,entropy_dict
 
 def decompress_dict_snappy(compressed_data):
     decompressed_data = snappy.uncompress(compressed_data)
     return np.frombuffer(decompressed_data, dtype='float32')
 
+    #df_results.to_csv(log_file, index=False, header=True)
+
+
+def calculate_shannon_entropy(time_series):
+    # Convert the time series to a histogram
+    value, counts = np.unique(time_series, return_counts=True)
+
+    # Calculate the probabilities
+    probabilities = counts / len(time_series)
+
+    # Calculate the Shannon entropy
+    shannon_entropy = entropy(probabilities, base=2)
+
+    return shannon_entropy
 def run_and_collect_data(dataset_path):
     results = []
     m, n = 10, 32
@@ -302,17 +358,17 @@ def run_and_collect_data(dataset_path):
 
    # ts_data1 = ts_data1.iloc[:, 1:]
     # Get the shape of the data
-    row, col = ts_data1.shape
+   # row, col = ts_data1.shape
     # Calculate the remainder
-    remainder = row % m
+    #remainder = row % m
     # Adjust h to be the largest number divisible by m if it's not already divisible
-    if remainder != 0:
-        row = row - remainder
+    #if remainder != 0:
+      #  row = row - remainder
     # Select only the rows that are divisible by m
-    ts_data1 = ts_data1.iloc[:row, :]
+    #ts_data1 = ts_data1.iloc[:row, :]
    # ts_m = row
-    ts_data = ts_data1
-    groups = ts_data.groupby(0)
+    #ts_data = ts_data1
+    groups = ts_data1.groupby(0)
     # ts_data = ts_data.iloc[:, 0:101]
 
     #dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
@@ -320,6 +376,15 @@ def run_and_collect_data(dataset_path):
     for group_id, group in groups:
         group = group.drop(columns=0)
         group.fillna(0, inplace=True)
+        row, col = group.shape
+        m=row
+        # Calculate the remainder
+        remainder = row % m
+        # Adjust h to be the largest number divisible by m if it's not already divisible
+        if remainder != 0:
+            row = row - remainder
+        # Select only the rows that are divisible by m
+        group = group.iloc[:row, :]
         group = group.to_numpy().reshape(-1)
         ts_m = group.shape[0]
 
@@ -331,7 +396,7 @@ def run_and_collect_data(dataset_path):
         print(len(bool_array.tobytes()))
 
         # Compress the data
-        compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len, int_array_dict, comp_int_dict, compressed_dict_snappy = pattern_based_compressor(
+        compressed_byte_array, compressed_char_array, inverse_cw_dict, cw_bit_len, int_array_dict, comp_int_dict, compressed_dict_snappy ,entropy_dict= pattern_based_compressor(
             bool_array, m, n, ts_m, ts_n)
 
         # Decompress the data
@@ -354,15 +419,17 @@ def run_and_collect_data(dataset_path):
         pattern_comp, pattern_comp_dict_zstd,  pattern_comp_dict_int_zstd ,pattern_comp_dict_int_snappy, pattern_comp_dict_int_zstd_delta ,pattern_comp_dict_int_snappy_delta= compute_comp_size(compressed_bool_array, inverse_cw_dict, dictionary_size, m, n)
 
         # Zstd compression of the original float array
+        entropy1 = calculate_shannon_entropy(group)
+        print("entropy1", entropy1)
         cctx = zstd.ZstdCompressor(level=3)
-        compressed_float_array_zstd = cctx.compress(bool_array.tobytes())
-        original_size = len(bool_array.tobytes())
+        compressed_float_array_zstd = cctx.compress(group.tobytes())
+        original_size = len(group.tobytes())
         zstd_comp_size = len(compressed_float_array_zstd)
         # snappy compression of the original float array
-        compressed_dict_snappy = snappy.compress(bool_array.tobytes())
+        compressed_dict_snappy = snappy.compress(group.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
         #save dictionary
-        with open('../num_brain_f64.pkl', 'wb') as pickle_file:
+        with open(log_file1, 'wb') as pickle_file:
             pickle.dump(inverse_cw_dict, pickle_file)
 
         results.append({
@@ -380,7 +447,10 @@ def run_and_collect_data(dataset_path):
             "pattern_comp_dict_int_zstd":pattern_comp_dict_int_zstd,
             "pattern_comp_dict_int_snappy":pattern_comp_dict_int_snappy,
             "pattern_comp_dict_int_zstd_delta":pattern_comp_dict_int_zstd_delta ,
-            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta
+            "pattern_comp_dict_int_snappy_delta":pattern_comp_dict_int_snappy_delta,
+            "entropy_dict":entropy_dict,
+            "entropy":entropy1
+
         })
 
     return pd.DataFrame(results)
@@ -391,6 +461,7 @@ def arg_parser():
     parser.add_argument('--variant', dest='variant', default="dictionary", help='Variant of the algorithm.')
     parser.add_argument('--pattern', dest='pattern', default="10*16", help='Pattern to match the files.')
     parser.add_argument('--outcsv', dest='log_file', default="./log_out.csv", help='Output directory for the sbatch scripts.')
+    parser.add_argument('--out1', dest='log_file1', default="./log_out1.pkl", help='Output directory for the sbatch scripts.')
     parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
     parser.add_argument('--mode', dest='mode',default="signal", help='run mode.')
     return parser
@@ -402,8 +473,10 @@ if __name__ == "__main__":
     comp_variant = args.variant
     pattern = args.pattern
     log_file = args.log_file
+    log_file1 = args.log_file1
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data(dataset_path)
-    df_results.to_csv('results.csv')
-# df_results.to_csv(log_file, index=False, header=True)
+    df_results.to_csv('WormsTwoClass_TRAIN.csv')
+    #df_results.to_csv(log_file, index=False, header=True)
+

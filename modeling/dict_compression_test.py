@@ -290,7 +290,7 @@ def decompress_dict_snappy(compressed_data):
 
 def run_and_collect_data():
     results = []
-    sizes = [1,100,1000]
+    sizes = [1000]
     ts_m = 8
     m, n = 8, 32
 
@@ -331,7 +331,7 @@ def run_and_collect_data():
         compressed_dict_snappy = snappy.compress(bool_array.tobytes())
         snappy_comp_size = len(compressed_dict_snappy)
         #save dictionary
-        with open('../data.pkl', 'wb') as pickle_file:
+        with open('citytemp_f32.pkl', 'wb') as pickle_file:
             pickle.dump(inverse_cw_dict, pickle_file)
 
         results.append({
@@ -373,6 +373,6 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data()
-    df_results.to_csv('results.csv')
+    df_results.to_csv('citytemp_f32.csv')
     #df_results.to_csv(log_file, index=False, header=True)
 

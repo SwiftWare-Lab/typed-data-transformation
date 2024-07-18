@@ -6,7 +6,7 @@ import zstandard as zstd
 import snappy
 from utils import generate_smooth_array,floats_to_bool_arrays, bool_array_to_float321 ,int_to_bool1,float32_to_bool_array1,bool_to_int1, generate_boolean_array, bool_to_int, char_to_bool, int_to_bool, bool_array_to_float32
 import argparse
-sys.set_int_max_str_digits(100000000)
+
 
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
@@ -21,13 +21,13 @@ def get_dict(bool_array, m, n,ts_m, ts_n):
             rectangles[rect_int] = rectangles.get(rect_int, 0) + 1
             rectangles1[rect_int1] = rectangles1.get(rect_int1, 0) + 1
 
-   # print("rectangles",rectangles)
-   # print("rectangles1" , rectangles1)
+    print("rectangles",rectangles)
+    print("rectangles1" , rectangles1)
     digit_counts = {key: count_digits(key) for key, value in rectangles.items()}
     digit_counts1 = {key: count_digits(key) for key, value in rectangles1.items()}
 
-    #print("digit_counts",digit_counts)
-    #print("digit_counts1",digit_counts1)
+    print("digit_counts",digit_counts)
+    print("digit_counts1",digit_counts1)
 
     return rectangles1
 def count_digits(value):
@@ -305,7 +305,6 @@ def convert_values_to_array_delta(dict_in, m, n):
     cctx = zstd.ZstdCompressor(level=3)
     sorted_values = [value for key, value in dict_in.items()]
     sorted_values_array = np.array(sorted_values)
-    print(sorted_values_array)
     compressed_dict_zstd1 = cctx.compress(sorted_values_array.tobytes())
 
     deltas = delta_encode(sorted_values)
@@ -339,13 +338,13 @@ def decompress_dict_snappy(compressed_data):
 def run_and_collect_data(dataset_path):
     results = []
     n = 32
-    m=10
+    m=2906326
     #m=412
     ts_n = 32
 
     #dataset_path="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
     ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
-    ts_data1 = ts_data1.iloc[:, 0:101]
+
     ts_data1 = ts_data1.iloc[:, 1:]
     # Get the shape of the data
     row, col = ts_data1.shape
