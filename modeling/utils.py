@@ -57,11 +57,42 @@ def bool_to_int(bool_array):
     """
     byte_array = np.packbits(bool_array.flatten())
     return int.from_bytes(byte_array, byteorder='big')
+import numpy as np
+
+
+def binary_to_int(binary_array):
+    """
+    Convert an array of binary digits (0s and 1s) to an integer.
+
+    :param binary_array: numpy array of binary digits (0s and 1s)
+    :return: integer representation of the binary array
+    """
+    # Ensure the array is flattened and consists of integers
+    binary_array = binary_array.flatten().astype(int)
+    # Convert the binary array to a single string of binary digits
+    binary_string = ''.join(map(str, binary_array))
+    # Convert the binary string to an integer
+    return int(binary_string, 2)
+
+# Example usage:
+binary_array = np.array([1, 0, 1, 1, 0, 1, 0, 0], dtype=bool)
+integer_value = bool_to_int(binary_array)
+print(integer_value)  # Output will be the integer representation of the binary array
 
 def char_to_bool(char_array):
     bool_array = np.array([1 if x == b'1' else 0 for x in char_array.flatten()], dtype='bool')
     return bool_array.reshape(char_array.shape)
 
+
+def char_to_binary(char_array):
+    """
+    Convert a character array of '0' and '1' characters into a binary integer array.
+
+    :param char_array: numpy array of '0' and '1' characters
+    :return: numpy array of integers (0 or 1) with the same shape as char_array
+    """
+    binary_array = np.array([1 if x == b'1' else 0 for x in char_array.flatten()], dtype=int)
+    return binary_array.reshape(char_array.shape)
 
 def bool_array_to_float32(bool_array):
     ba_flatten = bool_array.flatten()

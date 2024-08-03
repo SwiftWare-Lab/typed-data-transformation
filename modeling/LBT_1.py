@@ -5,8 +5,9 @@ from skimage.feature import local_binary_pattern
 from skimage import io
 import numpy as np
 from utils import generate_smooth_array, generate_oscillating_2d_array, floats_to_bool_arrays
-from huffman_code import create_huffman_tree, create_huffman_codes, encode, decode
+from huffman_code import create_huffman_tree, create_huffman_codes
 import pandas as pd
+from PIL import Image, ImageDraw, ImageFont
 
 
 # compress with zstd
@@ -62,6 +63,19 @@ def b_array_to_int_array(b_array, type=np.int64):
     return int_array
 
 
+def float_to_ieee754(f):
+    """Convert a float or a numpy array of floats to their IEEE 754 binary representation and return as an integer array."""
+    def float_to_binary_array(single_f):
+        """Convert a single float to an integer array representing its IEEE 754 binary form."""
+        binary_str = format(np.float32(single_f).view(np.uint32), '032b')
+        return np.array([int(bit) for bit in binary_str], dtype=np.uint8)
+
+    if isinstance(f, np.ndarray):
+        # Apply the conversion to each element in the numpy array
+        return np.array([float_to_binary_array(single_f) for single_f in f.ravel()]).reshape(f.shape + (32,))
+    else:
+        # Apply the conversion to a single float
+        return float_to_binary_array(f)
 # create all permutations of nx1 binary pattern
 def create_binary_patterns(n):
     binary_patterns = []
@@ -118,6 +132,8 @@ def find_pattern_in_array_not_in_mask(array, pattern, mask, binary_code):
 
 # take an array and compute repetition of values
 def compute_repetition(array):
+    nan_indices = np.where(np.isnan(array))[0]
+    num_nans = len(nan_indices)
     unique, counts = np.unique(array, return_counts=True)
     # get the top 10 values in counts
     max_top_10 = np.argsort(counts)[-50:]
@@ -314,7 +330,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos):
         bnd1 = bnd1 + i
         bnd2 = bnd2 - i
         leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2, image_ts)
-        pattern_size_list = [4, 6, 8, 10, 12] # this is a  tuning parameter
+        #pattern_size_list = [4, 6, 8, 10, 12] # this is a  tuning parameter
+        pattern_size_list = [2]
         for pattern_size in pattern_size_list:
             print("Pattern Size: ", pattern_size)
             binary_patterns, binary_code = create_binary_patterns(pattern_size)
@@ -337,29 +354,35 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos):
 
 
 # main
-#array_size = int(sys.argv[1])
-#pattern_size = int(sys.argv[2])
-array_size = 100
+array_size = 4
 pattern_size = 4
 binary_patterns, binary_code = create_binary_patterns(pattern_size)
+print(binary_code)
+
 
 # make a plot with 4x2 subplots
 fig, axs = plt.subplots(2, 3, figsize=(20, 10))
 # increase the distance of two row subplots
 plt.subplots_adjust(hspace=0.5)
 
-#if len(sys.argv) >= 4:
 if 1==1:
     log_dict = {}
-    #path_tsv = sys.argv[3]
-    path_tsv="/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    path_tsv = "/home/jamalids/Documents/2D/UCRArchive_2018/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     # load tsf in df
-    ts_dataset = pd.read_csv(path_tsv, delimiter="\t")
+    ts_dataset = pd.read_csv(path_tsv, delimiter="\t", header=None)
+    ts_dataset=ts_dataset.iloc[0:1,0:15]
     # drop the first column
     ts_dataset.drop(ts_dataset.columns[0], axis=1, inplace=True)
-    ts_dataset=ts_dataset.iloc[0:3,0:1]
+   # ts_datase=ts_dataset.dropna()
+    #ts_dataset.values
+
     # convert to numpy array
-    ts_array = ts_dataset.to_numpy().flatten().astype(np.float32)
+    #ts_array = ts_dataset.to_numpy().flatten().astype(np.float32)
+    ts_array1=[0.038 ,0.077, 0.08, 0.06 ,0.05 ,0.077 ,0.115, 0.077, 0.116 ,0.117, 0.118 , 0.077 ,0.077]
+    ts_array = np.array(ts_array1)
+    print(ts_array)
+
+
     original_size_bits = len(ts_array.tobytes()) * 8
     # plot the ts
     plot_ts(ts_dataset.values.flatten(), axs[0, 0], "Original Values")
@@ -380,6 +403,14 @@ if 1==1:
 
     # 1x4 compression
     frq_dict = compute_repetition(ts_array)
+    ############################################
+    threshold=len(ts_array)/30
+    repetitive_values = {value: count for value, count in frq_dict.items() if count > threshold}
+    sorted_frq_dict = dict(sorted(frq_dict.items(), key=lambda item: item[1], reverse=True))
+     # Select the top N most repetitive values
+    top_repetitive_values = dict(list(sorted_frq_dict.items())[:10])
+
+#########################################
     plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
     est_size, Non_uniform_1x4, uniform_code_len = compress_float_repetition(ts_array, frq_dict)
@@ -390,13 +421,67 @@ if 1==1:
     # pattern based
     new_array_size = ts_array.shape[0] - ts_array.shape[0] % pattern_size
     ts_array_trimmed = ts_array[:new_array_size]
-    bool_array = floats_to_bool_arrays(ts_array_trimmed)
-    image_ts = b_array_to_int_array(bool_array)
+    print(ts_array_trimmed)
+    #bool_array = floats_to_bool_arrays(ts_array_trimmed)
+    #image_ts1 = b_array_to_int_array(bool_array)
+    image_ts=float_to_ieee754(ts_array_trimmed)
     est_size_pattern, est_tot_size_pattern, dict_freq_pattern = profile_data(image_ts, binary_patterns, binary_code, "TS: "+path_tsv)
     print("CR Global pattern based ", pattern_size, " : ", original_size_bits / est_tot_size_pattern)
     log_dict["Global Pattern Based (bytes)"] = est_tot_size_pattern//8
     log_dict["Global Pattern Size"] = pattern_size
 
+    ##############plot####################3
+    binary_data=image_ts
+    # Get the dimensions from the array
+    height, width = binary_data.shape
+
+    # Get the dimensions from the array
+    height, width = binary_data.shape
+
+    # Create a new image with mode '1' (1-bit pixels, black and white)
+    image = Image.new('1', (width, height))
+
+    # Populate the image with the binary data
+    for i in range(height):
+        for j in range(width):
+            pixel_value = int(binary_data[i, j])  # Ensure pixel_value is an int
+            image.putpixel((j, i), pixel_value)
+
+    # Save or display the image
+    image.save('binary_bitmap.png')
+    image.show()
+    #######################33
+    # Get the dimensions from the array
+    height, width = binary_data.shape
+
+    # Define image size and create a new image
+    cell_size = 20  # Size of each cell in pixels
+    image_width = width * cell_size
+    image_height = height * cell_size
+    image = Image.new('RGB', (image_width, image_height), 'white')
+    draw = ImageDraw.Draw(image)
+
+    # Use a basic font
+    font = ImageFont.load_default()
+
+    # Populate the image with the binary data
+    for i in range(height):
+        for j in range(width):
+            pixel_value = int(binary_data[i, j])  # Ensure pixel_value is an int
+            text = str(pixel_value)
+            x = j * cell_size
+            y = i * cell_size
+            # Draw text at the center of each cell
+            draw.text((x + cell_size / 3, y + cell_size / 4), text, fill='black', font=font)
+            # Draw cell border
+            draw.rectangle([x, y, x + cell_size, y + cell_size], outline='black')
+
+    # Save or display the image
+    image.save('binary_table.png')
+    image.show()
+
+
+    ###############################
     # pattern based decomposition
     l_z_array, t_z_array = compute_leading_tailing_zeros(image_ts)
     tot_decomp_tot_size = decomposition_based_compression(image_ts, l_z_array, t_z_array)
