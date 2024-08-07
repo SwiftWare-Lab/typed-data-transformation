@@ -113,58 +113,56 @@ def calculate_size_of_huffman_tree(node):
 
   return size
 
+
 def decode(encoded_text, root, m, n, original_shape):
-    """
-    Decodes a Huffman encoded binary string using the Huffman tree.
+  """
+  Decodes a Huffman encoded binary string using the Huffman tree.
 
-    Args:
-        encoded_text: The encoded text as a binary string.
-        root: The root node of the Huffman tree.
-        m, n: The dimensions of the original patterns.
-        original_shape: The shape of the original 2D boolean array (ts_m, ts_n).
+  Args:
+      encoded_text: The encoded text as a binary string.
+      root: The root node of the Huffman tree.
+      m, n: The dimensions of the original patterns.
+      original_shape: The shape of the original 2D boolean array (ts_m, ts_n).
 
-    Returns:
-        A 2D boolean array representing the original data.
-    """
-    ts_m, ts_n = original_shape
-    decoded_ints = []
-    current_node = root
+  Returns:
+      A 2D boolean array representing the original data.
+  """
+  ts_m, ts_n = original_shape
+  decoded_ints = []
+  current_node = root
 
-    # Step 1: Decode the encoded text back to integer patterns
-    for bit in encoded_text:
-      if bit == '0':
-        current_node = current_node.left
-      elif bit == '1':
-        current_node = current_node.right
+  # Step 1: Decode the encoded text back to integer patterns
+  for bit in encoded_text:
+    if bit == '0':
+      current_node = current_node.left
+    elif bit == '1':
+      current_node = current_node.right
 
-      # If a leaf node is reached, store the integer value and reset to root
-      if current_node.char is not None:
-        decoded_ints.append(current_node.char)
-        current_node = root
+    # If a leaf node is reached, store the integer value and reset to root
+    if current_node.char is not None:
+      decoded_ints.append(current_node.char)
+      current_node = root
 
-    # Step 2: Convert decoded integers back to binary form
-    decoded_binaries = [int_to_binary(value, m * n) for value in decoded_ints]
-    # Step 3: Reconstruct the original 2D binary array
-    binary_array = np.zeros(original_shape, dtype=int)
-    pattern_idx = 0
+  # Step 2: Convert decoded integers back to binary form
+  decoded_binaries = [int_to_binary(value, m * n) for value in decoded_ints]
+  # Step 3: Reconstruct the original 2D binary array
+  binary_array = np.zeros(original_shape)
+  pattern_idx = 0
 
-    for j in range(0, ts_m, m):
-      for i in range(0, ts_n, n):
-        if pattern_idx >= len(decoded_binaries):
-          break
-        binary_pattern = decoded_binaries[pattern_idx]
-        pattern_idx += 1
+  for j in range(0, ts_n, n):
+    for i in range(0, ts_m, m):
+      if pattern_idx >= len(decoded_binaries):
+        break
+      binary_pattern = decoded_binaries[pattern_idx]
+      pattern_idx += 1
 
-        # Fill the corresponding part of the array
-        for bit_idx, bit in enumerate(binary_pattern):
-          bit_j = bit_idx // n
-          bit_i = bit_idx % n
-          binary_array[j + bit_j, i + bit_i] = bit
+      # Fill the corresponding part of the array
+      for bit_idx, bit in enumerate(binary_pattern):
+        bit_j = bit_idx // n
+        bit_i = bit_idx % n
+        binary_array[i + bit_j, j + bit_i] = int(bit)
 
-    return binary_array
-
-
-
+  return binary_array
 
 
 def int_to_binary(n, length):
