@@ -1,2 +1,2 @@
 Original Size (bytes),Dataset Name,Number of Signals,Number of Samples,Zstd Default-3 (bytes),Zstd Ultimate-22 (bytes),Uniform Code 1x4 (bytes),Non-Uniform Code 1x4 (bytes),Global Pattern Based (bytes),Global Pattern Size,Decomposition Based (bytes)
-104,AllGestureWiimoteX_TEST,1,14,95,88,47.0,8,52.0,4,35.0
+32,AllGestureWiimoteX_TEST,4,2,41,41,29.0,4,37.0,4,31.0
