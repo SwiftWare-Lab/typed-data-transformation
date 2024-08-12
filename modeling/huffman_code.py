@@ -24,15 +24,7 @@ class Node:
     return self.freq < other.freq
 
 def create_huffman_tree(char_freq_map):
-  """
-  Creates a Huffman tree from a character-frequency map.
 
-  Args:
-      char_freq_map: A dictionary mapping characters to their frequencies.
-
-  Returns:
-      The root node of the Huffman tree.
-  """
   nodes = [Node(char, freq) for char, freq in char_freq_map.items()]
   while len(nodes) > 1:
     # Get two nodes with the lowest frequencies
@@ -67,17 +59,7 @@ def create_huffman_codes(node, code, codes):
 
 
 def encode_data(bool_array, m, n, huffman_codes):
-  """
-  Encodes the data using Huffman codes.
 
-  Args:
-      bool_array: A 2D list of boolean values.
-      m, n: The dimensions of the patterns to be replaced.
-      huffman_codes: A dictionary mapping integer patterns to Huffman codes.
-
-  Returns:
-      A string containing the encoded binary data.
-  """
   ts_m, ts_n = len(bool_array), len(bool_array[0])
   encoded_string = ""
 
@@ -115,18 +97,7 @@ def calculate_size_of_huffman_tree(node):
 
 
 def decode(encoded_text, root, m, n, original_shape):
-  """
-  Decodes a Huffman encoded binary string using the Huffman tree.
-
-  Args:
-      encoded_text: The encoded text as a binary string.
-      root: The root node of the Huffman tree.
-      m, n: The dimensions of the original patterns.
-      original_shape: The shape of the original 2D boolean array (ts_m, ts_n).
-
-  Returns:
-      A 2D boolean array representing the original data.
-  """
+  
   ts_m, ts_n = original_shape
   decoded_ints = []
   current_node = root

@@ -177,6 +177,8 @@ def run_and_collect_data(dataset_path):
 
     #dataset_path="/home/jamalids/Documents/2D/UCRArchive_2018/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     dataset_path= "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    dataset_path="/home/jamalids/Documents/2D/data1/citytemp_f32.tsv"
+
     ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
     #ts_data1 = ts_data1.iloc[0:4, 0:3]
 
