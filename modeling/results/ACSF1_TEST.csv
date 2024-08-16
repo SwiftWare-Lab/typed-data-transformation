@@ -1,2 +1,0 @@
-Original Size (bytes),Dataset Name,Number of Signals,Number of Samples,Zstd Default-3 (bytes),Zstd Ultimate-22 (bytes),Uniform Code 1x4 (bytes),Non-Uniform Code 1x4 (bytes),Global Pattern Based (bytes),Global Pattern Size,Decomposition Based (bytes)
-578160,ACSF1_TEST,99,1460,225563,192218,562644.0,330294,553824.0,4,158345.0
