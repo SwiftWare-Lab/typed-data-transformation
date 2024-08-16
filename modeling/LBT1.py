@@ -199,6 +199,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         # Adjust bounds based on tuning step
         bnd1 = bnd1 + i
         bnd2 = bnd2 - i
+        print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
+        print("Tune Decomp: ", i)
 
         # Decompose the array into three parts
         leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,

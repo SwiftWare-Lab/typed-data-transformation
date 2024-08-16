@@ -401,10 +401,20 @@ if 1==1:
     print("TS: ", tot_decomp_tot_size, est_tot_size_pattern, original_size_bits, "--", original_size_bits / tot_decomp_tot_size)
     log_dict["Decomposition Based (bytes)"] = tot_decomp_tot_size//8
 
-    comp_ratio_array = np.array([comp_ratio_zstd_default, comp_ratio_l22, original_size_bits / Non_uniform_1x4, original_size_bits / uniform_code_len, original_size_bits / est_tot_size_pattern, original_size_bits / tot_decomp_tot_size])
+   # comp_ratio_array = np.array([comp_ratio_zstd_default, comp_ratio_l22, original_size_bits / Non_uniform_1x4, original_size_bits / uniform_code_len, original_size_bits / est_tot_size_pattern, original_size_bits / tot_decomp_tot_size])
+    comp_ratio_array = np.array([
+        comp_ratio_zstd_default,
+        comp_ratio_l22,
+        original_size_bits / Non_uniform_1x4,
+        original_size_bits / uniform_code_len,
+        original_size_bits / est_tot_size_pattern
+    ])
 
     # plot the compression ratio
-    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Uniform 1x4", "Huffman Enumerated "+str(pattern_size), "Decomposition Pattern"], "Compression Ratio", axs[0, 2])
+    #plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Uniform 1x4", "Huffman Enumerated "+str(pattern_size), "Decomposition Pattern"], "Compression Ratio", axs[0, 2])
+    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Uniform 1x4",
+                                "Huffman Enumerated " + str(pattern_size)],
+             "Compression Ratio", axs[0, 2])
 
     name_dataset = log_dict["Dataset Name"]
     if not PLOTING_DISABLE:
