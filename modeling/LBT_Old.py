@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from utils import binary_to_int
 import argparse
-from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,encode_data_L_T
+from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data
 
 
 def float_to_ieee754(f):
@@ -32,17 +32,6 @@ def get_dict(bool_array, m, n,ts_m, ts_n):
 
     return rectangles
 
-def get_dict_l_T(bool_array, m, n,ts_m, ts_n):
-    rectangles = {}
-    rectangles1 = {}
-    for i in range(0, ts_n, ts_n):
-        for j in range(0, ts_m,1):
-            rect = bool_array[j:j + 1, i:i + ts_n]
-            rect_int=binary_to_int(rect)
-            # increment the number of times we have seen this rectangle
-            rectangles[rect_int] = rectangles.get(rect_int, 0) + 1
-
-    return rectangles
 
 def compute_huffman_code(dict_code,original_data_bool,m, n):
     # Extract pattern counts from dict_code
@@ -54,10 +43,7 @@ def compute_huffman_code(dict_code,original_data_bool,m, n):
     # Create Huffman codes dictionary
     codes = {}
     create_huffman_codes(root, "", codes)
-    if m!=0 and n!=0:
-        encode_text = encode_data(original_data_bool, m, n, codes)
-    else:
-        encode_text = encode_data_L_T(original_data_bool, m, n, codes)
+    encode_text = encode_data(original_data_bool, m, n, codes)
 
 
     # Create a mapping of keys from dict_code to indices in pattern_count
@@ -82,12 +68,7 @@ def compute_huffman_code(dict_code,original_data_bool,m, n):
 
 def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
     # for each rectangle 4x8, convert it to an integer and udpate the dictionary
-    if n != 0 and m!= 0 :
-        rectangles = get_dict(original_data_bool, m, n, ts_m, ts_n)
-    else:
-        rectangles = get_dict_l_T(original_data_bool, m, n, ts_m, ts_n)
-
-
+    rectangles = get_dict(original_data_bool, m, n,ts_m, ts_n)
     # create a dictionary of code words
     estimated_size, estimated_all,cw_dict,root,tree_size,encode_text=compute_huffman_code(rectangles,original_data_bool,m, n)
 
@@ -118,28 +99,6 @@ def compute_leading_tailing_zeros(array):
                 break
         trailing_zeros_array[i] = 32 - trailing_zeros
     return leading_zeros_array, trailing_zeros_array
-def compute_leading_tailing_zeros1(array):
-    leading_zeros_array = np.zeros(array.shape[0])
-    for i in range(array.shape[0]):
-        leading_zeros = 0
-        # find first non zero in array[i]
-        for j in range(array.shape[1]):
-            if array[i, j] == 1:
-                leading_zeros += 1
-            else:
-                break
-        leading_zeros_array[i] = leading_zeros
-
-    trailing_zeros_array = np.zeros(array.shape[0])
-    for i in range(array.shape[0]-1, -1, -1):
-        trailing_zeros = 0
-        for j in range(array.shape[1]-1, -1, -1):
-            if array[i, j] == 1:
-                trailing_zeros += 1
-            else:
-                break
-        trailing_zeros_array[i] = 32 - trailing_zeros
-    return leading_zeros_array, trailing_zeros_array
 def decompose_array(min_lead, max_lead, min_tail, max_tail, array):
     leading_zero_array = array[:, :min_lead]
     assert np.sum(leading_zero_array) == 0
@@ -156,46 +115,6 @@ def decompose_array_three(max_lead, min_tail, array):
     content_array = array[:, max_lead:min_tail]
     trailing_zero_array = array[:, min_tail:]
     return leading_zero_array, content_array, trailing_zero_array
-def decomposition_based_compression1(image_ts, leading_zero_pos, tail_zero_pos,m,n):
-    min_lead, max_lead, avg_lead, min_tail, max_tail, avg_tail = int(np.min(leading_zero_pos)), int(np.max(leading_zero_pos)), \
-        int(np.mean(leading_zero_pos)), int(np.min(tail_zero_pos)), int(np.max(tail_zero_pos)), int(np.mean(tail_zero_pos))
-    print("Min Lead: ", min_lead, "Max Lead: ", max_lead, "avg lead: ", avg_lead, "Min Tail: ", min_tail, "Max Tail: ", max_tail, "Avg Tail: ", avg_tail)
-    bnd1 = max_lead if max_lead < 28 else avg_lead  # 28 and 4 are ad hoc number to avoid weird case all zeros
-
-    bnd2 = min_tail if min_tail >= 4 else avg_tail
-
-    print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
-    leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2, image_ts)
-    ts_m_l, ts_n_l = leading_zero_array_orig.shape
-    if ts_n_l != 0 :
-        dict_leading, root_leading, tree_size_leading, encoded_text_leading = pattern_based_compressor(
-            leading_zero_array_orig, 0, 0, ts_m_l, ts_n_l)
-    else:
-        dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
-
-    #dict_leading, root_leading, tree_size_leading, encoded_text_leading = pattern_based_compressor(leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
-    ts_m_c, ts_n_c = content_array_orig.shape
-    if ts_n_c != 0 :
-        dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(content_array_orig, m, n, ts_m_c, ts_n_c)
-    else:
-        dict_content, root_content, tree_size_content, encoded_text_content  = {}, None, 0, ''
-
-    #dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(content_array_orig, m, n, ts_m_c, ts_n_c)
-
-    ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
-    if ts_n_t != 0 :
-        dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(trailing_mixed_array_orig,0, 0, ts_m_t, ts_n_t)
-    else:
-        dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing= {}, None, 0, ''
-
-    #dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(trailing_mixed_array_orig,m, n, ts_m_t, ts_n_t)
-    ##########################
-    original_sorted_values1 = [value for key, value in dict_leading.items()]
-    Decodedata = pattern_based_decompressor(dict_leading, encoded_text_leading, m, n, ts_m_l, ts_n_l)
-    verify_flag_data1 = np.array_equal(leading_zero_array_orig, Decodedata)
-    print(verify_flag_data1)
-
-    return dict_leading,encoded_text_leading,dict_content,encoded_text_content,dict_trailing,encoded_text_trailing
 def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos,m,n):
     min_lead, max_lead, avg_lead, min_tail, max_tail, avg_tail = int(np.min(leading_zero_pos)), int(np.max(leading_zero_pos)), \
         int(np.mean(leading_zero_pos)), int(np.min(tail_zero_pos)), int(np.max(tail_zero_pos)), int(np.mean(tail_zero_pos))
@@ -203,13 +122,10 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos,m,
     bnd1 = max_lead if max_lead < 28 else avg_lead  # 28 and 4 are ad hoc number to avoid weird case all zeros
 
     bnd2 = min_tail if min_tail >= 4 else avg_tail
-   # bnd2=avg_tail
     print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
     leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2, image_ts)
     ts_m_l, ts_n_l = leading_zero_array_orig.shape
     if ts_n_l != 0 :
-        dict_leading_h, root_leading_h, tree_size_leading_h, encoded_text_leading_h = pattern_based_compressor(
-            leading_zero_array_orig, 0, 0, ts_m_l, ts_n_l)
         dict_leading, root_leading, tree_size_leading, encoded_text_leading = pattern_based_compressor(
             leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
     else:
@@ -226,19 +142,18 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos,m,
 
     ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
     if ts_n_t != 0 :
-        dict_trailing_h, root_trailing_h, tree_size_trailing_h, encoded_text_trailing_h = pattern_based_compressor(trailing_mixed_array_orig,0, 0, ts_m_t, ts_n_t)
-        dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t)
+        dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(trailing_mixed_array_orig,m, n, ts_m_t, ts_n_t)
     else:
         dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing= {}, None, 0, ''
 
     #dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(trailing_mixed_array_orig,m, n, ts_m_t, ts_n_t)
     ##########################
     original_sorted_values1 = [value for key, value in dict_leading.items()]
-   # Decodedata = pattern_based_decompressor(dict_leading, encoded_text_leading, m, n, ts_m_l, ts_n_l)
-    #verify_flag_data1 = np.array_equal(leading_zero_array_orig, Decodedata)
-   # print(verify_flag_data1)
+    Decodedata = pattern_based_decompressor(dict_leading, encoded_text_leading, m, n, ts_m_l, ts_n_l)
+    verify_flag_data1 = np.array_equal(leading_zero_array_orig, Decodedata)
+    print(verify_flag_data1)
 
-    return dict_leading,encoded_text_leading,dict_content,encoded_text_content,dict_trailing,encoded_text_trailing,dict_trailing_h,encoded_text_trailing_h,dict_leading_h,encoded_text_leading_h
+    return dict_leading,encoded_text_leading,dict_content,encoded_text_content,dict_trailing,encoded_text_trailing
 
 def measure_total_compressed_size( encoded_string, huffman_codes):
     dic_size_bits = 0
@@ -254,13 +169,6 @@ def measure_total_compressed_size( encoded_string, huffman_codes):
    # print("huffman_dict_size: ", huffman_dict_size)
     #print("encoded_size: ", encoded_size)
     return total_compressed_size,encoded_size,dic_size_bits
-def compress_with_zstd(data, level=3):
-    import zstandard as zstd
-    cctx = zstd.ZstdCompressor(level=level)
-    compressed = cctx.compress(data)
-    # comp ratio
-    comp_ratio = len(data.tobytes()) / len(compressed)
-    return compressed, comp_ratio
 
 def run_and_collect_data(dataset_path):
     results = []
@@ -269,7 +177,7 @@ def run_and_collect_data(dataset_path):
 
     #dataset_path="/home/jamalids/Documents/2D/UCRArchive_2018/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     dataset_path= "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
-
+    dataset_path="/home/jamalids/Documents/2D/data1/citytemp_f32.tsv"
 
     ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
     #ts_data1 = ts_data1.iloc[0:4, 0:3]
@@ -277,31 +185,21 @@ def run_and_collect_data(dataset_path):
     # Get the shape of the data
     row, col = ts_data1.shape
     # Calculate the remainder
-   # remainder = row % m
+    remainder = row % m
     # Adjust h to be the largest number divisible by m if it's not already divisible
-   # if remainder != 0:
-    #    row = row - remainder
+    if remainder != 0:
+        row = row - remainder
     # Select only the rows that are divisible by m
     ts_data1 = ts_data1.iloc[:row, :]
 
     groups = ts_data1.groupby(0)
-    if 1==1:
-    #for group_id, group in groups:
-        group=ts_data1
+    for group_id, group in groups:
         group.drop(group.columns[0], axis=1, inplace=True)
         group.fillna(0, inplace=True)
         group = group.astype(np.float32)
         group = group.to_numpy().reshape(-1)
         ts_m = group.shape[0]
         bool_array = float_to_ieee754(group)
-        # zstd:
-        zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
-        print("len:", len(zstd_compressed_ts) * 8, "zstd default:", comp_ratio_zstd_default)
-
-        zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
-        print("len:", len(zstd_compressed_ts_l22) * 8, "zstd ultimate:", comp_ratio_l22)
-
-
         # Compress the data
         inverse_cw_dict,root,tree_size,encoded_text = pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
 
@@ -313,19 +211,10 @@ def run_and_collect_data(dataset_path):
         print(verify_flag_data)
         # pattern based decomposition
         l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
-        dict_leading,encoded_text_leading,dict_content,encoded_text_content,dict_trailing,encoded_text_trailing,dict_trailing_h,encoded_text_trailing_h,dict_leading_h,encoded_text_leading_h=decomposition_based_compression(bool_array, l_z_array, t_z_array,m,n)
-        leading_compressed_size_1,l_encoded_size_1,l_dic_size_bits_1=measure_total_compressed_size(encoded_text_leading, dict_leading)
+        dict_leading,encoded_text_leading,dict_content,encoded_text_content,dict_trailing,encoded_text_trailing=decomposition_based_compression(bool_array, l_z_array, t_z_array,m,n)
+        leading_compressed_size,l_encoded_size,l_dic_size_bits=measure_total_compressed_size(encoded_text_leading, dict_leading)
         content_compressed_size,c_encoded_size,c_dic_size_bits = measure_total_compressed_size(encoded_text_content, dict_content)
-        trailing_compressed_size_1,t_encoded_size_1,t_dic_size_bits_1 = measure_total_compressed_size(encoded_text_trailing, dict_trailing)
-        leading_compressed_size_h, l_encoded_size_h, l_dic_size_bits_h = measure_total_compressed_size(encoded_text_leading_h,dict_leading_h)
-        trailing_compressed_size_h, t_encoded_size_h, t_dic_size_bits_h = measure_total_compressed_size(encoded_text_trailing_h,dict_trailing_h)
-        leading_compressed_size = min(leading_compressed_size_1,leading_compressed_size_h)
-        l_encoded_size = min(l_encoded_size_1, l_encoded_size_h)
-        l_dic_size_bits = min(l_dic_size_bits_1, l_dic_size_bits_h)
-        trailing_compressed_size = min(trailing_compressed_size_1, trailing_compressed_size_h)
-        t_encoded_size = min(t_encoded_size_1, t_encoded_size_h)
-        t_dic_size_bits = min(t_dic_size_bits_1, t_dic_size_bits_h)
-
+        trailing_compressed_size,t_encoded_size,t_dic_size_bits = measure_total_compressed_size(encoded_text_trailing, dict_trailing)
         total_compressed_size_d =leading_compressed_size+ content_compressed_size+trailing_compressed_size
         total_compressed_size =l_encoded_size+ c_encoded_size+t_encoded_size
 
@@ -335,14 +224,14 @@ def run_and_collect_data(dataset_path):
         print(f"Size of bool_array: {bool_array_size} bytes")
 
         # If you need the size in bits
-        bool_array_size_bits = bool_array_size
+        bool_array_size_bits = bool_array_size * 8
         com_ratio_d=bool_array_size_bits/total_compressed_size_d
         com_ratio = bool_array_size_bits / total_compressed_size
         com_ratio_tot_d = bool_array_size_bits / tot_compressed_size
         com_ratio_tot = bool_array_size_bits / tot_encoded_size
 
         results.append({
-            #"group_id":group_id,
+
             "Original Size (bits)": bool_array_size_bits,
             "tot_compressed_size":tot_compressed_size,
             "tot_encoded_size":tot_encoded_size,
@@ -359,13 +248,11 @@ def run_and_collect_data(dataset_path):
             "com_ratio_dict":com_ratio_d,
             "com_ratio":com_ratio,
             "com_ratio_tot_d ":com_ratio_tot_d,
-            "com_ratio_tot":com_ratio_tot,
-            "comp_ratio_zstd_default":comp_ratio_zstd_default,
-            "comp_ratio_l22":comp_ratio_l22
+            "com_ratio_tot":com_ratio_tot
 
         })
 
-    return pd.DataFrame(results)
+        return pd.DataFrame(results)
 
 
 
@@ -391,6 +278,5 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data(dataset_path)
-    df_results.to_csv('results12.csv')
+    df_results.to_csv('results11.csv')
    # df_results.to_csv(log_file, index=False, header=True)
-

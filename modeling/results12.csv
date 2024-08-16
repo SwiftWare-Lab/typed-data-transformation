@@ -1,0 +1,2 @@
+,Original Size (bits),tot_compressed_size,tot_encoded_size,tot_dic_size_bits,d_leading compressed Size,d_content compressed Size,d_trailing compressed Size,l_encoded_size,l_dic_size_bits,c_encoded_size,c_dic_size_bits,t_encoded_size,t_dic_size_bits,com_ratio_dict,com_ratio,com_ratio_tot_d ,com_ratio_tot,comp_ratio_zstd_default,comp_ratio_l22
+0,4672000,3500393,3496200,4193,65883,1481387,1708808,65445,9,1476830,4557,1704741,4067,1.4348550618259144,1.4388595559738542,1.334707274297486,1.336307991533665,2.5751943522107426,3.021023009435524

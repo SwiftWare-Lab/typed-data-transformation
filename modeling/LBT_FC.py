@@ -172,7 +172,7 @@ def measure_total_compressed_size( encoded_string, huffman_codes):
 
 def run_and_collect_data(dataset_path):
     results = []
-    m, n = 8, 1
+    m, n = 16,1
     ts_n = 32
 
     dataset_path="/home/jamalids/Documents/2D/data1/citytemp_f32.tsv"
@@ -229,7 +229,7 @@ def run_and_collect_data(dataset_path):
         print(f"Size of bool_array: {bool_array_size} bytes")
 
         # If you need the size in bits
-        bool_array_size_bits = bool_array_size * 8
+        bool_array_size_bits = bool_array_size
         com_ratio_d=bool_array_size_bits/total_compressed_size_d
         com_ratio = bool_array_size_bits / total_compressed_size
         com_ratio_tot_d = bool_array_size_bits / tot_compressed_size
@@ -283,6 +283,6 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data(dataset_path)
-    df_results.to_csv('results11.csv')
+    df_results.to_csv('results12.csv')
    # df_results.to_csv(log_file, index=False, header=True)
 

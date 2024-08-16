@@ -1,3 +1,5 @@
+import sys
+
 import matplotlib.pyplot as plt
 from skimage.feature import local_binary_pattern
 from skimage import io
@@ -306,14 +308,13 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos):
 
     plot_historgam(dict_freq_pattern, axs[1, 0], True, "Patterns")
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
-    #tune_decomp = [0, 1, 2]
-    tune_decomp = [0]
+    tune_decomp = [0, 1, 2]
     for i in tune_decomp:
         print("Tune Decomp: ", i)
         bnd1 = bnd1 + i
         bnd2 = bnd2 - i
         leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2, image_ts)
-        pattern_size_list = [8] # this is a  tuning parameter
+        pattern_size_list = [4, 6, 8, 10, 12] # this is a  tuning parameter
         for pattern_size in pattern_size_list:
             print("Pattern Size: ", pattern_size)
             binary_patterns, binary_code = create_binary_patterns(pattern_size)
@@ -332,25 +333,14 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos):
 
     tot_decomp_tot_size = np.min(lead_comp_size) + np.min(content_comp_size) + np.min(tail_comp_size)
 
-
     return tot_decomp_tot_size
 
-def float_to_ieee754(f):
 
-    def float_to_binary_array(single_f):
-
-        binary_str = format(np.float32(single_f).view(np.uint32), '032b')
-        return np.array([int(bit) for bit in binary_str], dtype=np.uint8)
-
-    if isinstance(f, np.ndarray):
-        # Apply the conversion to each element in the numpy array
-        return np.array([float_to_binary_array(single_f) for single_f in f.ravel()]).reshape(f.shape + (32,))
-    else:
-        # Apply the conversion to a single float
-        return float_to_binary_array(f)
 # main
+#array_size = int(sys.argv[1])
+#pattern_size = int(sys.argv[2])
 array_size = 100
-pattern_size = 8
+pattern_size =4
 binary_patterns, binary_code = create_binary_patterns(pattern_size)
 
 # make a plot with 4x2 subplots
@@ -358,28 +348,15 @@ fig, axs = plt.subplots(2, 3, figsize=(20, 10))
 # increase the distance of two row subplots
 plt.subplots_adjust(hspace=0.5)
 
-#path_tsv = sys.argv[3]
-#path_tsv="/home/jamalids/Documents/2D/UCRArchive_2018/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
-path_tsv= "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
-ts_dataset1 = pd.read_csv(path_tsv, delimiter='\t', header=None)
-#ts_dataset1 = ts_dataset1.iloc[0:4, 0:3]
-
-#groups = ts_dataset1.groupby(0)
-log_dict = {}
-#for group_id, group in groups:
 if 1==1:
-    group=ts_dataset1
-    group.drop(group.columns[0], axis=1, inplace=True)
-    group.fillna(0, inplace=True)
-    #group = group.astype(np.float32)
-   # group = group.to_numpy().reshape(-1)
-    ts_m = group.shape[0]
-    #bool_array = float_to_ieee754(group)
+    log_dict = {}
+    #path_tsv = sys.argv[3]
+    path_tsv = "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    # load tsf in df
+    ts_dataset = pd.read_csv(path_tsv, delimiter="\t")
     # drop the first column
-    ts_dataset=group
-    #ts_dataset.drop(ts_dataset.columns[0], axis=1, inplace=True)
+    ts_dataset.drop(ts_dataset.columns[0], axis=1, inplace=True)
     # convert to numpy array
-
     ts_array = ts_dataset.to_numpy().flatten().astype(np.float32)
     original_size_bits = len(ts_array.tobytes()) * 8
     # plot the ts
@@ -411,8 +388,7 @@ if 1==1:
     # pattern based
     new_array_size = ts_array.shape[0] - ts_array.shape[0] % pattern_size
     ts_array_trimmed = ts_array[:new_array_size]
-    #bool_array = floats_to_bool_arrays(ts_array_trimmed)
-    bool_array = float_to_ieee754(ts_array_trimmed)
+    bool_array = floats_to_bool_arrays(ts_array_trimmed)
     image_ts = b_array_to_int_array(bool_array)
     est_size_pattern, est_tot_size_pattern, dict_freq_pattern = profile_data(image_ts, binary_patterns, binary_code, "TS: "+path_tsv)
     print("CR Global pattern based ", pattern_size, " : ", original_size_bits / est_tot_size_pattern)
@@ -422,7 +398,7 @@ if 1==1:
     # pattern based decomposition
     l_z_array, t_z_array = compute_leading_tailing_zeros(image_ts)
     tot_decomp_tot_size = decomposition_based_compression(image_ts, l_z_array, t_z_array)
-    print("TS11: ", tot_decomp_tot_size, est_tot_size_pattern, original_size_bits, "--", original_size_bits / tot_decomp_tot_size)
+    print("TS: ", tot_decomp_tot_size, est_tot_size_pattern, original_size_bits, "--", original_size_bits / tot_decomp_tot_size)
     log_dict["Decomposition Based (bytes)"] = tot_decomp_tot_size//8
 
     comp_ratio_array = np.array([comp_ratio_zstd_default, comp_ratio_l22, original_size_bits / Non_uniform_1x4, original_size_bits / uniform_code_len, original_size_bits / est_tot_size_pattern, original_size_bits / tot_decomp_tot_size])
@@ -473,3 +449,35 @@ else:
 # plt.bar(np.arange(n_bins), hist, color='b')
 # plt.title("LBP Histogram")
 # plt.show()
+# plt.close()
+#
+#
+#
+# lbp_osc = local_binary_pattern(image_oscilate, neighbors, radius)
+# hist_osc, _ = np.histogram(lbp_osc, bins=n_bins, range=(0, n_bins))
+#
+# plt.imshow(image_oscilate, cmap="gray")
+# plt.title("Local Binary Pattern (LBP) Oscilating Features")
+# plt.show()
+# plt.close()
+#
+#
+#
+# plt.bar(np.arange(n_bins), hist_osc, color='b')
+# plt.title("LBP Oscilating Histogram")
+# plt.show()
+# plt.close()
+#
+#
+# lbp_random = local_binary_pattern(image_random, neighbors, radius)
+# hist_random, _ = np.histogram(lbp_random, bins=n_bins, range=(0, n_bins))
+#
+# plt.imshow(image_random, cmap="gray")
+# plt.title("Local Binary Pattern (LBP) Random Features")
+# plt.show()
+# plt.close()
+#
+# plt.bar(np.arange(n_bins), hist_random, color='b')
+# plt.title("LBP Random Histogram")
+# plt.show()
+# plt.close()

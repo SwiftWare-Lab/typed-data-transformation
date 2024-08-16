@@ -26,6 +26,7 @@ class Node:
 def create_huffman_tree(char_freq_map):
 
   nodes = [Node(char, freq) for char, freq in char_freq_map.items()]
+  heapq.heapify(nodes) # Convert the list of nodes into a heap
   while len(nodes) > 1:
     # Get two nodes with the lowest frequencies
     min1, min2 = heapq.heappop(nodes), heapq.heappop(nodes)
@@ -71,7 +72,19 @@ def encode_data(bool_array, m, n, huffman_codes):
       encoded_string += huffman_codes.get(rect_int, "")
 
   return encoded_string
+def encode_data_L_T(bool_array, m, n, huffman_codes):
 
+  ts_m, ts_n = len(bool_array), len(bool_array[0])
+  encoded_string = ""
+
+  for i in range(0, ts_n, ts_n):
+    for j in range(0, ts_m, 1):
+      # Extract the m x n pattern
+      rect = bool_array[j:j + 1, i:i + ts_n]
+      rect_int = binary_to_int(rect)
+      encoded_string += huffman_codes.get(rect_int, "")
+
+  return encoded_string
 def calculate_size_of_huffman_tree(node):
   """
   Calculate the total size of the Huffman tree in bytes.
@@ -97,7 +110,7 @@ def calculate_size_of_huffman_tree(node):
 
 
 def decode(encoded_text, root, m, n, original_shape):
-  
+
   ts_m, ts_n = original_shape
   decoded_ints = []
   current_node = root
