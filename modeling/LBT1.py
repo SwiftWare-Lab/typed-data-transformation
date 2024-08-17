@@ -2,6 +2,8 @@ import sys
 
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
+
 from utils import binary_to_int
 import argparse
 from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data
@@ -115,61 +117,6 @@ def decompose_array_three(max_lead, min_tail, array):
     content_array = array[:, max_lead:min_tail]
     trailing_zero_array = array[:, min_tail:]
     return leading_zero_array, content_array, trailing_zero_array
-def decomposition_based_compression1(image_ts, leading_zero_pos, tail_zero_pos,m,n):
-    min_lead, max_lead, avg_lead, min_tail, max_tail, avg_tail = int(np.min(leading_zero_pos)), int(np.max(leading_zero_pos)), \
-        int(np.mean(leading_zero_pos)), int(np.min(tail_zero_pos)), int(np.max(tail_zero_pos)), int(np.mean(tail_zero_pos))
-    print("Min Lead: ", min_lead, "Max Lead: ", max_lead, "avg lead: ", avg_lead, "Min Tail: ", min_tail, "Max Tail: ", max_tail, "Avg Tail: ", avg_tail)
-    bnd1 = max_lead if max_lead < 28 else avg_lead  # 28 and 4 are ad hoc number to avoid weird case all zeros
-
-    bnd2 = min_tail if min_tail >= 4 else avg_tail
-    tune_decomp = [0, 1, 2]
-    lead_comp_size, tail_comp_size, content_comp_size = [], [], []
-    lead_comp_size_d, tail_comp_size_d, content_comp_size_d= [], [], []
-    for i in tune_decomp:
-        print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
-        print("Tune Decomp: ", i)
-        bnd1 = bnd1 + i
-        bnd2 = bnd2 - i
-        leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,
-                                                                                                       image_ts)
-        ts_m_l, ts_n_l = leading_zero_array_orig.shape
-        if ts_n_l != 0:
-            dict_leading, root_leading, tree_size_leading, encoded_text_leading = pattern_based_compressor(
-                leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
-        else:
-            dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
-
-        # dict_leading, root_leading, tree_size_leading, encoded_text_leading = pattern_based_compressor(leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
-        ts_m_c, ts_n_c = content_array_orig.shape
-        if ts_n_c != 0:
-            dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(
-                content_array_orig, m, n, ts_m_c, ts_n_c)
-        else:
-            dict_content, root_content, tree_size_content, encoded_text_content = {}, None, 0, ''
-
-        # dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(content_array_orig, m, n, ts_m_c, ts_n_c)
-
-        ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
-        if ts_n_t != 0:
-            dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(
-                trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t)
-        else:
-            dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = {}, None, 0, ''
-
-        lead_comp_size_d.append(dict_leading)
-        tail_comp_size_d.append(dict_trailing)
-        content_comp_size_d.append(dict_content)
-        lead_comp_size.append(encoded_text_leading)
-        tail_comp_size.append(encoded_text_trailing)
-        content_comp_size.append(encoded_text_content)
-        # dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(trailing_mixed_array_orig,m, n, ts_m_t, ts_n_t)
-        ##########################
-        original_sorted_values1 = [value for key, value in dict_leading.items()]
-    #  Decodedata = pattern_based_decompressor(dict_leading, encoded_text_leading, m, n, ts_m_l, ts_n_l)
-    #  verify_flag_data1 = np.array_equal(leading_zero_array_orig, Decodedata)
-    #  print(verify_flag_data1)
-
-    return lead_comp_size, tail_comp_size, content_comp_size,lead_comp_size_d, tail_comp_size_d, content_comp_size_d
 
 
 def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m, n):
@@ -184,6 +131,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     # Set bounds based on ad-hoc conditions
     bnd1 = max_lead if max_lead < 28 else avg_lead
     bnd2 = min_tail if min_tail >= 4 else avg_tail
+    plot_ts(leading_zero_pos, axs[1, 1], "Leading Zeros")
+    plot_ts(tail_zero_pos, axs[1, 2], "Trailing Zeros")
 
     # Tune decomposition steps
     tune_decomp = [0, 1, 2]
@@ -209,7 +158,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         # Compress leading zero array
         ts_m_l, ts_n_l = leading_zero_array_orig.shape
         if ts_n_l != 0:
-            dict_leading, root_leading, tree_size_leading, encoded_text_leading = pattern_based_compressor(
+            dict_leading, root_leading, tree_size_leading, encoded_text_leading, = pattern_based_compressor(
                 leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
         else:
             dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
@@ -281,6 +230,7 @@ def huffman_code_array(array):
     # Create Huffman codes dictionary
     codes = {}
     create_huffman_codes(root, "", codes)
+    #plot_historgam(codes, axs[1, 0], True, "Patterns")
     # print(codes)
     estimated_size = 0
     for key in codes:
@@ -296,42 +246,107 @@ def compute_repetition(array):
     max_top_10 = np.argsort(counts)[-50:]
     #print("Top 10 values: ", unique[max_top_10], counts[max_top_10])
     return dict(zip(unique, counts))
+#############################################################3
+PLOTING_DISABLE = False
+# make a plot with 4x2 subplots
+fig, axs = plt.subplots(2, 3, figsize=(20, 10))
+# increase the distance of two row subplots
+plt.subplots_adjust(hspace=0.5)
 
+def plot_historgam(freq_dict, ax=None, log_scale=False, y_label=""):
+    if PLOTING_DISABLE:
+        return
+    ax.bar(freq_dict.keys(), freq_dict.values(), color='b')
+    # log scale
+    if log_scale:
+        ax.set_yscale('log')
+    ax.set_ylabel("Frequency of "+ y_label)
+    # set y label
+
+
+def plot_bar(values, x_labels, y_label, ax=None):
+    if PLOTING_DISABLE:
+        return
+    ax.bar(np.arange(len(values)), values, color='b')
+    ax.set_xticks(np.arange(len(x_labels)))
+    ax.set_xticklabels(x_labels, rotation=45)
+    ax.set_ylabel(y_label)
+def plot_ts(ts_array, ax=None, plot_y_axis=""):
+    if PLOTING_DISABLE:
+        return
+    ax.plot(ts_array)
+    #ax.set_title(plot_title)
+    # set y axis
+    ax.set_ylabel(plot_y_axis)
+name_dataset="hst_wfc3_ir_f32"
 
 def run_and_collect_data(dataset_path):
     results = []
     m, n = 8, 2
     ts_n = 32
-    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    #dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018/Car/Car_TEST.tsv"
+    #dataset_path = "/home/jamalids/Documents/2D/data1/citytemp_f32.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/hst_wfc3_ir_f32.tsv"
 
     ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
-
-    # Adjust the dataset to be divisible by m
-    row, col = ts_data1.shape
-    remainder = row % m
-    if remainder != 0:
-        row = row - remainder
-    ts_data1 = ts_data1.iloc[:row, :]
-
-    group = ts_data1.drop(ts_data1.columns[0], axis=1)
+    ts_data1 = ts_data1.iloc[0:500000, :]
+    ts_data1 = ts_data1.iloc[:, 1:]
+    group= ts_data1.T
+    #group = group.drop(ts_data1.columns[0], axis=1)
     group = group.astype(np.float32).to_numpy().reshape(-1)
-    ts_m = group.shape[0]
+    # Calculate the total number of elements
+    total_elements = len(group)
+
+    # Calculate the number of positive and negative values
+    positive_values = np.sum(group > 0)
+    negative_values = np.sum(group < 0)
+
+    # Calculate the percentages
+    positive_percentage = (positive_values / total_elements) * 100
+    negative_percentage = (negative_values / total_elements) * 100
+    codes={"positive_percentage":positive_percentage,"negative_percentage":negative_percentage}
+    plot_historgam(codes, axs[1, 0], True, "Patterns")
+    # plot the ts
+    plot_ts(group, axs[0, 0], "Original Values")
+
+    # group=[1.4260641, 1.3833925 ,1.6273729 ,1.5902346 ,1.6512119, 1.6114463 ,2.0275657, 2.0275657]
+
+
 
     # Zstd and Huffman
     zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
     zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
     est_size, Non_uniform_1x4 = huffman_code_array(group)
+    bool_array = float_to_ieee754(group)
+    bool_array_size_bits = bool_array.nbytes  # Size in bits
+    # 1x4 compression
+    frq_dict = compute_repetition(group)
+    plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
-    pattern_size_list = [4, 6, 8, 10, 12]
-    n_list = [1, 2]
+
+
+
+    pattern_size_list = [4]
+    n_list = [2]
 
     for m in pattern_size_list:
         for n in n_list:
+            print("m",m,"n",n)
+
+            group = ts_data1.T
+            #group = group.drop(ts_data1.columns[0], axis=1)
+            group = group.astype(np.float32).to_numpy().reshape(-1)
+            new_array_size = group.shape[0] - group.shape[0] % m
+            group = group[:new_array_size]
+            ts_m = group.shape[0]
+            #group = [1.4260641, 1.3833925, 1.6273729, 1.5902346, 1.6512119, 1.6114463, 2.0275657, 2.0275657]
             bool_array = float_to_ieee754(group)
             bool_array_size_bits = bool_array.nbytes  # Size in bits
 
             # Compress the data
             inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
+
 
             # Decompress the data
             Decodedata = pattern_based_decompressor(inverse_cw_dict, encoded_text, m, n, ts_m, ts_n)
@@ -341,8 +356,7 @@ def run_and_collect_data(dataset_path):
 
             # Pattern-based decomposition
             l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
-            encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content = decomposition_based_compression(
-                bool_array, l_z_array, t_z_array, m, n)
+            encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content = decomposition_based_compression(bool_array, l_z_array, t_z_array, m, n)
 
             # Initialize a dictionary to hold the b1, b2, b3, ..., bn values
             result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
@@ -442,6 +456,8 @@ def run_and_collect_data(dataset_path):
             # Store Zstd and Huffman results
             result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
             result_row["comp_ratio_l22"] = comp_ratio_l22
+            result_row["Non_uniform_1x4"]=Non_uniform_1x4
+            result_row["bool_array_size_bits"]=bool_array_size_bits
 
             results.append(result_row)
 
@@ -468,5 +484,28 @@ if __name__ == "__main__":
     num_threads = args.num_threads
     mode = args.mode
     df_results = run_and_collect_data(dataset_path)
-    df_results.to_csv('results11.csv')
+    df1=df_results
+    df_results["max_com_ratio"] = df_results[["com_ratio_b1", "com_ratio_b2", "com_ratio_b3"]].max(axis=1)
+    Decomposion_pattern=max(df_results["max_com_ratio"])
+    df_results["t-max_com_ratio"] = df_results[["t_com_ratio_b1", "t_com_ratio_b2", "t_com_ratio_b3"]].max(axis=1)
+    Decomposion_pattern_with_dict=max(df_results["t-max_com_ratio"])
+    comp_ratio_zstd_default=max(df_results["comp_ratio_zstd_default"])
+    comp_ratio_l22=max(df_results["comp_ratio_l22"])
+    Non_uniform_1x4=max(df_results["Non_uniform_1x4"])
+    bool_array_size_bits=max(df_results["bool_array_size_bits"])
+    comp_ratio_array = np.array([
+        comp_ratio_zstd_default,
+        comp_ratio_l22,
+        bool_array_size_bits / Non_uniform_1x4,
+        Decomposion_pattern,
+        Decomposion_pattern_with_dict
+
+    ])
+    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4","Decomposion pattern","Decomposion pattern with dict"], "Compression Ratio", axs[0, 2])
+    if not PLOTING_DISABLE:
+        plt.title(name_dataset)
+        # plt.show()
+        plt.savefig(f"results/{name_dataset}.png")
+        plt.close()
+    df1.to_csv('hst_wfc3_ir_f32.csv')
    # df_results.to_csv(log_file, index=False, header=True)

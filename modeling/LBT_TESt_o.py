@@ -351,7 +351,8 @@ plt.subplots_adjust(hspace=0.5)
 if 1==1:
     log_dict = {}
     #path_tsv = sys.argv[3]
-    path_tsv = "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    #path_tsv = "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    path_tsv = "/home/jamalids/Documents/2D/UCRArchive_2018/Car/Car_TEST.tsv"
     # load tsf in df
     ts_dataset = pd.read_csv(path_tsv, delimiter="\t")
     # drop the first column
@@ -412,9 +413,7 @@ if 1==1:
 
     # plot the compression ratio
     #plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Uniform 1x4", "Huffman Enumerated "+str(pattern_size), "Decomposition Pattern"], "Compression Ratio", axs[0, 2])
-    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Uniform 1x4",
-                                "Huffman Enumerated " + str(pattern_size)],
-             "Compression Ratio", axs[0, 2])
+    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Uniform 1x4", "Huffman Enumerated " + str(pattern_size)], "Compression Ratio", axs[0, 2])
 
     name_dataset = log_dict["Dataset Name"]
     if not PLOTING_DISABLE:
