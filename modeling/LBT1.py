@@ -1,3 +1,4 @@
+import math
 import sys
 
 import pandas as pd
@@ -22,6 +23,34 @@ def float_to_ieee754(f):
     else:
         # Apply the conversion to a single float
         return float_to_binary_array(f)
+
+def calculate_entropy_float(data):
+    """Calculate the Shannon entropy of quantized data."""
+    value, counts = np.unique(data, return_counts=True)
+    probabilities = counts / counts.sum()
+    entropy = -np.sum(probabilities * np.log2(probabilities))
+    return entropy
+
+def calculate_entropy(binary_data):
+    # Calculate the frequency of each unique binary pattern
+    frequencies = {}
+    for binary in binary_data:
+        # Convert the numpy array to a tuple to use it as a dictionary key
+        binary_tuple = tuple(binary.flatten())
+        if binary_tuple in frequencies:
+            frequencies[binary_tuple] += 1
+        else:
+            frequencies[binary_tuple] = 1
+
+    # Calculate probabilities and entropy
+    entropy = 0
+    total_count = len(binary_data)
+    for freq in frequencies.values():
+        probability = freq / total_count
+        entropy -= probability * math.log2(probability)
+
+    return entropy
+
 def get_dict(bool_array, m, n,ts_m, ts_n):
     rectangles = {}
     rectangles1 = {}
@@ -131,8 +160,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     # Set bounds based on ad-hoc conditions
     bnd1 = max_lead if max_lead < 28 else avg_lead
     bnd2 = min_tail if min_tail >= 4 else avg_tail
-    plot_ts(leading_zero_pos, axs[1, 1], "Leading Zeros")
-    plot_ts(tail_zero_pos, axs[1, 2], "Trailing Zeros")
+    plot_ts(leading_zero_pos, axs[1, 0], "Leading Zeros")
+    plot_ts(tail_zero_pos, axs[1, 1], "Trailing Zeros")
 
     # Tune decomposition steps
     tune_decomp = [0, 1, 2]
@@ -140,6 +169,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     # Initialize lists to store compressed sizes and dictionaries
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
     lead_comp_size_d, tail_comp_size_d, content_comp_size_d = [], [], []
+    lead_entropy, tail_entropy, content_entropy = [], [], []
 
     for i in tune_decomp:
         print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
@@ -160,24 +190,31 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         if ts_n_l != 0:
             dict_leading, root_leading, tree_size_leading, encoded_text_leading, = pattern_based_compressor(
                 leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
+            leading_entropy=calculate_entropy(leading_zero_array_orig)
         else:
             dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
+            leading_entropy = 0
 
         # Compress content array
         ts_m_c, ts_n_c = content_array_orig.shape
         if ts_n_c != 0:
             dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(
                 content_array_orig, m, n, ts_m_c, ts_n_c)
+            contents_entropy = calculate_entropy(content_array_orig)
         else:
             dict_content, root_content, tree_size_content, encoded_text_content = {}, None, 0, ''
+            contents_entropy = 0
 
         # Compress trailing mixed array
         ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
         if ts_n_t != 0:
             dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(
                 trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t)
+            trailing_entropy = calculate_entropy(trailing_mixed_array_orig)
+
         else:
             dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = {}, None, 0, ''
+            trailing_entropy = 0
 
         # Store compressed sizes and dictionaries
         lead_comp_size_d.append(dict_leading)
@@ -186,13 +223,12 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         lead_comp_size.append(encoded_text_leading)
         tail_comp_size.append(encoded_text_trailing)
         content_comp_size.append(encoded_text_content)
+        lead_entropy.append(leading_entropy)
+        tail_entropy.append(contents_entropy)
+        content_entropy.append(trailing_entropy)
 
-        ##########################
-        # You can add verification or any other process here
-        # Example: original_sorted_values1 = [value for key, value in dict_leading.items()]
 
-    # Return compressed sizes and dictionaries
-    return lead_comp_size, tail_comp_size, content_comp_size, lead_comp_size_d, tail_comp_size_d, content_comp_size_d
+    return lead_comp_size, tail_comp_size, content_comp_size, lead_comp_size_d, tail_comp_size_d, content_comp_size_d,lead_entropy, tail_entropy, content_entropy
 
 
 def measure_total_compressed_size( encoded_string, huffman_codes):
@@ -249,9 +285,9 @@ def compute_repetition(array):
 #############################################################3
 PLOTING_DISABLE = False
 # make a plot with 4x2 subplots
-fig, axs = plt.subplots(2, 3, figsize=(20, 10))
+fig, axs = plt.subplots(4, 2, figsize=(20, 20))
 # increase the distance of two row subplots
-plt.subplots_adjust(hspace=0.5)
+plt.subplots_adjust(hspace=1)
 
 def plot_historgam(freq_dict, ax=None, log_scale=False, y_label=""):
     if PLOTING_DISABLE:
@@ -269,8 +305,46 @@ def plot_bar(values, x_labels, y_label, ax=None):
         return
     ax.bar(np.arange(len(values)), values, color='b')
     ax.set_xticks(np.arange(len(x_labels)))
-    ax.set_xticklabels(x_labels, rotation=45)
+    ax.set_xticklabels(x_labels, rotation=40, ha='right')
     ax.set_ylabel(y_label)
+    # Set the x-axis label explicitly to the bottom-left corner
+    label = ax.set_xlabel('X-axis Label')
+
+
+def plot_line(values, x_labels, y_label, title=None, colors=None, markers=None, linestyles=None, xlabel='X-axis Label',
+              rotation=40, ax=None):
+    """
+    Plot a line chart with given values and labels.
+    """
+    if 'PLOTING_DISABLE' in globals() and PLOTING_DISABLE:
+        return
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    if colors is None:
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    if markers is None:
+        markers = ['o', '^', 's', 'p', '*', 'x', '+']
+    if linestyles is None:
+        linestyles = ['-', '--', '-.', ':']
+
+    for idx, series in enumerate(values):
+        ax.plot(x_labels, series, color=colors[idx % len(colors)], marker=markers[idx % len(markers)],
+                linestyle=linestyles[idx % len(linestyles)], label=f'Series {idx + 1}')
+
+    ax.set_xticks(np.arange(len(x_labels)))
+    ax.set_xticklabels(x_labels, rotation=rotation, ha='right')
+    ax.set_ylabel(y_label)
+    ax.set_xlabel(xlabel)
+
+    if title:
+        ax.set_title(title)
+
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
+
 def plot_ts(ts_array, ax=None, plot_y_axis=""):
     if PLOTING_DISABLE:
         return
@@ -278,7 +352,7 @@ def plot_ts(ts_array, ax=None, plot_y_axis=""):
     #ax.set_title(plot_title)
     # set y axis
     ax.set_ylabel(plot_y_axis)
-name_dataset="hst_wfc3_ir_f32"
+name_dataset="Beef_test.tsv"
 
 def run_and_collect_data(dataset_path):
     results = []
@@ -287,14 +361,18 @@ def run_and_collect_data(dataset_path):
     #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018/Car/Car_TEST.tsv"
     #dataset_path = "/home/jamalids/Documents/2D/data1/citytemp_f32.tsv"
-    dataset_path = "/home/jamalids/Documents/2D/data1/hst_wfc3_ir_f32.tsv"
+    #dataset_path = "/home/jamalids/Documents/2D/data1/hst_wfc3_ir_f32.tsv"
+    dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018/Beef/Beef_TEST.tsv"
 
     ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
-    ts_data1 = ts_data1.iloc[0:500000, :]
-    ts_data1 = ts_data1.iloc[:, 1:]
-    group= ts_data1.T
-    #group = group.drop(ts_data1.columns[0], axis=1)
+    #ts_data1 = ts_data1.iloc[0:500000, :]
+    group = ts_data1
+    #ts_data1 = ts_data1.iloc[:, 1:]
+    #group= ts_data1.T
+    group = group.drop(ts_data1.columns[0], axis=1)
     group = group.astype(np.float32).to_numpy().reshape(-1)
+    entropy_float=calculate_entropy_float(group)
+    print("entropy_float=", entropy_float)
     # Calculate the total number of elements
     total_elements = len(group)
 
@@ -306,7 +384,10 @@ def run_and_collect_data(dataset_path):
     positive_percentage = (positive_values / total_elements) * 100
     negative_percentage = (negative_values / total_elements) * 100
     codes={"positive_percentage":positive_percentage,"negative_percentage":negative_percentage}
-    plot_historgam(codes, axs[1, 0], True, "Patterns")
+    plot_historgam(codes, axs[3, 0], True, "_percentage")
+    codes = {"positive_values": positive_values, "negative_values": negative_values}
+    plot_historgam(codes, axs[3, 1], True, "_values")
+
     # plot the ts
     plot_ts(group, axs[0, 0], "Original Values")
 
@@ -327,21 +408,23 @@ def run_and_collect_data(dataset_path):
 
 
 
-    pattern_size_list = [4]
-    n_list = [2]
+    pattern_size_list = [4,8,10]
+    n_list = [1]
 
     for m in pattern_size_list:
         for n in n_list:
             print("m",m,"n",n)
 
-            group = ts_data1.T
-            #group = group.drop(ts_data1.columns[0], axis=1)
+            group = ts_data1
+            group = group.drop(ts_data1.columns[0], axis=1)
             group = group.astype(np.float32).to_numpy().reshape(-1)
             new_array_size = group.shape[0] - group.shape[0] % m
             group = group[:new_array_size]
             ts_m = group.shape[0]
             #group = [1.4260641, 1.3833925, 1.6273729, 1.5902346, 1.6512119, 1.6114463, 2.0275657, 2.0275657]
             bool_array = float_to_ieee754(group)
+            entropy_all=calculate_entropy(bool_array)
+            print("entropy_all",entropy_all)
             bool_array_size_bits = bool_array.nbytes  # Size in bits
 
             # Compress the data
@@ -356,7 +439,7 @@ def run_and_collect_data(dataset_path):
 
             # Pattern-based decomposition
             l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
-            encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content = decomposition_based_compression(bool_array, l_z_array, t_z_array, m, n)
+            encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content,lead_entropy, tail_entropy, content_entropy = decomposition_based_compression(bool_array, l_z_array, t_z_array, m, n)
 
             # Initialize a dictionary to hold the b1, b2, b3, ..., bn values
             result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
@@ -364,16 +447,18 @@ def run_and_collect_data(dataset_path):
             # Initialize variables to calculate total encoded size for b1, b2, etc.
             total_encoded_b1 = total_encoded_b2 = total_encoded_b3 = 0
             encoded_b1 = encoded_b2 = encoded_b3 = 0
+            entropy_b1 = entropy_b2 = entropy_b3 = 0
 
             # Process leading part
             leading_idx = 1
             if len(encoded_text_leading) == len(dict_leading):
-                for encoded_array, dictionary in zip(encoded_text_leading, dict_leading):
+                for encoded_array, dictionary ,lead_entropy1 in zip(encoded_text_leading, dict_leading,lead_entropy):
                     leading_compressed_size, l_encoded_size, l_dic_size_bits = measure_total_compressed_size(
                         encoded_array, dictionary)
                     result_row[f"b{leading_idx}_leading_compressed_size"] = leading_compressed_size
                     result_row[f"b{leading_idx}_leading_encoded_size"] = l_encoded_size
                     result_row[f"b{leading_idx}_leading_dic_size_bits"] = l_dic_size_bits
+                    result_row[f"b{leading_idx}_leading_entropy"] = lead_entropy1
 
                     # Accumulate encoded size for b1, b2, b3
                     if leading_idx == 1:
@@ -390,17 +475,25 @@ def run_and_collect_data(dataset_path):
                     elif leading_idx == 3:
                         total_encoded_b3 += leading_compressed_size
 
+                    if leading_idx == 1:
+                        entropy_b1 += lead_entropy1
+                    elif leading_idx == 2:
+                        entropy_b2 += lead_entropy1
+                    elif leading_idx == 3:
+                        entropy_b3 += lead_entropy1
+
                     leading_idx += 1
 
             # Process content part (Restart idx to b1 for content)
             content_idx = 1
             if len(encoded_text_content) == len(dict_content):
-                for encoded_array, dictionary in zip(encoded_text_content, dict_content):
+                for encoded_array, dictionary,content_entropy1 in zip(encoded_text_content, dict_content,content_entropy):
                     content_compressed_size, c_encoded_size, c_dic_size_bits = measure_total_compressed_size(
                         encoded_array, dictionary)
                     result_row[f"b{content_idx}_content_compressed_size"] = content_compressed_size
                     result_row[f"b{content_idx}_content_encoded_size"] = c_encoded_size
                     result_row[f"b{content_idx}_content_dic_size_bits"] = c_dic_size_bits
+                    result_row[f"b{content_idx}_content_entropy"] = content_entropy1
 
                     # Accumulate encoded size for b1, b2, b3
                     if content_idx == 1:
@@ -415,18 +508,26 @@ def run_and_collect_data(dataset_path):
                         total_encoded_b2 += content_compressed_size
                     elif content_idx == 3:
                         total_encoded_b3 += content_compressed_size
+                    if leading_idx == 1:
+                        entropy_b1 += content_entropy1
+                    elif leading_idx == 2:
+                        entropy_b2 += content_entropy1
+                    elif leading_idx == 3:
+                        entropy_b3 += content_entropy1
+
 
                     content_idx += 1
 
             # Process trailing part (Restart idx to b1 for trailing)
             trailing_idx = 1
             if len(encoded_text_trailing) == len(dict_trailing):
-                for encoded_array, dictionary in zip(encoded_text_trailing, dict_trailing):
+                for encoded_array, dictionary, tail_entropy1 in zip(encoded_text_trailing, dict_trailing, tail_entropy):
                     trailing_compressed_size, t_encoded_size, t_dic_size_bits = measure_total_compressed_size(
                         encoded_array, dictionary)
                     result_row[f"b{trailing_idx}_trailing_compressed_size"] = trailing_compressed_size
                     result_row[f"b{trailing_idx}_trailing_encoded_size"] = t_encoded_size
                     result_row[f"b{trailing_idx}_trailing_dic_size_bits"] = t_dic_size_bits
+                    result_row[f"b{trailing_idx}_tailing_entropy"] = tail_entropy1
 
                     # Accumulate encoded size for b1, b2, b3
                     if trailing_idx == 1:
@@ -441,6 +542,12 @@ def run_and_collect_data(dataset_path):
                         total_encoded_b2 += trailing_compressed_size
                     elif trailing_idx == 3:
                         total_encoded_b3 += trailing_compressed_size
+                    if leading_idx == 1:
+                        entropy_b1 += tail_entropy1
+                    elif leading_idx == 2:
+                        entropy_b2 += tail_entropy1
+                    elif leading_idx == 3:
+                        entropy_b3 += tail_entropy1
 
 
                     trailing_idx += 1
@@ -458,6 +565,8 @@ def run_and_collect_data(dataset_path):
             result_row["comp_ratio_l22"] = comp_ratio_l22
             result_row["Non_uniform_1x4"]=Non_uniform_1x4
             result_row["bool_array_size_bits"]=bool_array_size_bits
+            result_row["entropy_all"] = entropy_all
+
 
             results.append(result_row)
 
@@ -487,6 +596,17 @@ if __name__ == "__main__":
     df1=df_results
     df_results["max_com_ratio"] = df_results[["com_ratio_b1", "com_ratio_b2", "com_ratio_b3"]].max(axis=1)
     Decomposion_pattern=max(df_results["max_com_ratio"])
+    b1_leading_entropy=max(df_results["b1_leading_entropy"])
+    b1_content_entropy = max(df_results["b1_content_entropy"])
+    b1_tailing_entropy = max(df_results["b1_tailing_entropy"])
+    b2_leading_entropy = max(df_results["b2_leading_entropy"])
+    b2_content_entropy = max(df_results["b2_content_entropy"])
+    b2_tailing_entropy = max(df_results["b2_tailing_entropy"])
+    b3_leading_entropy = max(df_results["b3_leading_entropy"])
+    b3_content_entropy = max(df_results["b3_content_entropy"])
+    b3_tailing_entropy = max(df_results["b3_tailing_entropy"])
+    entropy_full_data=max(df_results["entropy_all"])
+
     df_results["t-max_com_ratio"] = df_results[["t_com_ratio_b1", "t_com_ratio_b2", "t_com_ratio_b3"]].max(axis=1)
     Decomposion_pattern_with_dict=max(df_results["t-max_com_ratio"])
     comp_ratio_zstd_default=max(df_results["comp_ratio_zstd_default"])
@@ -501,11 +621,45 @@ if __name__ == "__main__":
         Decomposion_pattern_with_dict
 
     ])
-    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4","Decomposion pattern","Decomposion pattern with dict"], "Compression Ratio", axs[0, 2])
+    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4","Decomposion pattern","Decomposion pattern with dict"], "Compression Ratio", axs[2, 0])
+
+    entropy_array = np.array([
+        b1_leading_entropy,
+        b1_content_entropy,
+        b1_tailing_entropy,
+        b2_leading_entropy,
+        b2_content_entropy,
+        b2_tailing_entropy,
+        b3_leading_entropy,
+        b3_content_entropy,
+        b3_tailing_entropy,
+        entropy_full_data
+
+    ])
+    plot_bar(entropy_array, ["b1_leading_entropy", "b1_content_entropy", "b1_tailing_entropy", "b2_leading_entropy",
+                             "b2_content_entropy",
+                             "b2_tailing_entropy", "b3_leading_entropy", "b3_content_entropy", "b3_tailing_entropy",
+                             "entropy_full_data"], "Entropy", axs[2, 1])
+
+    configs = [f"{m} x {n}" for m, n in zip(df_results['M'], df_results['N'])]
+    series = [
+        df_results['b1_leading_entropy'].tolist(),
+        df_results['b1_content_entropy'].tolist(),
+        df_results['b1_tailing_entropy'].tolist(),
+        df_results['b2_leading_entropy'].tolist(),
+        df_results['b2_content_entropy'].tolist(),
+        df_results['b2_tailing_entropy'].tolist(),
+        df_results['b3_leading_entropy'].tolist(),
+        df_results['b3_content_entropy'].tolist(),
+        df_results['b3_tailing_entropy'].tolist()
+    ]
+    plot_line(series, configs, y_label='Entropy', title='Entropy across Configurations',
+              colors=['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'grey'])
     if not PLOTING_DISABLE:
-        plt.title(name_dataset)
+       # plt.title(name_dataset)
+        #plt.title(name_dataset, loc='center', pad=20)
         # plt.show()
         plt.savefig(f"results/{name_dataset}.png")
         plt.close()
-    df1.to_csv('hst_wfc3_ir_f32.csv')
+    df1.to_csv('Beef_test.tsv.csv')
    # df_results.to_csv(log_file, index=False, header=True)
