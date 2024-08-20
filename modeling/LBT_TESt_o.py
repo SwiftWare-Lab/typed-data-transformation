@@ -121,6 +121,7 @@ def compute_repetition(array):
     unique, counts = np.unique(array, return_counts=True)
     # get the top 10 values in counts
     max_top_10 = np.argsort(counts)[-50:]
+
     #print("Top 10 values: ", unique[max_top_10], counts[max_top_10])
     return dict(zip(unique, counts))
 

@@ -1,3 +1,4 @@
+
 import math
 import sys
 
@@ -242,7 +243,7 @@ def measure_total_compressed_size( encoded_string, huffman_codes):
         dic_size_bits += key_size_bits + value_size_bits
 
     total_compressed_size = encoded_size + dic_size_bits
-   # print("huffman_dict_size: ", huffman_dict_size)
+    # print("huffman_dict_size: ", huffman_dict_size)
     #print("encoded_size: ", encoded_size)
     return total_compressed_size,encoded_size,dic_size_bits
 def compress_with_zstd(data, level=3):
@@ -256,7 +257,7 @@ def compress_with_zstd(data, level=3):
 #########################################################################
 def huffman_code_array(array):
     # compute the frequency of the values
-    frq_dict = compute_repetition(array)
+    frq_dict , top_2_values= compute_repetition(array)
     pattern_count = np.fromiter(frq_dict.values(), dtype=int)
     binary_code = np.array(range(len(pattern_count)), dtype=int)
     dict_code = {}
@@ -276,16 +277,22 @@ def huffman_code_array(array):
     for key, value in codes.items():
         dict_size += len(value)
     return estimated_size, estimated_size + dict_size
-def compute_repetition(array):
+def compute_repetition1(array):
     unique, counts = np.unique(array, return_counts=True)
     # get the top 10 values in counts
     max_top_10 = np.argsort(counts)[-50:]
+    # Get the indices of the top 2 most frequent values
+    top_2_indices = np.argsort(counts)[-2:]
+
+    # Get the corresponding top 2 most frequent values
+    top_2_values = unique[top_2_indices]
+
     #print("Top 10 values: ", unique[max_top_10], counts[max_top_10])
-    return dict(zip(unique, counts))
+    return dict(zip(unique, counts)),top_2_values
 #############################################################3
 PLOTING_DISABLE = False
 # make a plot with 4x2 subplots
-fig, axs = plt.subplots(4, 2, figsize=(20, 20))
+fig, axs = plt.subplots(5, 2, figsize=(20, 20))
 # increase the distance of two row subplots
 plt.subplots_adjust(hspace=1)
 
@@ -311,39 +318,25 @@ def plot_bar(values, x_labels, y_label, ax=None):
     label = ax.set_xlabel('X-axis Label')
 
 
-def plot_line(values, x_labels, y_label, title=None, colors=None, markers=None, linestyles=None, xlabel='X-axis Label',
-              rotation=40, ax=None):
-    """
-    Plot a line chart with given values and labels.
-    """
-    if 'PLOTING_DISABLE' in globals() and PLOTING_DISABLE:
+def plot_multiple_lines(series, configs, labels, ax=None, y_label="Entropy", xlabel="Configurations", rotation=40):
+    if PLOTING_DISABLE:
         return
-
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10, 6))
 
-    if colors is None:
-        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-    if markers is None:
-        markers = ['o', '^', 's', 'p', '*', 'x', '+']
-    if linestyles is None:
-        linestyles = ['-', '--', '-.', ':']
+    # Plot each series with a label
+    for values, label in zip(series, labels):
+        ax.plot(configs, values, marker='o', linestyle='-', label=label)
 
-    for idx, series in enumerate(values):
-        ax.plot(x_labels, series, color=colors[idx % len(colors)], marker=markers[idx % len(markers)],
-                linestyle=linestyles[idx % len(linestyles)], label=f'Series {idx + 1}')
-
-    ax.set_xticks(np.arange(len(x_labels)))
-    ax.set_xticklabels(x_labels, rotation=rotation, ha='right')
-    ax.set_ylabel(y_label)
+    # Set labels and rotation
     ax.set_xlabel(xlabel)
+    ax.set_ylabel(y_label)
+    ax.set_xticks(range(len(configs)))
+    ax.set_xticklabels(configs, rotation=rotation, ha='right')
 
-    if title:
-        ax.set_title(title)
-
+    # Add grid and legend for better readability
+    ax.grid(True)
     ax.legend()
-    plt.tight_layout()
-    plt.show()
 
 def plot_ts(ts_array, ax=None, plot_y_axis=""):
     if PLOTING_DISABLE:
@@ -352,7 +345,90 @@ def plot_ts(ts_array, ax=None, plot_y_axis=""):
     #ax.set_title(plot_title)
     # set y axis
     ax.set_ylabel(plot_y_axis)
-name_dataset="Beef_test.tsv"
+name_dataset="ACSF1_TEST"
+###########################################################
+def remove_top_2_repetitions(array, top_2_values):
+    # Remove the top 2 most frequent values from the NumPy array
+    mask = np.isin(array, top_2_values)
+    cleaned_array = array[~mask]
+
+    # Reshape the cleaned array to match the original array shape if possible
+    # Ensure the cleaned array has enough elements to reshape
+
+    return cleaned_array
+################################
+def compute_repetition(array):
+    unique, counts = np.unique(array, return_counts=True)
+
+    # Create a dictionary mapping unique values to their counts
+    frq_dict = dict(zip(unique, counts))
+
+    # Get the top 2 most frequent values
+    top_2_indices = np.argsort(counts)[-100:]
+    top_2_values = unique[top_2_indices]
+
+    # Return both the frequency dictionary and the top 2 values as separate entities
+    return frq_dict, top_2_values
+
+
+def replace_consecutive_nulls_with_count1(df):
+    # Loop through each column in the DataFrame
+    for col in df.columns:
+        # Initialize variables to track consecutive nulls
+        consecutive_null_count = 0
+
+        # Loop through each element in the column
+        for i in range(len(df[col])):
+            if pd.isnull(df[col].iloc[i]):
+                consecutive_null_count += 1
+            else:
+                if consecutive_null_count > 0:
+                    # Replace the first null in the sequence with the null and count
+                    df[col].iloc[i - consecutive_null_count] = np.nan
+                    df[col].iloc[i - consecutive_null_count + 1] = consecutive_null_count
+
+                    # Drop the remaining consecutive nulls
+                    df.drop(index=range(i - consecutive_null_count + 2, i), inplace=True)
+
+                    # Reset the counter
+                    consecutive_null_count = 0
+
+        # Handle the case where the column ends with consecutive nulls
+        if consecutive_null_count > 0:
+            df[col].iloc[len(df[col]) - consecutive_null_count] = np.nan
+            df[col].iloc[len(df[col]) - consecutive_null_count + 1] = consecutive_null_count
+            df.drop(index=range(len(df[col]) - consecutive_null_count + 2, len(df[col])), inplace=True)
+
+    return df.reset_index(drop=True)
+
+
+def replace_consecutive_nulls_with_count(arr):
+    # Convert the array to a list to allow easy manipulation
+    arr = arr.tolist()
+
+    new_arr = []
+    consecutive_null_count = 0
+
+    for i in range(len(arr)):
+        if pd.isnull(arr[i]):
+            consecutive_null_count += 1
+        else:
+            if consecutive_null_count > 0:
+                # Insert one NaN and the count of consecutive nulls
+                new_arr.append(np.nan)
+                new_arr.append(consecutive_null_count)
+                consecutive_null_count = 0
+            # Add the non-null value
+            new_arr.append(arr[i])
+
+    # Handle the case where the array ends with consecutive nulls
+    if consecutive_null_count > 0:
+        new_arr.append(np.nan)
+        new_arr.append(consecutive_null_count)
+
+    # Convert the list back to a NumPy array
+    return np.array(new_arr)
+
 
 def run_and_collect_data(dataset_path):
     results = []
@@ -362,15 +438,33 @@ def run_and_collect_data(dataset_path):
     #dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018/Car/Car_TEST.tsv"
     #dataset_path = "/home/jamalids/Documents/2D/data1/citytemp_f32.tsv"
     #dataset_path = "/home/jamalids/Documents/2D/data1/hst_wfc3_ir_f32.tsv"
-    dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018/Beef/Beef_TEST.tsv"
+    #dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018/AllGestureWiimoteZ/AllGestureWiimoteZ_TEST.tsv"
 
     ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
+
+    #ts_data1.fillna(1000, inplace=True)
     #ts_data1 = ts_data1.iloc[0:500000, :]
-    group = ts_data1
+    group1 = ts_data1
     #ts_data1 = ts_data1.iloc[:, 1:]
     #group= ts_data1.T
-    group = group.drop(ts_data1.columns[0], axis=1)
-    group = group.astype(np.float32).to_numpy().reshape(-1)
+    group1 = group1.drop(ts_data1.columns[0], axis=1)
+
+    group1 = group1.astype(np.float32).to_numpy().reshape(-1)
+    ts_data = replace_consecutive_nulls_with_count(group1)
+   # group1 = group1[~np.isnan(group1)]
+   # group=group1
+  #  group2 = group
+    ############################################
+    # Compute the top 2 most frequent values
+    frq_dict, top_2_values = compute_repetition(group1)
+    # Remove the top 2 most frequent values from the dataset
+    group= remove_top_2_repetitions(group1, top_2_values)
+    group2=group
+
+
+    #########################################################
+    frq_dict1, top_2_values1 = compute_repetition(group)
     entropy_float=calculate_entropy_float(group)
     print("entropy_float=", entropy_float)
     # Calculate the total number of elements
@@ -384,9 +478,9 @@ def run_and_collect_data(dataset_path):
     positive_percentage = (positive_values / total_elements) * 100
     negative_percentage = (negative_values / total_elements) * 100
     codes={"positive_percentage":positive_percentage,"negative_percentage":negative_percentage}
-    plot_historgam(codes, axs[3, 0], True, "_percentage")
+    plot_historgam(codes, axs[3, 1], True, "_percentage")
     codes = {"positive_values": positive_values, "negative_values": negative_values}
-    plot_historgam(codes, axs[3, 1], True, "_values")
+   # plot_historgam(codes, axs[3, 1], True, "_values")
 
     # plot the ts
     plot_ts(group, axs[0, 0], "Original Values")
@@ -402,22 +496,24 @@ def run_and_collect_data(dataset_path):
     bool_array = float_to_ieee754(group)
     bool_array_size_bits = bool_array.nbytes  # Size in bits
     # 1x4 compression
-    frq_dict = compute_repetition(group)
+
+    #frq_dict = compute_repetition(group)
     plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
 
 
 
-    pattern_size_list = [4,8,10]
-    n_list = [1]
+    pattern_size_list = [4,6,8,10]
+    n_list = [1,2]
 
     for m in pattern_size_list:
         for n in n_list:
             print("m",m,"n",n)
 
-            group = ts_data1
-            group = group.drop(ts_data1.columns[0], axis=1)
-            group = group.astype(np.float32).to_numpy().reshape(-1)
+           # group = ts_data1
+           # group = group.drop(ts_data1.columns[0], axis=1)
+            #group = group.astype(np.float32).to_numpy().reshape(-1)
+            group=group2
             new_array_size = group.shape[0] - group.shape[0] % m
             group = group[:new_array_size]
             ts_m = group.shape[0]
@@ -564,6 +660,7 @@ def run_and_collect_data(dataset_path):
             result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
             result_row["comp_ratio_l22"] = comp_ratio_l22
             result_row["Non_uniform_1x4"]=Non_uniform_1x4
+            result_row["Non_uniform_1x4_without_dic"] = est_size
             result_row["bool_array_size_bits"]=bool_array_size_bits
             result_row["entropy_all"] = entropy_all
 
@@ -612,16 +709,19 @@ if __name__ == "__main__":
     comp_ratio_zstd_default=max(df_results["comp_ratio_zstd_default"])
     comp_ratio_l22=max(df_results["comp_ratio_l22"])
     Non_uniform_1x4=max(df_results["Non_uniform_1x4"])
+    Non_uniform_1x4_without_dict=max(df_results["Non_uniform_1x4_without_dic"])
     bool_array_size_bits=max(df_results["bool_array_size_bits"])
     comp_ratio_array = np.array([
         comp_ratio_zstd_default,
         comp_ratio_l22,
         bool_array_size_bits / Non_uniform_1x4,
+        bool_array_size_bits / Non_uniform_1x4_without_dict,
         Decomposion_pattern,
         Decomposion_pattern_with_dict
 
+
     ])
-    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4","Decomposion pattern","Decomposion pattern with dict"], "Compression Ratio", axs[2, 0])
+    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman_dict 1x4", "Huffman 1x4","Decomposion pattern","Decomposion pattern with dict",], "Compression Ratio", axs[2, 0])
 
     entropy_array = np.array([
         b1_leading_entropy,
@@ -642,6 +742,7 @@ if __name__ == "__main__":
                              "entropy_full_data"], "Entropy", axs[2, 1])
 
     configs = [f"{m} x {n}" for m, n in zip(df_results['M'], df_results['N'])]
+    # Create appropriate labels for each entropy component
     series = [
         df_results['b1_leading_entropy'].tolist(),
         df_results['b1_content_entropy'].tolist(),
@@ -653,13 +754,54 @@ if __name__ == "__main__":
         df_results['b3_content_entropy'].tolist(),
         df_results['b3_tailing_entropy'].tolist()
     ]
-    plot_line(series, configs, y_label='Entropy', title='Entropy across Configurations',
-              colors=['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'grey'])
+
+    labels = [
+    'b1_leading_entropy',
+    'b1_content_entropy',
+    'b1_tailing_entropy',
+    'b2_leading_entropy',
+    'b2_content_entropy',
+    'b2_tailing_entropy',
+    'b3_leading_entropy',
+    'b3_content_entropy',
+    'b3_tailing_entropy'
+]
+
+    plot_multiple_lines(series, configs, labels, ax=axs[3, 0], y_label="Entropy", xlabel="Configurations")
+    #######################
+    series1 = [
+        df_results['com_ratio_b1'].tolist(),
+        df_results['com_ratio_b2'].tolist(),
+        df_results['com_ratio_b3'].tolist()
+
+    ]
+
+    labels1 = [
+        'com_ratio_b1',
+        'com_ratio_b2',
+        'com_ratio_b3'
+
+    ]
+    plot_multiple_lines(series1, configs, labels1, ax=axs[4, 0], y_label="Com_Ratio", xlabel="Configurations")
+    series2 = [
+        df_results['t_com_ratio_b1'].tolist(),
+        df_results['t_com_ratio_b2'].tolist(),
+        df_results['t_com_ratio_b3'].tolist()
+
+    ]
+
+    labels2 = [
+        'com_ratio_dic_b1',
+        'com_ratio_dic_b2',
+        'com_ratio_dic_b3'
+
+    ]
+    plot_multiple_lines(series2, configs, labels2, ax=axs[4, 1], y_label="Com_Ratio_Dic", xlabel="Configurations")
     if not PLOTING_DISABLE:
-       # plt.title(name_dataset)
+        # plt.title(name_dataset)
         #plt.title(name_dataset, loc='center', pad=20)
         # plt.show()
         plt.savefig(f"results/{name_dataset}.png")
         plt.close()
-    df1.to_csv('Beef_test.tsv.csv')
-   # df_results.to_csv(log_file, index=False, header=True)
+    df1.to_csv(f"results/{name_dataset}.csv")
+# df_results.to_csv(log_file, index=False, header=True)
