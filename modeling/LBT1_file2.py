@@ -379,48 +379,6 @@ def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.1):
         split_arrays.append(data[start_idx:])
 
     return split_arrays
-def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.1):
-    total_length = len(data)
-    threshold = total_length * (threshold_percentage / 100.0)
-
-    consecutive_count = 1
-    start_idx = 0
-    non_consecutive_array = []
-    metadata = []
-
-    def are_equal(val1, val2):
-        # Check if two values are equal, treating NaN as equal to NaN
-        if np.isnan(val1) and np.isnan(val2):
-            return True
-        return val1 == val2
-
-    for i in range(1, total_length):
-        if are_equal(data[i], data[i - 1]):
-            consecutive_count += 1
-        else:
-            if consecutive_count > threshold:
-                metadata.append({
-                    'value': data[i - 1],
-                    'count': consecutive_count,
-                    'start_index': i - consecutive_count
-                })
-            else:
-                non_consecutive_array.extend(data[start_idx:i])
-            start_idx = i
-            consecutive_count = 1
-
-    if consecutive_count > threshold:
-        metadata.append({
-            'value': data[-1],
-            'count': consecutive_count,
-            'start_index': total_length - consecutive_count
-        })
-    else:
-        non_consecutive_array.extend(data[start_idx:])
-
-    non_consecutive_array = np.array(non_consecutive_array, dtype=np.float32).reshape(-1)
-
-    return non_consecutive_array, metadata
 def run_and_collect_data(dataset_path):
     results = []
     m, n = 8, 2
@@ -467,197 +425,191 @@ def run_and_collect_data(dataset_path):
         # Zstd and Huffman
         zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
         zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
-        #est_size, Non_uniform_1x4 = huffman_code_array(group)
+        est_size, Non_uniform_1x4 = huffman_code_array(group)
         bool_array = float_to_ieee754(group)
         bool_array_size_bits = bool_array.nbytes  # Size in bits
         # 1x4 compression
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
-        pattern_size_list = [4,8,10,12]
-        n_list = [1,2]
+        pattern_size_list = [4]
+        n_list = [1]
         pattern_size=0
-        bool_array_size_bits = bool_array.nbytes
         #####################################################
-        non_consecutive_array, metadata=split_array_on_multiple_consecutive_values(group, threshold_percentage=0.1)
-        est_size, Non_uniform_1x4 = huffman_code_array(non_consecutive_array)
-        #size_metadata=len(metadata)*96
-        size_metadata=len(metadata)*32
-        bool_array_size_bits = bool_array.nbytes  # Size in bits
-        for m in pattern_size_list:
-            for n in n_list:
-                print("m", m, "n", n)
+        result=split_array_on_multiple_consecutive_values(group, 0.1)
+        for i, subarray in enumerate(result):
+            if np.all(subarray == subarray[0]) or np.all(np.isnan(subarray)):
+                pattern_size+=64
+            else:
+                for m in pattern_size_list:
+                    for n in n_list:
+                        print("m", m, "n", n)
 
-                group = non_consecutive_array
-                # group = group.drop(ts_data1.columns[0], axis=1)
-                # group = group.astype(np.float32).to_numpy().reshape(-1)
-                new_array_size = group.shape[0] - group.shape[0] % m
-                group = group[:new_array_size]
-                ts_m = group.shape[0]
-                # group = [1.4260641, 1.3833925, 1.6273729, 1.5902346, 1.6512119, 1.6114463, 2.0275657, 2.0275657]
-                bool_array = float_to_ieee754(group)
-                bool_array_size_bits1 = bool_array.nbytes
-                entropy_all = calculate_entropy(bool_array)
-                print("entropy_all", entropy_all)
+                        group = subarray
+                        #group = group.drop(ts_data1.columns[0], axis=1)
+                        #group = group.astype(np.float32).to_numpy().reshape(-1)
+                        new_array_size = group.shape[0] - group.shape[0] % m
+                        group = group[:new_array_size]
+                        ts_m = group.shape[0]
+                        # group = [1.4260641, 1.3833925, 1.6273729, 1.5902346, 1.6512119, 1.6114463, 2.0275657, 2.0275657]
+                        bool_array = float_to_ieee754(group)
+                        entropy_all = calculate_entropy(bool_array)
+                        print("entropy_all", entropy_all)
+                        bool_array_size_bits = bool_array.nbytes  # Size in bits
 
+                        # Compress the data
+                        inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n,
+                                                                                                  ts_m,
+                                                                                                  ts_n)
 
-                # Compress the data
-                inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n,
-                                                                                          ts_m,
-                                                                                          ts_n)
+                        # Decompress the data
+                        Decodedata = pattern_based_decompressor(inverse_cw_dict, encoded_text, m, n, ts_m, ts_n)
+                        tot_compressed_size, tot_encoded_size, tot_dic_size_bits = measure_total_compressed_size(
+                            encoded_text,
+                            inverse_cw_dict)
+                        verify_flag_data = np.array_equal(bool_array, Decodedata)
 
-                # Decompress the data
-                Decodedata = pattern_based_decompressor(inverse_cw_dict, encoded_text, m, n, ts_m, ts_n)
-                tot_compressed_size, tot_encoded_size, tot_dic_size_bits = measure_total_compressed_size(
-                    encoded_text,
-                    inverse_cw_dict)
-                verify_flag_data = np.array_equal(bool_array, Decodedata)
+                        # Pattern-based decomposition
+                        l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
+                        encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content, lead_entropy, tail_entropy, content_entropy = decomposition_based_compression(
+                            bool_array, l_z_array, t_z_array, m, n, fig, axs)
 
-                # Pattern-based decomposition
-                l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
-                encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content, lead_entropy, tail_entropy, content_entropy = decomposition_based_compression(
-                    bool_array, l_z_array, t_z_array, m, n, fig, axs)
+                        # Initialize a dictionary to hold the b1, b2, b3, ..., bn values
+                        result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
 
-                # Initialize a dictionary to hold the b1, b2, b3, ..., bn values
-                result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
+                        # Initialize variables to calculate total encoded size for b1, b2, etc.
+                        total_encoded_b1 = total_encoded_b2 = total_encoded_b3 = 0
+                        encoded_b1 = encoded_b2 = encoded_b3 = 0
+                        entropy_b1 = entropy_b2 = entropy_b3 = 0
 
-                # Initialize variables to calculate total encoded size for b1, b2, etc.
-                total_encoded_b1 = total_encoded_b2 = total_encoded_b3 = 0
-                encoded_b1 = encoded_b2 = encoded_b3 = 0
-                entropy_b1 = entropy_b2 = entropy_b3 = 0
+                        # Process leading part
+                        leading_idx = 1
+                        if len(encoded_text_leading) == len(dict_leading):
+                            for encoded_array, dictionary, lead_entropy1 in zip(encoded_text_leading, dict_leading,
+                                                                                lead_entropy):
+                                leading_compressed_size, l_encoded_size, l_dic_size_bits = measure_total_compressed_size(
+                                    encoded_array, dictionary)
+                                result_row[f"b{leading_idx}_leading_compressed_size"] = leading_compressed_size
+                                result_row[f"b{leading_idx}_leading_encoded_size"] = l_encoded_size
+                                result_row[f"b{leading_idx}_leading_dic_size_bits"] = l_dic_size_bits
+                                result_row[f"b{leading_idx}_leading_entropy"] = lead_entropy1
 
-                # Process leading part
-                leading_idx = 1
-                if len(encoded_text_leading) == len(dict_leading):
-                    for encoded_array, dictionary, lead_entropy1 in zip(encoded_text_leading, dict_leading,
-                                                                        lead_entropy):
-                        leading_compressed_size, l_encoded_size, l_dic_size_bits = measure_total_compressed_size(
-                            encoded_array, dictionary)
-                        result_row[f"b{leading_idx}_leading_compressed_size"] = leading_compressed_size
-                        result_row[f"b{leading_idx}_leading_encoded_size"] = l_encoded_size
-                        result_row[f"b{leading_idx}_leading_dic_size_bits"] = l_dic_size_bits
-                        result_row[f"b{leading_idx}_leading_entropy"] = lead_entropy1
+                                # Accumulate encoded size for b1, b2, b3
+                                if leading_idx == 1:
+                                    encoded_b1 += l_encoded_size
+                                elif leading_idx == 2:
+                                    encoded_b2 += l_encoded_size
+                                elif leading_idx == 3:
+                                    encoded_b3 += l_encoded_size
 
-                        # Accumulate encoded size for b1, b2, b3
-                        if leading_idx == 1:
-                            encoded_b1 += l_encoded_size
-                        elif leading_idx == 2:
-                            encoded_b2 += l_encoded_size
-                        elif leading_idx == 3:
-                            encoded_b3 += l_encoded_size
+                                if leading_idx == 1:
+                                    total_encoded_b1 += leading_compressed_size
+                                elif leading_idx == 2:
+                                    total_encoded_b2 += leading_compressed_size
+                                elif leading_idx == 3:
+                                    total_encoded_b3 += leading_compressed_size
 
-                        if leading_idx == 1:
-                            total_encoded_b1 += leading_compressed_size
-                        elif leading_idx == 2:
-                            total_encoded_b2 += leading_compressed_size
-                        elif leading_idx == 3:
-                            total_encoded_b3 += leading_compressed_size
+                                if leading_idx == 1:
+                                    entropy_b1 += lead_entropy1
+                                elif leading_idx == 2:
+                                    entropy_b2 += lead_entropy1
+                                elif leading_idx == 3:
+                                    entropy_b3 += lead_entropy1
 
-                        if leading_idx == 1:
-                            entropy_b1 += lead_entropy1
-                        elif leading_idx == 2:
-                            entropy_b2 += lead_entropy1
-                        elif leading_idx == 3:
-                            entropy_b3 += lead_entropy1
+                                leading_idx += 1
 
-                        leading_idx += 1
+                        # Process content part (Restart idx to b1 for content)
+                        content_idx = 1
+                        if len(encoded_text_content) == len(dict_content):
+                            for encoded_array, dictionary, content_entropy1 in zip(encoded_text_content, dict_content,
+                                                                                   content_entropy):
+                                content_compressed_size, c_encoded_size, c_dic_size_bits = measure_total_compressed_size(
+                                    encoded_array, dictionary)
+                                result_row[f"b{content_idx}_content_compressed_size"] = content_compressed_size
+                                result_row[f"b{content_idx}_content_encoded_size"] = c_encoded_size
+                                result_row[f"b{content_idx}_content_dic_size_bits"] = c_dic_size_bits
+                                result_row[f"b{content_idx}_content_entropy"] = content_entropy1
 
-                # Process content part (Restart idx to b1 for content)
-                content_idx = 1
-                if len(encoded_text_content) == len(dict_content):
-                    for encoded_array, dictionary, content_entropy1 in zip(encoded_text_content, dict_content,
-                                                                           content_entropy):
-                        content_compressed_size, c_encoded_size, c_dic_size_bits = measure_total_compressed_size(
-                            encoded_array, dictionary)
-                        result_row[f"b{content_idx}_content_compressed_size"] = content_compressed_size
-                        result_row[f"b{content_idx}_content_encoded_size"] = c_encoded_size
-                        result_row[f"b{content_idx}_content_dic_size_bits"] = c_dic_size_bits
-                        result_row[f"b{content_idx}_content_entropy"] = content_entropy1
+                                # Accumulate encoded size for b1, b2, b3
+                                if content_idx == 1:
+                                    encoded_b1 += c_encoded_size
+                                elif content_idx == 2:
+                                    encoded_b2 += c_encoded_size
+                                elif content_idx == 3:
+                                    encoded_b3 += c_encoded_size
+                                if content_idx == 1:
+                                    total_encoded_b1 += content_compressed_size
+                                elif content_idx == 2:
+                                    total_encoded_b2 += content_compressed_size
+                                elif content_idx == 3:
+                                    total_encoded_b3 += content_compressed_size
+                                if leading_idx == 1:
+                                    entropy_b1 += content_entropy1
+                                elif leading_idx == 2:
+                                    entropy_b2 += content_entropy1
+                                elif leading_idx == 3:
+                                    entropy_b3 += content_entropy1
 
-                        # Accumulate encoded size for b1, b2, b3
-                        if content_idx == 1:
-                            encoded_b1 += c_encoded_size
-                        elif content_idx == 2:
-                            encoded_b2 += c_encoded_size
-                        elif content_idx == 3:
-                            encoded_b3 += c_encoded_size
-                        if content_idx == 1:
-                            total_encoded_b1 += content_compressed_size
-                        elif content_idx == 2:
-                            total_encoded_b2 += content_compressed_size
-                        elif content_idx == 3:
-                            total_encoded_b3 += content_compressed_size
-                        if leading_idx == 1:
-                            entropy_b1 += content_entropy1
-                        elif leading_idx == 2:
-                            entropy_b2 += content_entropy1
-                        elif leading_idx == 3:
-                            entropy_b3 += content_entropy1
+                                content_idx += 1
 
-                        content_idx += 1
+                        # Process trailing part (Restart idx to b1 for trailing)
+                        trailing_idx = 1
+                        if len(encoded_text_trailing) == len(dict_trailing):
+                            for encoded_array, dictionary, tail_entropy1 in zip(encoded_text_trailing, dict_trailing,
+                                                                                tail_entropy):
+                                trailing_compressed_size, t_encoded_size, t_dic_size_bits = measure_total_compressed_size(
+                                    encoded_array, dictionary)
+                                result_row[f"b{trailing_idx}_trailing_compressed_size"] = trailing_compressed_size
+                                result_row[f"b{trailing_idx}_trailing_encoded_size"] = t_encoded_size
+                                result_row[f"b{trailing_idx}_trailing_dic_size_bits"] = t_dic_size_bits
+                                result_row[f"b{trailing_idx}_tailing_entropy"] = tail_entropy1
 
-                # Process trailing part (Restart idx to b1 for trailing)
-                trailing_idx = 1
-                if len(encoded_text_trailing) == len(dict_trailing):
-                    for encoded_array, dictionary, tail_entropy1 in zip(encoded_text_trailing, dict_trailing,
-                                                                        tail_entropy):
-                        trailing_compressed_size, t_encoded_size, t_dic_size_bits = measure_total_compressed_size(
-                            encoded_array, dictionary)
-                        result_row[f"b{trailing_idx}_trailing_compressed_size"] = trailing_compressed_size
-                        result_row[f"b{trailing_idx}_trailing_encoded_size"] = t_encoded_size
-                        result_row[f"b{trailing_idx}_trailing_dic_size_bits"] = t_dic_size_bits
-                        result_row[f"b{trailing_idx}_tailing_entropy"] = tail_entropy1
+                                # Accumulate encoded size for b1, b2, b3
+                                if trailing_idx == 1:
+                                    encoded_b1 += t_encoded_size
+                                elif trailing_idx == 2:
+                                    encoded_b2 += t_encoded_size
+                                elif trailing_idx == 3:
+                                    encoded_b3 += t_encoded_size
+                                if trailing_idx == 1:
+                                    total_encoded_b1 += trailing_compressed_size
+                                elif trailing_idx == 2:
+                                    total_encoded_b2 += trailing_compressed_size
+                                elif trailing_idx == 3:
+                                    total_encoded_b3 += trailing_compressed_size
+                                if leading_idx == 1:
+                                    entropy_b1 += tail_entropy1
+                                elif leading_idx == 2:
+                                    entropy_b2 += tail_entropy1
+                                elif leading_idx == 3:
+                                    entropy_b3 += tail_entropy1
 
-                        # Accumulate encoded size for b1, b2, b3
-                        if trailing_idx == 1:
-                            encoded_b1 += t_encoded_size
-                        elif trailing_idx == 2:
-                            encoded_b2 += t_encoded_size
-                        elif trailing_idx == 3:
-                            encoded_b3 += t_encoded_size
-                        if trailing_idx == 1:
-                            total_encoded_b1 += trailing_compressed_size
-                        elif trailing_idx == 2:
-                            total_encoded_b2 += trailing_compressed_size
-                        elif trailing_idx == 3:
-                            total_encoded_b3 += trailing_compressed_size
-                        if leading_idx == 1:
-                            entropy_b1 += tail_entropy1
-                        elif leading_idx == 2:
-                            entropy_b2 += tail_entropy1
-                        elif leading_idx == 3:
-                            entropy_b3 += tail_entropy1
+                                trailing_idx += 1
 
-                        trailing_idx += 1
+                        # Calculate com_ratio_b1, com_ratio_b2, com_ratio_b3
+                        result_row["com_ratio_b1"] = bool_array_size_bits / encoded_b1 if encoded_b1 > 0 else None
+                        result_row["com_ratio_b2"] = bool_array_size_bits / encoded_b2 if encoded_b2 > 0 else None
+                        result_row["com_ratio_b3"] = bool_array_size_bits / encoded_b3 if encoded_b3 > 0 else None
+                        result_row[
+                            "t_com_ratio_b1"] = bool_array_size_bits / total_encoded_b1 if total_encoded_b1 > 0 else None
+                        result_row[
+                            "t_com_ratio_b2"] = bool_array_size_bits / total_encoded_b2 if total_encoded_b2 > 0 else None
+                        result_row[
+                            "t_com_ratio_b3"] = bool_array_size_bits / total_encoded_b3 if total_encoded_b3 > 0 else None
 
-                # Calculate com_ratio_b1, com_ratio_b2, com_ratio_b3
-                result_row["com_ratio_b1"] = bool_array_size_bits / (encoded_b1+ size_metadata) if encoded_b1 > 0 else None
-                result_row["com_ratio_b2"] = bool_array_size_bits / (encoded_b2+ size_metadata) if encoded_b2 > 0 else None
-                result_row["com_ratio_b3"] = bool_array_size_bits / ( encoded_b3 + size_metadata) if encoded_b3 > 0 else None
-                result_row[
-                    "t_com_ratio_b1"] = bool_array_size_bits / (total_encoded_b1 +size_metadata) if total_encoded_b1 > 0 else None
-                result_row[
-                    "t_com_ratio_b2"] = bool_array_size_bits / (total_encoded_b2+ size_metadata) if total_encoded_b2 > 0 else None
-                result_row[
-                    "t_com_ratio_b3"] = bool_array_size_bits / (total_encoded_b3 + size_metadata) if total_encoded_b3 > 0 else None
+                        # Store Zstd and Huffman results
+                        result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
+                        result_row["comp_ratio_l22"] = comp_ratio_l22
+                        result_row["Non_uniform_1x4"] = Non_uniform_1x4
+                        result_row["bool_array_size_bits"] = bool_array_size_bits
+                        result_row["entropy_all"] = entropy_all
+                        result_row["dataset_name"] = dataset_name
+                        result_row["subarray"]=i
 
-                # Store Zstd and Huffman results
-                result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
-                result_row["comp_ratio_l22"] = comp_ratio_l22
-                result_row["Non_uniform_1x4"] = Non_uniform_1x4
-                result_row["bool_array_size_bits"] = bool_array_size_bits
-                result_row["entropy_all"] = entropy_all
-                result_row["dataset_name"] = dataset_name
-
-
-                results.append(result_row)
-        save_results(pd.DataFrame(results), dataset_name, fig, axs)
+                        results.append(result_row)
+                save_results(pd.DataFrame(results), dataset_name, fig, axs)
 
         return pd.DataFrame(results)
-
-
-
-
 
 
 def save_results(df_results,name_dataset,fig, axs ):

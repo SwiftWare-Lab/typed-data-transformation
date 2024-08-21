@@ -1,12 +1,13 @@
 import numpy as np
 
-def split_array_on_multiple_consecutive_values(data, threshold_percentage=20):
+def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.1):
     total_length = len(data)
     threshold = total_length * (threshold_percentage / 100.0)
 
     consecutive_count = 1
     start_idx = 0
-    split_arrays = []
+    non_consecutive_array = []
+    metadata = []
 
     def are_equal(val1, val2):
         # This function checks if two values are equal, treating NaN as equal to NaN
@@ -19,30 +20,33 @@ def split_array_on_multiple_consecutive_values(data, threshold_percentage=20):
             consecutive_count += 1
         else:
             if consecutive_count > threshold:
-                # Append the array before the consecutive sequence
-                if start_idx < i - consecutive_count:
-                    split_arrays.append(data[start_idx:i - consecutive_count])
-                # Append the consecutive sequence
-                split_arrays.append(data[i - consecutive_count:i])
-                # Update the start index for the next segment
-                start_idx = i
+                # Record metadata about the sequence
+                metadata.append({
+                    'value': data[i - 1],
+                    'count': consecutive_count,
+                    'start_index': i - consecutive_count
+                })
+            else:
+                # Append the segment to the single non_consecutive_array
+                non_consecutive_array.extend(data[start_idx:i])
+            # Update the start index for the next segment
+            start_idx = i
             consecutive_count = 1
 
-    # Handle the case where the array ends with consecutive values
+    # Handle the end of the array
     if consecutive_count > threshold:
-        if start_idx < total_length - consecutive_count:
-            split_arrays.append(data[start_idx:total_length - consecutive_count])
-        split_arrays.append(data[total_length - consecutive_count:])
+        metadata.append({
+            'value': data[-1],
+            'count': consecutive_count,
+            'start_index': total_length - consecutive_count
+        })
     else:
-        # Append the final segment if no consecutive sequence at the end
-        split_arrays.append(data[start_idx:])
+        non_consecutive_array.extend(data[start_idx:])
 
-    return split_arrays
+    return non_consecutive_array, metadata
 
-# Example usage:
-data = np.array([1.2, np.nan, np.nan, 2.5, np.nan, np.nan, np.nan, 4.4, 4.4, 4.4, np.nan, 5.1, 5.1, 6.2], dtype=np.float32)
-result = split_array_on_multiple_consecutive_values(data)
-
-# Display the resulting split arrays
-for i, subarray in enumerate(result):
-    print(f"Subarray {i}: {subarray}")
+# Example usage
+data = np.array([1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 5, 5, 5, 5])
+non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(data, threshold_percentage=20)
+print("Non-consecutive array:", non_consecutive_array)
+print("Metadata:", metadata)
