@@ -400,7 +400,7 @@ def run_and_collect_data(dataset_path):
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
-        pattern_size_list = [4,6,8,10]
+        pattern_size_list = [4,6,8,10,12]
         n_list = [1,2]
 
         for m in pattern_size_list:

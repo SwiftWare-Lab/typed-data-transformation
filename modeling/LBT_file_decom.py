@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 
 from utils import binary_to_int
 import argparse
-from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data
+from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,decode_decompose,concat_decompose
 
 
 def float_to_ieee754(f):
@@ -110,6 +110,10 @@ def pattern_based_decompressor(inverse_cw_dict,encoded_text ,m, n,ts_m, ts_n):
     root1 = create_huffman_tree_from_dict(inverse_cw_dict)
     Decodedata = decode(encoded_text, root1, m, n, (ts_m, ts_n))
     return Decodedata
+def pattern_based_decompressor_compose(inverse_cw_dict,encoded_text ,m, n,ts_m, ts_n):
+    root1 = create_huffman_tree_from_dict(inverse_cw_dict)
+    Decodedata = decode_decompose(encoded_text, root1, m, n, (ts_m, ts_n))
+    return Decodedata
 def compute_leading_tailing_zeros(array):
     leading_zeros_array = np.zeros(array.shape[0])
     for i in range(array.shape[0]):
@@ -172,6 +176,9 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
     lead_comp_size_d, tail_comp_size_d, content_comp_size_d = [], [], []
     lead_entropy, tail_entropy, content_entropy = [], [], []
+    lead_shape_m, tail_shap_m, content_shap_m = [], [], []
+    lead_shape_n, tail_shap_n, content_shap_n = [], [], []
+    leading_zero_array_orig1, content_array_orig1, trailing_mixed_array_orig1=[],[],[]
 
     for i in tune_decomp:
         print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
@@ -186,6 +193,9 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         # Decompose the array into three parts
         leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,
                                                                                                        image_ts)
+        tl_m,tl_n=leading_zero_array_orig.shape
+        tc_m,tc_n=content_array_orig.shape
+        tt_m,tt_n=trailing_mixed_array_orig.shape
 
         # Compress leading zero array
         ts_m_l, ts_n_l = leading_zero_array_orig.shape
@@ -228,9 +238,19 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         lead_entropy.append(leading_entropy)
         tail_entropy.append(contents_entropy)
         content_entropy.append(trailing_entropy)
+        lead_shape_m.append(tl_m)
+        tail_shap_m.append(tt_m)
+        content_shap_m.append(tc_m)
+        lead_shape_n.append(tl_n)
+        tail_shap_n.append(tt_n)
+        content_shap_n.append(tc_n)
+        leading_zero_array_orig1.append(leading_zero_array_orig)
+        content_array_orig1.append(content_array_orig)
+        trailing_mixed_array_orig1.append(trailing_mixed_array_orig)
 
 
-    return lead_comp_size, tail_comp_size, content_comp_size, lead_comp_size_d, tail_comp_size_d, content_comp_size_d,lead_entropy, tail_entropy, content_entropy
+    return (lead_comp_size, tail_comp_size, content_comp_size, lead_comp_size_d, tail_comp_size_d, content_comp_size_d,lead_entropy, tail_entropy, content_entropy,lead_shape_m,
+            tail_shap_m, content_shap_m,lead_shape_n, tail_shap_n, content_shap_n,leading_zero_array_orig1,content_array_orig1,trailing_mixed_array_orig1)
 
 
 def measure_total_compressed_size( encoded_string, huffman_codes):
@@ -341,44 +361,7 @@ def plot_ts(ts_array, ax=None, plot_y_axis=""):
     # set y axis
     ax.set_ylabel(plot_y_axis)
 #name_dataset="Beef_test.tsv"
-def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.1):
-    total_length = len(data)
-    threshold = total_length * (threshold_percentage / 100.0)
 
-    consecutive_count = 1
-    start_idx = 0
-    split_arrays = []
-
-    def are_equal(val1, val2):
-        # This function checks if two values are equal, treating NaN as equal to NaN
-        if np.isnan(val1) and np.isnan(val2):
-            return True
-        return val1 == val2
-
-    for i in range(1, total_length):
-        if are_equal(data[i], data[i - 1]):
-            consecutive_count += 1
-        else:
-            if consecutive_count > threshold:
-                # Append the array before the consecutive sequence
-                if start_idx < i - consecutive_count:
-                    split_arrays.append(data[start_idx:i - consecutive_count])
-                # Append the consecutive sequence
-                split_arrays.append(data[i - consecutive_count:i])
-                # Update the start index for the next segment
-                start_idx = i
-            consecutive_count = 1
-
-    # Handle the case where the array ends with consecutive values
-    if consecutive_count > threshold:
-        if start_idx < total_length - consecutive_count:
-            split_arrays.append(data[start_idx:total_length - consecutive_count])
-        split_arrays.append(data[total_length - consecutive_count:])
-    else:
-        # Append the final segment if no consecutive sequence at the end
-        split_arrays.append(data[start_idx:])
-
-    return split_arrays
 def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.01):
     total_length = len(data)
     threshold = total_length * (threshold_percentage / 100.0)
@@ -400,9 +383,10 @@ def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.01):
         else:
             if consecutive_count > threshold:
                 metadata.append({
+                    'start_index': total_length - consecutive_count,
                     'value': data[i - 1],
-                    'count': consecutive_count,
-                    'start_index': i - consecutive_count
+                    'count': consecutive_count
+
                 })
             else:
                 non_consecutive_array.extend(data[start_idx:i])
@@ -411,9 +395,10 @@ def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.01):
 
     if consecutive_count > threshold:
         metadata.append({
+            'start_index': total_length - consecutive_count,
             'value': data[-1],
-            'count': consecutive_count,
-            'start_index': total_length - consecutive_count
+            'count': consecutive_count
+
         })
     else:
         non_consecutive_array.extend(data[start_idx:])
@@ -421,12 +406,30 @@ def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.01):
     non_consecutive_array = np.array(non_consecutive_array, dtype=np.float32).reshape(-1)
 
     return non_consecutive_array, metadata
+def convert_RLE(metadata):
+    if isinstance(metadata, list):
+        # Initialize an empty list to store all the consecutive values
+        consecutive_values = []
+
+        # Loop through each dictionary in the metadata list
+        for item in metadata:
+            # Extract 'value', 'count', and 'start_index' and append them consecutively to the list
+            consecutive_values.extend([item['start_index'], item['value'], item['count']])
+
+
+        # Convert the list to a float32 NumPy array
+        metadata1 = np.array(consecutive_values, dtype=np.float32).reshape(-1)
+    else:
+        # If metadata is not a list of dictionaries, handle it differently as needed
+        metadata1 = np.array(metadata, dtype=np.float32).reshape(-1)
+    return metadata1
 def run_and_collect_data(dataset_path):
     results = []
     m, n = 8, 2
     ts_n = 32
     #datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
-    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
+    #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
+    dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     datasets = [dataset_path]
     for dataset_path in datasets:
         fig, axs = plt.subplots(5, 2, figsize=(20, 20))  # Adjust the subplot grid and figure size as needed
@@ -463,8 +466,6 @@ def run_and_collect_data(dataset_path):
         # plot the ts
         plot_ts(group, axs[0, 0], "Original Values")
 
-        # group=[1.4260641, 1.3833925 ,1.6273729 ,1.5902346 ,1.6512119, 1.6114463 ,2.0275657, 2.0275657]
-
         # Zstd and Huffman
         zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
         zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
@@ -475,12 +476,15 @@ def run_and_collect_data(dataset_path):
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
-        pattern_size_list = [4,8,6,10,12]
-        n_list = [1,2]
+        pattern_size_list = [4]
+        n_list = [2]
         pattern_size=0
         bool_array_size_bits = bool_array.nbytes
         #####################################################
-        non_consecutive_array, metadata=split_array_on_multiple_consecutive_values(group, threshold_percentage=0.01)
+        non_consecutive_array, metadata=split_array_on_multiple_consecutive_values(group, threshold_percentage=0.1)
+        metadata1=convert_RLE(metadata)
+        metadata_array = float_to_ieee754(metadata1)
+        ###############
         est_size, Non_uniform_1x4 = huffman_code_array(non_consecutive_array)
         size_metadata=len(metadata)*96
        # size_metadata=len(metadata)*32
@@ -516,8 +520,29 @@ def run_and_collect_data(dataset_path):
 
                 # Pattern-based decomposition
                 l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
-                encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content, lead_entropy, tail_entropy, content_entropy = decomposition_based_compression(
+                (encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing, dict_content, lead_entropy,
+                 tail_entropy, content_entropy,lead_shape_m, tail_shap_m, content_shap_m,lead_shape_n, tail_shap_n, content_shap_n,leading_zero_array_orig,content_array_orig,trailing_mixed_array_orig) = decomposition_based_compression(
                     bool_array, l_z_array, t_z_array, m, n, fig, axs)
+                #################Decode###############################
+                all_decoded_data = []
+                Decodedata_leading = pattern_based_decompressor_compose(dict_leading[0], encoded_text_leading[0], m, n, lead_shape_m[0], lead_shape_n[0])
+                Decodedata_content = pattern_based_decompressor_compose(dict_content[0],  encoded_text_content[0], m, n,content_shap_m[0], content_shap_n[0])
+                Decodedata_tailing = pattern_based_decompressor_compose(dict_trailing[0], encoded_text_trailing[0], m, n,
+                                                                tail_shap_m[0], tail_shap_n[0])
+                final_decoded_data = Decodedata_leading + Decodedata_content + Decodedata_tailing
+                Decode_comp=concat_decompose(final_decoded_data, m, n, (ts_m, ts_n))
+                verify_flag_compo = np.array_equal(bool_array, Decode_comp)
+                difference_indices = np.where(bool_array != Decode_comp)
+
+                # Get the differing values for both arrays at the differing indices
+                bool_array_diff = bool_array[difference_indices]
+                Decode_comp_diff = Decode_comp[difference_indices]
+
+                # Print the differences
+                print("Indices where bool_array and Decode_comp differ:", difference_indices)
+                print("Values in bool_array at differing indices:", bool_array_diff)
+                print("Values in Decode_comp at differing indices:", Decode_comp_diff)
+
 
                 # Initialize a dictionary to hold the b1, b2, b3, ..., bn values
                 result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}

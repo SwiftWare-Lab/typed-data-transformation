@@ -108,48 +108,6 @@ def calculate_size_of_huffman_tree(node):
 
   return size
 
-def decode_decompose(encoded_text, root, m, n, original_shape):
-
-  ts_m, ts_n = original_shape
-  decoded_ints = []
-  current_node = root
-
-  # Step 1: Decode the encoded text back to integer patterns
-  for bit in encoded_text:
-    if bit == '0':
-      current_node = current_node.left
-    elif bit == '1':
-      current_node = current_node.right
-
-    # If a leaf node is reached, store the integer value and reset to root
-    if current_node.char is not None:
-      decoded_ints.append(current_node.char)
-      current_node = root
-
-  # Step 2: Convert decoded integers back to binary form
-  decoded_binaries = [int_to_binary(value, m * n) for value in decoded_ints]
-  return decoded_binaries
-def concat_decompose(decoded_binaries, m, n, original_shape):
-  ts_m, ts_n = original_shape
-  # Step 3: Reconstruct the original 2D binary array
-  binary_array = np.zeros(original_shape)
-  pattern_idx = 0
-
-  for j in range(0, ts_n, n):
-    for i in range(0, ts_m, m):
-      if pattern_idx >= len(decoded_binaries):
-        break
-      binary_pattern = decoded_binaries[pattern_idx]
-      pattern_idx += 1
-
-      # Fill the corresponding part of the array
-      for bit_idx, bit in enumerate(binary_pattern):
-        bit_j = bit_idx // n
-        bit_i = bit_idx % n
-        binary_array[i + bit_j, j + bit_i] = int(bit)
-
-  return binary_array
-
 
 def decode(encoded_text, root, m, n, original_shape):
 
