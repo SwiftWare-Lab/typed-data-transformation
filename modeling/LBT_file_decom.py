@@ -187,67 +187,69 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         # Adjust bounds based on tuning step
         bnd1 = bnd1 + i
         bnd2 = bnd2 - i
-        print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
-        print("Tune Decomp: ", i)
-
-        # Decompose the array into three parts
-        leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,
-                                                                                                       image_ts)
-        tl_m,tl_n=leading_zero_array_orig.shape
-        tc_m,tc_n=content_array_orig.shape
-        tt_m,tt_n=trailing_mixed_array_orig.shape
-
-        # Compress leading zero array
-        ts_m_l, ts_n_l = leading_zero_array_orig.shape
-        if ts_n_l != 0:
-            dict_leading, root_leading, tree_size_leading, encoded_text_leading, = pattern_based_compressor(
-                leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
-            leading_entropy=calculate_entropy(leading_zero_array_orig)
+        if bnd1 % n != 0 or bnd2 % n != 0:
+            continue
         else:
-            dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
-            leading_entropy = 0
+            print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
+            print("Tune Decomp: ", i)
 
-        # Compress content array
-        ts_m_c, ts_n_c = content_array_orig.shape
-        if ts_n_c != 0:
-            dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(
-                content_array_orig, m, n, ts_m_c, ts_n_c)
-            contents_entropy = calculate_entropy(content_array_orig)
-        else:
-            dict_content, root_content, tree_size_content, encoded_text_content = {}, None, 0, ''
-            contents_entropy = 0
+            # Decompose the array into three parts
+            leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,
+                                                                                                           image_ts)
+            tl_m, tl_n = leading_zero_array_orig.shape
+            tc_m, tc_n = content_array_orig.shape
+            tt_m, tt_n = trailing_mixed_array_orig.shape
 
-        # Compress trailing mixed array
-        ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
-        if ts_n_t != 0:
-            dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(
-                trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t)
-            trailing_entropy = calculate_entropy(trailing_mixed_array_orig)
+            # Compress leading zero array
+            ts_m_l, ts_n_l = leading_zero_array_orig.shape
+            if ts_n_l != 0:
+                dict_leading, root_leading, tree_size_leading, encoded_text_leading, = pattern_based_compressor(
+                    leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
+                leading_entropy = calculate_entropy(leading_zero_array_orig)
+            else:
+                dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
+                leading_entropy = 0
 
-        else:
-            dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = {}, None, 0, ''
-            trailing_entropy = 0
+            # Compress content array
+            ts_m_c, ts_n_c = content_array_orig.shape
+            if ts_n_c != 0:
+                dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(
+                    content_array_orig, m, n, ts_m_c, ts_n_c)
+                contents_entropy = calculate_entropy(content_array_orig)
+            else:
+                dict_content, root_content, tree_size_content, encoded_text_content = {}, None, 0, ''
+                contents_entropy = 0
 
-        # Store compressed sizes and dictionaries
-        lead_comp_size_d.append(dict_leading)
-        tail_comp_size_d.append(dict_trailing)
-        content_comp_size_d.append(dict_content)
-        lead_comp_size.append(encoded_text_leading)
-        tail_comp_size.append(encoded_text_trailing)
-        content_comp_size.append(encoded_text_content)
-        lead_entropy.append(leading_entropy)
-        tail_entropy.append(contents_entropy)
-        content_entropy.append(trailing_entropy)
-        lead_shape_m.append(tl_m)
-        tail_shap_m.append(tt_m)
-        content_shap_m.append(tc_m)
-        lead_shape_n.append(tl_n)
-        tail_shap_n.append(tt_n)
-        content_shap_n.append(tc_n)
-        leading_zero_array_orig1.append(leading_zero_array_orig)
-        content_array_orig1.append(content_array_orig)
-        trailing_mixed_array_orig1.append(trailing_mixed_array_orig)
+            # Compress trailing mixed array
+            ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
+            if ts_n_t != 0:
+                dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(
+                    trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t)
+                trailing_entropy = calculate_entropy(trailing_mixed_array_orig)
 
+            else:
+                dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = {}, None, 0, ''
+                trailing_entropy = 0
+
+            # Store compressed sizes and dictionaries
+            lead_comp_size_d.append(dict_leading)
+            tail_comp_size_d.append(dict_trailing)
+            content_comp_size_d.append(dict_content)
+            lead_comp_size.append(encoded_text_leading)
+            tail_comp_size.append(encoded_text_trailing)
+            content_comp_size.append(encoded_text_content)
+            lead_entropy.append(leading_entropy)
+            tail_entropy.append(contents_entropy)
+            content_entropy.append(trailing_entropy)
+            lead_shape_m.append(tl_m)
+            tail_shap_m.append(tt_m)
+            content_shap_m.append(tc_m)
+            lead_shape_n.append(tl_n)
+            tail_shap_n.append(tt_n)
+            content_shap_n.append(tc_n)
+            leading_zero_array_orig1.append(leading_zero_array_orig)
+            content_array_orig1.append(content_array_orig)
+            trailing_mixed_array_orig1.append(trailing_mixed_array_orig)
 
     return (lead_comp_size, tail_comp_size, content_comp_size, lead_comp_size_d, tail_comp_size_d, content_comp_size_d,lead_entropy, tail_entropy, content_entropy,lead_shape_m,
             tail_shap_m, content_shap_m,lead_shape_n, tail_shap_n, content_shap_n,leading_zero_array_orig1,content_array_orig1,trailing_mixed_array_orig1)
@@ -288,7 +290,7 @@ def huffman_code_array(array):
     # Create Huffman codes dictionary
     codes = {}
     create_huffman_codes(root, "", codes)
-    #plot_historgam(codes, axs[1, 0], True, "Patterns")
+   # plot_historgam(codes, axs[1, 0], True, "Patterns")
     # print(codes)
     estimated_size = 0
     for key in codes:
@@ -362,7 +364,7 @@ def plot_ts(ts_array, ax=None, plot_y_axis=""):
     ax.set_ylabel(plot_y_axis)
 #name_dataset="Beef_test.tsv"
 
-def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.01):
+def split_array_on_multiple_consecutive_values(data, threshold_percentage=9):
     total_length = len(data)
     threshold = total_length * (threshold_percentage / 100.0)
 
@@ -423,7 +425,300 @@ def convert_RLE(metadata):
         # If metadata is not a list of dictionaries, handle it differently as needed
         metadata1 = np.array(metadata, dtype=np.float32).reshape(-1)
     return metadata1
+
+
+def ieee754_to_float32(binary_array):
+    """Convert a binary array (32 bits) to its corresponding float32 value."""
+    binary_str = ''.join(str(int(bit)) for bit in binary_array)
+    as_int = int(binary_str, 2)
+    return np.float32(np.uint32(as_int).view(np.float32))
+
+
+def ieee754_to_int32(binary_array):
+    """Convert a binary array (32 bits) to its corresponding int32 value."""
+    binary_str = ''.join(str(int(bit)) for bit in binary_array)
+    as_int = int(binary_str, 2)
+    return np.int32(np.uint32(as_int))
+
+
+def decompress_final(final_decoded_data, metadata1):
+    # Both final_decoded_data and metadata1 are in IEEE 754 binary format (0s and 1s)
+
+    # Step 1: Calculate the final size after decompression
+    final_size = len(final_decoded_data)
+
+    for i in range(0, len(metadata1), 3):
+        # Extract the count value from the binary metadata
+        count =  ieee754_to_float32(metadata1[i + 2])  # Convert IEEE 754 binary to int32 for count
+        final_size += count  # Add the count to the final size
+
+    # Step 2: Create a new array with the final size, initialized to zeros (in binary format)
+    reconstructed_data = np.zeros((final_size, 32), dtype=np.uint8)  # 32 bits per float, so shape is (final_size, 32)
+
+    # Keep track of the current position in the reconstructed_data
+    current_position = 0
+
+    # Process metadata1 to perform insertions
+    original_position = 0  # Track the position in the original final_decoded_data
+
+    for i in range(0, len(metadata1), 3):
+        # Convert start_index and count to integers from their binary representations
+        start_index = ieee754_to_int32(metadata1[i])  # Convert IEEE 754 binary to int32 for start_index
+        value = metadata1[i + 1]  # Value remains in IEEE 754 binary format (32-bit binary array)
+        count = ieee754_to_int32(metadata1[i + 2])  # Convert IEEE 754 binary to int32 for count
+
+        # Copy data from final_decoded_data up to the start_index
+        reconstructed_data[current_position:current_position + (start_index - original_position)] = final_decoded_data[
+                                                                                                    original_position:start_index]
+        current_position += (start_index - original_position)
+
+        # Insert the value 'count' times at the correct position
+        for _ in range(count):
+            reconstructed_data[current_position] = value
+            current_position += 1
+
+        # Update the original position
+        original_position = start_index
+
+    # Copy any remaining data from final_decoded_data after the last insertion
+    reconstructed_data[current_position:] = final_decoded_data[original_position:]
+
+    return reconstructed_data
 def run_and_collect_data(dataset_path):
+    results = []
+    m, n = 8, 2
+    ts_n = 32
+    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
+    datasets = [dataset_path]
+
+    for dataset_path in datasets:
+        fig, axs = plt.subplots(5, 2, figsize=(20, 20))  # Adjust the subplot grid and figure size as needed
+        plt.subplots_adjust(hspace=1)  # Adjust the space between rows
+
+        results = []
+        ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
+        dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
+        ts_data1 = ts_data1.iloc[0:10, 0:3]
+        group = ts_data1.drop(ts_data1.columns[0], axis=1)
+        group = group.astype(np.float32).to_numpy().reshape(-1)
+        entropy_float = calculate_entropy_float(group)
+        print("entropy_float=", entropy_float)
+
+        # Calculate the total number of elements
+        total_elements = len(group)
+        positive_values = np.sum(group > 0)
+        negative_values = np.sum(group < 0)
+
+        # Calculate the percentages
+        positive_percentage = (positive_values / total_elements) * 100
+        negative_percentage = (negative_values / total_elements) * 100
+        codes = {"positive_percentage": positive_percentage, "negative_percentage": negative_percentage}
+        plot_historgam(codes, axs[3, 1], True, "_percentage")
+        codes = {"positive_values": positive_values, "negative_values": negative_values}
+
+        # Plot the time series
+        plot_ts(group, axs[0, 0], "Original Values")
+
+        # Zstd and Huffman
+        zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
+        zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
+        bool_array = float_to_ieee754(group)
+        bool_array_size_bits = bool_array.nbytes  # Size in bits
+
+        # Split array and apply RLE
+        non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(group, threshold_percentage=9)
+        metadata1 = convert_RLE(metadata)
+        metadata_array = float_to_ieee754(metadata1)
+
+        # Huffman compression
+        est_size, Non_uniform_1x4 = huffman_code_array(non_consecutive_array)
+        frq_dict = compute_repetition(group)
+        plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
+        size_metadata = len(metadata) * 96  # Example size calculation
+        pattern_size_list = [4,8]
+        n_list = [1,2]
+        for m in pattern_size_list:
+            for n in n_list:
+                print("m", m, "n", n)
+
+                # Reshape group based on `m`
+                new_array_size = group.shape[0] - group.shape[0] % m
+                group = group[:new_array_size]
+                ts_m = group.shape[0]
+
+                bool_array = float_to_ieee754(group)
+                entropy_all = calculate_entropy(bool_array)
+                print("entropy_all", entropy_all)
+
+                # Compress the data
+                inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
+
+                # Decompress the data
+                Decodedata = pattern_based_decompressor(inverse_cw_dict, encoded_text, m, n, ts_m, ts_n)
+                tot_compressed_size, tot_encoded_size, tot_dic_size_bits = measure_total_compressed_size(
+                    encoded_text, inverse_cw_dict)
+                verify_flag_data = np.array_equal(bool_array, Decodedata)
+
+                # Decomposition-based compression
+                l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
+                (encoded_text_leading, encoded_text_trailing, encoded_text_content, dict_leading, dict_trailing,
+                 dict_content, lead_entropy, tail_entropy, content_entropy, lead_shape_m, tail_shap_m, content_shap_m,
+                 lead_shape_n, tail_shap_n, content_shap_n, leading_zero_array_orig, content_array_orig,
+                 trailing_mixed_array_orig) = decomposition_based_compression(bool_array, l_z_array, t_z_array, m, n,
+                                                                              fig, axs)
+                 ##############################################decode#######################
+                Decodedata_leading1 = pattern_based_decompressor(dict_leading[0], encoded_text_leading[0], m, n,
+                                                                 lead_shape_m[0],
+                                                                 lead_shape_n[0])
+
+                Decodedata_content1 = pattern_based_decompressor(dict_content[0], encoded_text_content[0], m, n,
+                                                                content_shap_m[0], content_shap_n[0])
+
+                Decodedata_tailing1 = pattern_based_decompressor(dict_trailing[0], encoded_text_trailing[0], m, n,
+                                                               tail_shap_m[0], tail_shap_n[0])
+
+                final_decoded_data = np.concatenate((Decodedata_leading1, Decodedata_content1, Decodedata_tailing1),
+                                                              axis=1)
+                verify_flag_compo = np.array_equal(bool_array, final_decoded_data)
+                decompress_final(final_decoded_data,metadata_array)
+               ################################################################################################################
+                # Store results dynamically
+                result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
+                total_encoded_b = {}
+                encoded_b = {}
+                entropy_b = {}
+
+                # Process leading part
+                for idx, (encoded_array, dictionary, lead_entropy1) in enumerate(
+                        zip(encoded_text_leading, dict_leading, lead_entropy), start=1):
+                    leading_compressed_size, l_encoded_size, l_dic_size_bits = measure_total_compressed_size(
+                        encoded_array, dictionary)
+                    result_row[f"b{idx}_leading_compressed_size"] = leading_compressed_size
+                    result_row[f"b{idx}_leading_encoded_size"] = l_encoded_size
+                    result_row[f"b{idx}_leading_dic_size_bits"] = l_dic_size_bits
+                    result_row[f"b{idx}_leading_entropy"] = lead_entropy1
+                    encoded_b[idx] = encoded_b.get(idx, 0) + l_encoded_size
+                    total_encoded_b[idx] = total_encoded_b.get(idx, 0) + leading_compressed_size
+                    entropy_b[idx] = entropy_b.get(idx, 0) + lead_entropy1
+
+                # Process content part
+                for idx, (encoded_array, dictionary, content_entropy1) in enumerate(
+                        zip(encoded_text_content, dict_content, content_entropy), start=1):
+                    content_compressed_size, c_encoded_size, c_dic_size_bits = measure_total_compressed_size(
+                        encoded_array, dictionary)
+                    result_row[f"b{idx}_content_compressed_size"] = content_compressed_size
+                    result_row[f"b{idx}_content_encoded_size"] = c_encoded_size
+                    result_row[f"b{idx}_content_dic_size_bits"] = c_dic_size_bits
+                    result_row[f"b{idx}_content_entropy"] = content_entropy1
+                    encoded_b[idx] = encoded_b.get(idx, 0) + c_encoded_size
+                    total_encoded_b[idx] = total_encoded_b.get(idx, 0) + content_compressed_size
+                    entropy_b[idx] = entropy_b.get(idx, 0) + content_entropy1
+
+                # Process trailing part
+                for idx, (encoded_array, dictionary, tail_entropy1) in enumerate(
+                        zip(encoded_text_trailing, dict_trailing, tail_entropy), start=1):
+                    trailing_compressed_size, t_encoded_size, t_dic_size_bits = measure_total_compressed_size(
+                        encoded_array, dictionary)
+                    result_row[f"b{idx}_trailing_compressed_size"] = trailing_compressed_size
+                    result_row[f"b{idx}_trailing_encoded_size"] = t_encoded_size
+                    result_row[f"b{idx}_trailing_dic_size_bits"] = t_dic_size_bits
+                    result_row[f"b{idx}_tailing_entropy"] = tail_entropy1
+                    encoded_b[idx] = encoded_b.get(idx, 0) + t_encoded_size
+                    total_encoded_b[idx] = total_encoded_b.get(idx, 0) + trailing_compressed_size
+                    entropy_b[idx] = entropy_b.get(idx, 0) + tail_entropy1
+
+                # Calculate compression ratios dynamically for all available `b` components
+                for idx in encoded_b:
+                    result_row[f"com_ratio_b{idx}"] = bool_array_size_bits / (encoded_b[idx] + size_metadata) if \
+                    encoded_b[idx] > 0 else None
+                    result_row[f"t_com_ratio_b{idx}"] = bool_array_size_bits / (total_encoded_b[idx] + size_metadata) if \
+                    total_encoded_b[idx] > 0 else None
+
+                # Store Zstd and Huffman results
+                result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
+                result_row["comp_ratio_l22"] = comp_ratio_l22
+                result_row["Non_uniform_1x4"] = Non_uniform_1x4
+                result_row["bool_array_size_bits"] = bool_array_size_bits
+                result_row["entropy_all"] = entropy_all
+                result_row["dataset_name"] = dataset_name
+
+                results.append(result_row)
+
+        save_results(pd.DataFrame(results), dataset_name, fig, axs)
+
+
+    return pd.DataFrame(results)
+
+
+def save_results(df_results, name_dataset, fig, axs):
+    # Check which com_ratio columns exist dynamically
+    com_ratio_cols = [col for col in df_results.columns if col.startswith("com_ratio_b")]
+    if com_ratio_cols:  # Ensure the list is not empty
+        df_results["max_com_ratio"] = df_results[com_ratio_cols].max(axis=1)
+        Decomposion_pattern = df_results["max_com_ratio"].max()
+    else:
+        Decomposion_pattern = 0  # Fallback value if no columns exist
+
+    # Similarly handle the entropy columns dynamically
+    entropy_cols = [col for col in df_results.columns if col.endswith("_entropy")]
+    if entropy_cols:  # Ensure the list is not empty
+        entropy_full_data = df_results[entropy_cols].max().max()
+    else:
+        entropy_full_data = 0  # Fallback value if no columns exist
+
+    # Handle t_com_ratio columns
+    t_com_ratio_cols = [col for col in df_results.columns if col.startswith("t_com_ratio_b")]
+    if t_com_ratio_cols:  # Ensure the list is not empty
+        df_results["t-max_com_ratio"] = df_results[t_com_ratio_cols].max(axis=1)
+        Decomposion_pattern_with_dict = df_results["t-max_com_ratio"].max()
+    else:
+        Decomposion_pattern_with_dict = 0  # Fallback value if no columns exist
+
+    comp_ratio_zstd_default = df_results.get("comp_ratio_zstd_default", pd.Series([0])).max()
+    comp_ratio_l22 = df_results.get("comp_ratio_l22", pd.Series([0])).max()
+    Non_uniform_1x4 = df_results.get("Non_uniform_1x4", pd.Series([0])).max()
+    bool_array_size_bits = df_results.get("bool_array_size_bits", pd.Series([0])).max()
+
+    comp_ratio_array = np.array([
+        comp_ratio_zstd_default,
+        comp_ratio_l22,
+        bool_array_size_bits / Non_uniform_1x4 if Non_uniform_1x4 else 0,
+        Decomposion_pattern,
+        Decomposion_pattern_with_dict
+    ])
+    plot_bar(comp_ratio_array, ["Zstd Default-3", "Zstd Ultimate-22", "Huffman 1x4", "Decomposion pattern",
+                                "Decomposion pattern with dict"], "Compression Ratio", axs[2, 0])
+
+    # Dynamically find all entropy columns
+    entropy_cols = [col for col in df_results.columns if col.endswith("_entropy")]
+
+    # Collect the max values of these entropy columns
+    entropy_array = np.array([df_results[col].max() for col in entropy_cols])
+
+    # Add the full entropy data if needed
+    entropy_array = np.append(entropy_array, entropy_full_data)
+
+    # Create labels dynamically for these entropy columns
+    entropy_labels = entropy_cols + ["entropy_full_data"]
+
+    # Plot the entropy array with the corresponding labels
+    plot_bar(entropy_array, entropy_labels, "Entropy", axs[2, 1])
+    configs = [f"{m} x {n}" for m, n in zip(df_results['M'], df_results['N'])]
+    series3 = [df_results[col].tolist() for col in entropy_cols if col in df_results]
+    plot_multiple_lines(series3, configs, entropy_cols, ax=axs[3, 0], y_label="Entropy", xlabel="Configurations")
+    series1 = [df_results[col].tolist() for col in com_ratio_cols if col in df_results]
+    plot_multiple_lines(series1, configs, com_ratio_cols, ax=axs[4, 0], y_label="Com_Ratio", xlabel="Configurations")
+
+    series2 = [df_results[col].tolist() for col in t_com_ratio_cols if col in df_results]
+    plot_multiple_lines(series2, configs, t_com_ratio_cols, ax=axs[4, 1], y_label="Com_Ratio_Dic", xlabel="Configurations")
+
+    df_results.to_csv(f"results/{name_dataset}.csv")
+
+    if not PLOTING_DISABLE:
+       plt.savefig(f"results/{name_dataset}.png")
+       plt.close(fig)  # This is crucial to reset the plot state for the next dataset
+
+def run_and_collect_data1(dataset_path):
     results = []
     m, n = 8, 2
     ts_n = 32
@@ -440,7 +735,7 @@ def run_and_collect_data(dataset_path):
         results = []
         ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
-        # ts_data1 = ts_data1.iloc[0:500000, :]
+        ts_data1 = ts_data1.iloc[0:10, 0:3]
         group = ts_data1
         # ts_data1 = ts_data1.iloc[:, 1:]
         # group= ts_data1.T
@@ -476,12 +771,12 @@ def run_and_collect_data(dataset_path):
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
 
-        pattern_size_list = [4]
+        pattern_size_list = [8]
         n_list = [2]
         pattern_size=0
         bool_array_size_bits = bool_array.nbytes
         #####################################################
-        non_consecutive_array, metadata=split_array_on_multiple_consecutive_values(group, threshold_percentage=0.1)
+        non_consecutive_array, metadata=split_array_on_multiple_consecutive_values(group, threshold_percentage=5)
         metadata1=convert_RLE(metadata)
         metadata_array = float_to_ieee754(metadata1)
         ###############
@@ -525,6 +820,10 @@ def run_and_collect_data(dataset_path):
                     bool_array, l_z_array, t_z_array, m, n, fig, axs)
                 #################Decode###############################
                 all_decoded_data = []
+
+                Decodedata_leading1 = pattern_based_decompressor(dict_leading[0], encoded_text_leading[0], m, n, lead_shape_m[0], lead_shape_n[0])
+                Decodedata_content1 = pattern_based_decompressor(dict_content[0], encoded_text_content[0], m, n,content_shap_m[0], content_shap_n[0])
+                Decodedata_tailing1 = pattern_based_decompressor(dict_trailing[0], encoded_text_trailing[0], m,n,tail_shap_m[0], tail_shap_n[0])
                 Decodedata_leading = pattern_based_decompressor_compose(dict_leading[0], encoded_text_leading[0], m, n, lead_shape_m[0], lead_shape_n[0])
                 Decodedata_content = pattern_based_decompressor_compose(dict_content[0],  encoded_text_content[0], m, n,content_shap_m[0], content_shap_n[0])
                 Decodedata_tailing = pattern_based_decompressor_compose(dict_trailing[0], encoded_text_trailing[0], m, n,
@@ -677,7 +976,7 @@ def run_and_collect_data(dataset_path):
 
 
                 results.append(result_row)
-        save_results(pd.DataFrame(results), dataset_name, fig, axs)
+        save_results1(pd.DataFrame(results), dataset_name, fig, axs)
 
     return pd.DataFrame(results)
 
@@ -686,7 +985,7 @@ def run_and_collect_data(dataset_path):
 
 
 
-def save_results(df_results,name_dataset,fig, axs ):
+def save_results1(df_results,name_dataset,fig, axs ):
    # name_dataset =name_dataset = df_results["dataset_name"].iloc[0]
     df1 = df_results
     df_results["max_com_ratio"] = df_results[["com_ratio_b1", "com_ratio_b2", "com_ratio_b3"]].max(axis=1)
