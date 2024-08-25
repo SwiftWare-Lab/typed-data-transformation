@@ -1,58 +1,94 @@
 import numpy as np
 
 
-def decompress_final(final_decoded_data, metadata1):
-    # Both final_decoded_data and metadata1 are in IEEE 754 float32 format
+def binary_to_int(binary_array):
+    """
+    Convert an array of binary digits (0s and 1s) to an integer.
+    """
+    binary_string = ''.join(map(str, binary_array))
+    return int(binary_string, 2)
 
-    # Step 1: Calculate the final size after decompression
-    final_size = len(final_decoded_data)
 
-    # Iterate through metadata1 to compute the additional size needed for the inserted values
-    for i in range(0, len(metadata1), 3):
-        count = np.float32(metadata1[i + 2]).view(np.int32)  # Convert IEEE 754 to int for count
-        final_size += count  # Add the count to the final size
+def convert_to_int_array(binary_arrays):
+    """
+    Convert a 2D numpy array of binary arrays (each row represents binary digits) to an array of integers.
+    """
+    return np.array([binary_to_int(row) for row in binary_arrays])
 
-    # Step 2: Create a new array with the final size
-    reconstructed_data = np.zeros(final_size, dtype=np.float32)
 
-    # Step 3: Populate the new array with values from final_decoded_data and metadata1
-    current_position = 0  # Track the current position in the reconstructed array
+def rle_encode(data):
+    """
+    Run-Length Encoding (RLE) for an array of integers.
+    """
+    encoded = []
+    count = 1
+    previous = data[0]
 
-    # Keep track of the position in the original final_decoded_data
-    original_position = 0
+    # Loop through the array starting from the second element
+    for value in data[1:]:
+        if value == previous:
+            count += 1
+        else:
+            encoded.append((previous, count))
+            count = 1
+            previous = value
 
-    # Process metadata1 to perform insertions
-    for i in range(0, len(metadata1), 3):
-        # Convert start_index and count to integers, as these are stored in IEEE 754 format
-        start_index = np.float32(metadata1[i]).view(np.int32)  # Convert IEEE 754 to int for start_index
-        value = metadata1[i + 1]  # Value remains in IEEE 754 format
-        count = np.float32(metadata1[i + 2]).view(np.int32)  # Convert IEEE 754 to int for count
+    # Append the last run
+    encoded.append((previous, count))
+    return encoded
 
-        # Copy data from final_decoded_data up to the start_index
-        reconstructed_data[current_position:current_position + (start_index - original_position)] = final_decoded_data[
-                                                                                                    original_position:start_index]
-        current_position += (start_index - original_position)
 
-        # Insert the value count times at the correct position
-        reconstructed_data[current_position:current_position + count] = value
-        current_position += count
+def calculate_size_in_bits(array, bit_length_func):
+    """
+    Calculate the size of an array in bits.
 
-        # Update the original position to continue copying from the original data
-        original_position = start_index
+    :param array: The array to calculate the size for.
+    :param bit_length_func: A function that calculates the number of bits for a given element.
+    :return: Total size in bits.
+    """
+    return sum(bit_length_func(int(value)) for value in array)  # Convert to Python int
 
-    # Copy any remaining data from final_decoded_data after the last insertion
-    reconstructed_data[current_position:] = final_decoded_data[original_position:]
 
-    return reconstructed_data
+def bit_length_for_int(value):
+    """
+    Calculate the number of bits required to represent an integer.
+    """
+    return value.bit_length()
+
+
+def bit_length_for_rle(encoded_data):
+    """
+    Calculate the total number of bits for RLE encoded data.
+    Each tuple in RLE contains a value and a count.
+    """
+    total_bits = 0
+    for value, count in encoded_data:
+        total_bits += int(value).bit_length()  # Convert to Python int
+        total_bits += int(count).bit_length()  # Convert to Python int
+    return total_bits
 
 
 # Example usage
-# Both 'metadata1' and 'final_decoded_data' are assumed to be in IEEE 754 float32 format
-metadata1 = np.array([1065353216, 1073741824, 1073741824,  # start_index = 2, value = 2.0, count = 2
-                      1090519040, 1084227584, 1077936128], dtype=np.float32)  # start_index = 5, value = 4.5, count = 3
-final_decoded_data = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)  # Example data
+first_10_bits = np.array([[1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+                          [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+                          [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+                          [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+                          [0, 1, 1, 0, 1, 0, 0, 1, 1, 0],
+                          [1, 0, 1, 0, 1, 1, 0, 1, 0, 1]])  # Example binary arrays
 
-# Decompress the final data
-reconstructed_data = decompress_final(final_decoded_data, metadata1)
+# Step 1: Convert the first 10 bits to integers
+array10 = convert_to_int_array(first_10_bits)
 
-print(reconstructed_data)
+# Step 2: Apply RLE to the integer array
+rle_encoded_array10 = rle_encode(array10)
+
+# Step 3: Calculate the size of `array10` in bits
+array10_size_in_bits = calculate_size_in_bits(array10, bit_length_for_int)
+
+# Step 4: Calculate the size of `rle_encoded_array10` in bits
+rle_encoded_array10_size_in_bits = bit_length_for_rle(rle_encoded_array10)
+
+print("First 10 Bits as Integers:", array10)
+print("RLE Encoded Integers:", rle_encoded_array10)
+print("Size of array10 in bits:", array10_size_in_bits)
+print("Size of rle_encoded_array10 in bits:", rle_encoded_array10_size_in_bits)
