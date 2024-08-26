@@ -187,7 +187,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
         # Adjust bounds based on tuning step
         bnd1 = bnd1 + i
         bnd2 = bnd2 - i
-        if bnd1 % n != 0 or bnd2 % n != 0:
+
+        if bnd1 % n == 0 or bnd2 % n == 0:
             continue
         else:
             print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
@@ -508,7 +509,9 @@ def run_and_collect_data(dataset_path):
     #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/Car/Car_TEST.tsv"
     #datasets = [dataset_path]
-    datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
+   # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
+    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
+    datasets = [dataset_path]
 
     for dataset_path in datasets:
         fig, axs = plt.subplots(5, 2, figsize=(20, 20))  # Adjust the subplot grid and figure size as needed
@@ -557,8 +560,8 @@ def run_and_collect_data(dataset_path):
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
         size_metadata = len(metadata) * 96  # Example size calculation
-        pattern_size_list = [4,6,8,10]
-        n_list = [1,2]
+        pattern_size_list = [1]
+        n_list = [4]
         for m in pattern_size_list:
             for n in n_list:
                 print("m", m, "n", n)

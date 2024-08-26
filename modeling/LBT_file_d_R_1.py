@@ -568,8 +568,8 @@ def bit_length_for_rle(encoded_data):
 def run_and_collect_data(dataset_path):
     results = []
     verify_flag_final=False
-    m, n = 1, 32
-    ts_n = 32
+    m, n = 8, 2
+    ts_n = 22
     #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
     datasets = [dataset_path]
@@ -582,7 +582,7 @@ def run_and_collect_data(dataset_path):
         results = []
         ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
-        ts_data1 = ts_data1.iloc[0:85, :]
+       # ts_data1 = ts_data1.iloc[0:4, :]
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
         group = group.astype(np.float32).to_numpy().reshape(-1)
 
@@ -619,7 +619,7 @@ def run_and_collect_data(dataset_path):
         ##########################################
         array22 = convert_to_int_array( remaining_22_bits)
         results22 = rle_encode(array22)
-        #array10_size_in_bits = calculate_size_in_bits(result_array10, bit_length_for_int)
+        array10_size_in_bits = calculate_size_in_bits(array10, bit_length_for_int)
         rle_encoded_array10_size_in_bits = bit_length_for_rle(result_array10)
         rle_encoded_array22_size_in_bits = bit_length_for_rle(results22)
 
@@ -635,21 +635,12 @@ def run_and_collect_data(dataset_path):
 
         # Huffman compression
         est_size, Non_uniform_1x4 = huffman_code_array(non_consecutive_array)
-        #############################################
-        ts_m = bool_array.shape[0]
-        inverse_cw_dict1, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
-        compressed_size, encoded_size, dic_size_bits = measure_total_compressed_size(
-            encoded_text, inverse_cw_dict1)
-        max_code_length_32 = max(len(code) for code in inverse_cw_dict1.values())
-
-        ts_n = 22
-        ##########################################3
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
        # size_metadata = len(metadata) * 96  # Example size calculation
         size_metadata =rle_encoded_array10_size_in_bits
-        pattern_size_list = [1]
-        n_list = [22]
+        pattern_size_list = [4,5,8,10,12]
+        n_list = [1]
         for m in pattern_size_list:
             for n in n_list:
                 print("m", m, "n", n)
@@ -673,7 +664,6 @@ def run_and_collect_data(dataset_path):
                 inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
                 compressed_size22, encoded_size22,dic_size_bits22 = measure_total_compressed_size(
                     encoded_text, inverse_cw_dict)
-                max_code_length_16 = max(len(code) for code in inverse_cw_dict.values())
 
 
 
@@ -685,7 +675,29 @@ def run_and_collect_data(dataset_path):
                  lead_shape_n, tail_shap_n, content_shap_n, leading_zero_array_orig, content_array_orig,
                  trailing_mixed_array_orig) = decomposition_based_compression(bool_array, l_z_array, t_z_array, m, n,
                                                                               fig, axs)
+                 ##############################################decode#######################
+                #if len(dict_trailing) > 0:
+                if 1==2:
 
+
+                    Decodedata_leading1 = pattern_based_decompressor(dict_leading[0], encoded_text_leading[0], m, n,
+                                                                     lead_shape_m[0],
+                                                                     lead_shape_n[0])
+
+                    Decodedata_content1 = pattern_based_decompressor(dict_content[0], encoded_text_content[0], m, n,
+                                                                     content_shap_m[0], content_shap_n[0])
+
+                    Decodedata_tailing1 = pattern_based_decompressor(dict_trailing[0], encoded_text_trailing[0], m, n,
+                                                                     tail_shap_m[0], tail_shap_n[0])
+
+                    final_decoded_data = np.concatenate((Decodedata_leading1, Decodedata_content1, Decodedata_tailing1),
+                                                        axis=1)
+                    verify_flag_compo = np.array_equal(bool_array, final_decoded_data)
+                    reconstructed_data = decompress_final(final_decoded_data, metadata_array)
+                    verify_flag_final = np.array_equal(bool_array2, reconstructed_data)
+
+
+               ################################################################################################################
                 # Store results dynamically
                 result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
                 total_encoded_b = {}
@@ -742,7 +754,6 @@ def run_and_collect_data(dataset_path):
                 result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
                 result_row["comp_ratio_l22"] = comp_ratio_l22
                 result_row["Non_uniform_1x4"] = Non_uniform_1x4
-                result_row["Non_uniform_1_1x4"]=compressed_size
                 result_row["Huffman_22_dict_1x4"] =bool_array_size_bits/(compressed_size22+ size_metadata)
                 result_row["Huffman_22_1x4"] =bool_array_size_bits/ (encoded_size22 + size_metadata)
                 result_row["bool_array_size_bits"] = bool_array_size_bits
@@ -752,7 +763,6 @@ def run_and_collect_data(dataset_path):
                 result_row["compressed_size22"]=compressed_size22
                 result_row["encoded_size22"] =  encoded_size22
                 result_row["dic_size_bits22"] = dic_size_bits22
-                result_row["rle_encoded_array10_size_in_bits"]=rle_encoded_array10_size_in_bits
 
 
                 results.append(result_row)
