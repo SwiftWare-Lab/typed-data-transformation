@@ -363,10 +363,9 @@ def plot_ts(ts_array, ax=None, plot_y_axis=""):
     ax.set_ylabel(plot_y_axis)
 #name_dataset="Beef_test.tsv"
 
-def split_array_on_multiple_consecutive_values(data, threshold_percentage=90):
+def split_array_on_multiple_consecutive_values(data, threshold_percentage=9):
     total_length = len(data)
     threshold = total_length * (threshold_percentage / 100.0)
-
     total_length = len(data)
     consecutive_count = 1
     start_idx = 0
@@ -398,30 +397,19 @@ def split_array_on_multiple_consecutive_values(data, threshold_percentage=90):
         })
     else:
         non_consecutive_array.extend(data[start_idx:])
-    #non_consecutive_array = np.array(non_consecutive_array, dtype=np.float32).reshape(-1)
-    non_consecutive_array = np.array(non_consecutive_array).reshape(-1)
-    #non_consecutive_array = np.array(non_consecutive_array)
-
-
+    non_consecutive_array = np.array(non_consecutive_array, dtype=np.float32).reshape(-1)
 
     return non_consecutive_array, metadata
 
 
-def are_equal1(val1, val2):
+def are_equal(val1, val2):
     # Check if two values are equal, treating NaN as equal to NaN
     if np.isnan(val1) and np.isnan(val2):
         return True
     return val1 == val2
 
 
-def are_equal(val1, val2):
-    # Check if the values are arrays
-    if isinstance(val1, np.ndarray) and isinstance(val2, np.ndarray):
-        return np.array_equal(val1, val2)
-    # Check if NaN values are treated as equal
-    if np.isnan(val1) and np.isnan(val2):
-        return True
-    return val1 == val2
+
 def convert_RLE(metadata):
     if isinstance(metadata, list):
         # Initialize an empty list to store all the consecutive values
@@ -531,35 +519,6 @@ def decompress_final(final_decoded_data, metadata1):
     return reconstructed_data
 
 
-
-def int_to_binary_array(value, bit_length=None):
-    """
-    Convert an integer or an array of integers to a binary array of 0s and 1s.
-
-    :param value: The integer or array of integers to convert to binary.
-    :param bit_length: The desired bit length of the binary array. If None, it will use the minimum required bits.
-    :return: A 2D numpy array representing the binary digits (0s and 1s).
-    """
-    if isinstance(value, np.ndarray) or isinstance(value, list):
-        # Convert each element in the array to a binary array
-        binary_arrays = [int_to_binary_array(v, bit_length) for v in value]
-        # Convert the list of arrays to a 2D numpy array
-        return np.vstack(binary_arrays)
-
-    if value < 0:
-        raise ValueError("The value must be a non-negative integer.")
-
-    # Convert integer to binary string, remove the '0b' prefix
-    binary_string = bin(value)[2:]
-
-    # If bit_length is specified, pad the binary string with leading zeros
-    if bit_length is not None:
-        binary_string = binary_string.zfill(bit_length)
-
-    # Convert the binary string to a numpy array of integers (0s and 1s)
-    binary_array = np.array([int(bit) for bit in binary_string], dtype=np.int16)
-
-    return binary_array
 def convert_to_int_array(binary_arrays):
     """
     Convert a 2D numpy array of binary arrays (each row represents binary digits) to an array of integers.
@@ -612,7 +571,7 @@ def run_and_collect_data(dataset_path):
     m, n = 1, 32
     ts_n = 32
     #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
-    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
+    dataset_path = "/media/samira/sa/result-compression/UCRArchive_2018/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
     datasets = [dataset_path]
     #datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
 
@@ -663,16 +622,15 @@ def run_and_collect_data(dataset_path):
         #array10_size_in_bits = calculate_size_in_bits(result_array10, bit_length_for_int)
         rle_encoded_array10_size_in_bits = bit_length_for_rle(result_array10)
         rle_encoded_array22_size_in_bits = bit_length_for_rle(results22)
-        #non_consecutive_array, metadata=split_array_on_multiple_consecutive_values(remaining_22_bits,0.005)
 
 
 
     #####################################
 
         # Split array and apply RLE
-        non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(array22, threshold_percentage=0.005)
-        #metadata1 = convert_RLE(metadata)
-        #metadata_array = float_to_ieee754(metadata1)
+        non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(array22, threshold_percentage=9)
+        metadata1 = convert_RLE(metadata)
+        metadata_array = float_to_ieee754(metadata1)
 
 
         # Huffman compression
@@ -688,29 +646,25 @@ def run_and_collect_data(dataset_path):
         ##########################################3
         frq_dict = compute_repetition(group)
         plot_historgam(frq_dict, axs[0, 1], False, "Pattern 1x4")
-        size_metadata1 = len(metadata) * 68  # Example size calculation
-        size_metadata =rle_encoded_array10_size_in_bits +size_metadata1
+       # size_metadata = len(metadata) * 96  # Example size calculation
+        size_metadata =rle_encoded_array10_size_in_bits
         pattern_size_list = [1]
-        n_list = [10]
+        n_list = [22]
         for m in pattern_size_list:
             for n in n_list:
                 print("m", m, "n", n)
-                #group=remaining_22_bits
-                group1=non_consecutive_array
-                group1 = np.array(group1)
-                new_array_size = group1.shape[0] - group1.shape[0] % m
-                group1 = group1[:new_array_size]
-
+                group=remaining_22_bits
+                new_array_size = group.shape[0] - group.shape[0] % m
+                group = group[:new_array_size]
+                bool_array = group
                # group=non_consecutive_array
 
                 # Reshape group based on `m`
-                #new_array_size = group.shape[0] - group.shape[0] % m
-                #group = group[:new_array_size]
-                ts_m = group1.shape[0]
-                #ts_n=group.shape[1]
-                bool_array=int_to_binary_array(group1)
+               # new_array_size = group.shape[0] - group.shape[0] % m
+               # group = group[:new_array_size]
+                ts_m = group.shape[0]
+
                 #bool_array = float_to_ieee754(group)
-                ts_n = len(bool_array[0])
                 #bool_array =remaining_22_bits
                 entropy_all = calculate_entropy(bool_array)
                 print("entropy_all", entropy_all)

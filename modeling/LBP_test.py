@@ -360,9 +360,9 @@ plt.subplots_adjust(hspace=0.5)
 
 #path_tsv = sys.argv[3]
 #path_tsv="/home/jamalids/Documents/2D/UCRArchive_2018/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
-path_tsv= "/home/jamalids/Documents/2D/UCRArchive_2018/ACSF1/ACSF1_TEST.tsv"
+path_tsv= "/home/jamalids/Downloads/InsectEPGSmallTrain_TEST.tsv"
 ts_dataset1 = pd.read_csv(path_tsv, delimiter='\t', header=None)
-#ts_dataset1 = ts_dataset1.iloc[0:4, 0:3]
+ts_dataset1 = ts_dataset1.iloc[0:50, :]
 
 #groups = ts_dataset1.groupby(0)
 log_dict = {}
