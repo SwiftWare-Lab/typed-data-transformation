@@ -5,95 +5,89 @@ from scipy.stats import entropy, skew
 
 # Load the dataset
 #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
-dataset_path ="/home/jamalids/Documents/2D/data1/hst_wfc3_ir_f32.tsv"
-ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
-ts_data1 = ts_data1.drop(ts_data1.columns[0], axis=1)
-#ts_data1 = ts_data1.iloc[0:1, :]
-ts_data1=ts_data1.T
-ts_data1 = ts_data1.astype(np.float32).to_numpy().reshape(-1)
+dataset_path="/home/jamalids/Documents/2D/data1"
+#datasets = [dataset_path]
+datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
+results = []
 
-# Calculate statistics
-max_value = np.max(ts_data1)  # Maximum value in the dataset
-min_value = np.min(ts_data1)  # Minimum value in the dataset
-avg_value = ts_data1.mean()  # Average of all values in the dataset
-positive_count = (ts_data1 > 0).sum()  # Count of positive numbers
-negative_count = (ts_data1 < 0).sum()  # Count of negative numbers
-unique, counts = np.unique(ts_data1, return_counts=True)  # Number of repetitions for each unique value
-repetition_counts = dict(zip(unique, counts))
+for dataset_path in datasets:
+    ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
+    ts_data1 = ts_data1.drop(ts_data1.columns[0], axis=1)
+    ts_data1 = ts_data1.T
+    ts_data1 = ts_data1.astype(np.float64).to_numpy().reshape(-1)
+    dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
 
-# Total number of values in the dataset
-total_values = ts_data1.size
 
-# Dataset size in bytes
-dataset_size = os.path.getsize(dataset_path)
+    # Function to calculate significant digits precision
+    def count_decimal_digits(value):
+        # Ignore NaN values
+        if np.isnan(value):
+            return 0
 
-# Entropy of the dataset using histogram for float data
-hist, bin_edges = np.histogram(ts_data1, bins='auto', density=True)
-dataset_entropy = entropy(hist, base=2)
+        # Convert to string with full precision
+        value_str = f"{value:.32f}"
 
-# Standard deviation
-std_deviation = np.std(ts_data1)
+        # Split into integer and decimal parts
+        if '.' in value_str:
+            integer_part, decimal_part = value_str.split('.')
 
-# Skewness of the frequency distribution
-frequency_skewness = skew(ts_data1)
+            # Remove trailing zeros from the decimal part
+            decimal_part = decimal_part.rstrip('0')
 
-# Detect trend changes
-def count_trend_changes(data):
-    trend_changes = 0
-    diffs = np.diff(data)
-    trend_changes += np.sum(np.diff(np.sign(diffs)) != 0)
-    return trend_changes
+            # Count the remaining digits in the decimal part
+            return len(decimal_part)
+        else:
+            return 0  # Integer values have zero decimal precision
 
-trend_changes = count_trend_changes(ts_data1)
 
-# Prepare the data for export
-statistics = {
-    'Maximum Value': [max_value],
-    'Minimum Value': [min_value],
-    'Average Value': [avg_value],
-    'Positive Count': [positive_count],
-    'Negative Count': [negative_count],
-    'Unique Values': [len(repetition_counts)],
-    'Most Frequent Value': [max(repetition_counts, key=repetition_counts.get)],
-    'Most Frequent Value Count': [max(repetition_counts.values())],
-    'Total Number of Values': [total_values],
-    'Dataset Size (bytes)': [dataset_size],
-    'Entropy': [dataset_entropy],
-    'Standard Deviation': [std_deviation],
-    'Skewness': [frequency_skewness],
-    'Trend Changes': [trend_changes]
-}
+    # Calculate precision
+    #precision_counts = [count_decimal_digits(value) for value in ts_data1 if not np.isnan(value)]
+    #max_precision = np.max(precision_counts)
+   # average_precision = np.mean(precision_counts)
+    # Calculate other statistics
+    max_value = np.max(ts_data1)
+    min_value = np.min(ts_data1)
+    avg_value = np.mean(ts_data1)
+    positive_count = (ts_data1 > 0).sum()
+    negative_count = (ts_data1 < 0).sum()
+    unique, counts = np.unique(ts_data1, return_counts=True)
+    repetition_counts = dict(zip(unique, counts))
+    total_values = ts_data1.size
+    dataset_size = os.path.getsize(dataset_path)
+    #std_deviation = np.std(ts_data1)
+   # frequency_skewness = skew(ts_data1)
 
-# Convert to DataFrame
-statistics_df = pd.DataFrame(statistics)
+    # Trend changes calculation
+    def count_trend_changes(data):
+        diffs = np.diff(data)
+        trend_changes = np.sum(np.diff(np.sign(diffs)) != 0)
+        return trend_changes
 
-# Save to CSV
+   # trend_changes = count_trend_changes(ts_data1)
+
+    # Prepare the data for export
+    statistics = {
+        "datasetname":dataset_name,
+        'Maximum Value': [max_value],
+        'Minimum Value': [min_value],
+        'Average Value': [avg_value],
+        'Positive Count': [positive_count],
+        'Negative Count': [negative_count],
+        'Unique Values': [len(repetition_counts)],
+        'Most Frequent Value': [max(repetition_counts, key=repetition_counts.get)],
+        'Most Frequent Value Count': [max(repetition_counts.values())],
+        'Total Number of Values': [total_values],
+        'Dataset Size (bytes)': [dataset_size],
+        #'Standard Deviation': [std_deviation],
+        #'Skewness': [frequency_skewness],
+       # 'Trend Changes': [trend_changes],
+        #'Highest Precision (decimal places)': [max_precision],
+        #'Value with Highest Precision': max_precision
+    }
+
+    results.append(statistics)
+
+# Convert to DataFrame and save to CSV
+statistics_df = pd.DataFrame(results)
 statistics_df.to_csv("statistic.csv", index=False)
-
 print("Statistics saved to statistic.csv")
-
-#################################################################
-
-# Detect consecutive same values and count them
-consecutive_counts = []
-current_value = ts_data1[0]
-count = 1
-
-for i in range(1, len(ts_data1)):
-    if ts_data1[i] == current_value:
-        count += 1
-    else:
-        consecutive_counts.append((current_value, count))
-        current_value = ts_data1[i]
-        count = 1
-
-# Append the last group
-consecutive_counts.append((current_value, count))
-
-# Convert to DataFrame
-consecutive_df = pd.DataFrame(consecutive_counts, columns=['Value', 'Consecutive Count'])
-
-# Save to a new CSV file
-consecutive_df.to_csv("consecutive_values.csv", index=False)
-
-print("Consecutive values saved to consecutive_values.csv")
