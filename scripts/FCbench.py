@@ -34,7 +34,7 @@ def calculate_metrics(df):
     }
 
 #dataset_path = "/home/jamalids/Documents/compression-part3/big-data-compression/scripts/results"
-dataset_path ="/home/jamalids/Documents/compression-part3/Fcbench/Results_10000K"
+dataset_path ="/home/jamalids/Documents/compression-part3/Fcbench/logE"
 datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.csv')]
 results_df = pd.DataFrame()  # Initialize an empty DataFrame to hold all results
 
@@ -44,7 +44,7 @@ for dataset_path in datasets:
     metrics = calculate_metrics(df)  # Calculate metrics
     metrics['dataset'] = os.path.basename(dataset_path).replace('.csv', '')  # Adding the dataset name
     results_df = pd.concat([results_df, pd.DataFrame([metrics])], ignore_index=True)  # Append the results to the DataFrame
-
+results_df.to_csv("second_fcbench.csv")
 # Number of datasets per subplot
 datasets_per_subplot = 4
 
@@ -76,5 +76,5 @@ for i, ax in enumerate(axes):
     ax.set_ylabel("Compression Ratio")  # Set y-axis label
 
 plt.tight_layout()
-plt.savefig('FCbench.jpg', format='jpg', dpi=300)
+plt.savefig('FCbench2.jpg', format='jpg', dpi=300)
 plt.show()

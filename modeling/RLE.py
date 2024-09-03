@@ -1,52 +1,35 @@
-import numpy as np
+def rle_encode_bits(bit_data):
+    encoding = []
+    i = 0
 
-def split_array_on_multiple_consecutive_values(data, threshold_percentage=0.1):
-    total_length = len(data)
-    threshold = total_length * (threshold_percentage / 100.0)
+    while i < len(bit_data):
+        count = 1
 
-    consecutive_count = 1
-    start_idx = 0
-    non_consecutive_array = []
-    metadata = []
+        # Count occurrences of the same bit sequence
+        while i + 1 < len(bit_data) and bit_data[i] == bit_data[i + 1]:
+            count += 1
+            i += 1
 
-    def are_equal(val1, val2):
-        # This function checks if two values are equal, treating NaN as equal to NaN
-        if np.isnan(val1) and np.isnan(val2):
-            return True
-        return val1 == val2
+        # Append the bit sequence (as a string) and its count to the encoding
+        encoding.append((''.join(bit_data[i]), count))
+        i += 1
 
-    for i in range(1, total_length):
-        if are_equal(data[i], data[i - 1]):
-            consecutive_count += 1
-        else:
-            if consecutive_count > threshold:
-                # Record metadata about the sequence
-                metadata.append({
-                    'value': data[i - 1],
-                    'count': consecutive_count,
-                    'start_index': i - consecutive_count
-                })
-            else:
-                # Append the segment to the single non_consecutive_array
-                non_consecutive_array.extend(data[start_idx:i])
-            # Update the start index for the next segment
-            start_idx = i
-            consecutive_count = 1
+    return encoding
 
-    # Handle the end of the array
-    if consecutive_count > threshold:
-        metadata.append({
-            'value': data[-1],
-            'count': consecutive_count,
-            'start_index': total_length - consecutive_count
-        })
-    else:
-        non_consecutive_array.extend(data[start_idx:])
+def rle_decode_bits(encoding):
+    decoded_data = []
 
-    return non_consecutive_array, metadata
+    # Reconstruct the original bit data from the encoding
+    for bit_sequence, count in encoding:
+        bit_sequence_list = list(bit_sequence)
+        decoded_data.extend([bit_sequence_list] * count)
 
-# Example usage
-data = np.array([1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 5, 5, 5, 5])
-non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(data, threshold_percentage=20)
-print("Non-consecutive array:", non_consecutive_array)
-print("Metadata:", metadata)
+    return decoded_data
+
+# Example usage:
+bit_data = [[01], [0, 1], [1 0], ['1', '0'], ['1', '1'], ['0', '0']]
+encoded_data = rle_encode_bits(bit_data)
+print("Encoded Data:", encoded_data)
+
+decoded_data = rle_decode_bits(encoded_data)
+print("Decoded Data:", decoded_data)

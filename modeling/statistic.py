@@ -54,8 +54,6 @@ for dataset_path in datasets:
     repetition_counts = dict(zip(unique, counts))
     total_values = ts_data1.size
     dataset_size = os.path.getsize(dataset_path)
-    #std_deviation = np.std(ts_data1)
-   # frequency_skewness = skew(ts_data1)
 
     # Trend changes calculation
     def count_trend_changes(data):
@@ -68,21 +66,17 @@ for dataset_path in datasets:
     # Prepare the data for export
     statistics = {
         "datasetname":dataset_name,
-        'Maximum Value': [max_value],
-        'Minimum Value': [min_value],
-        'Average Value': [avg_value],
-        'Positive Count': [positive_count],
-        'Negative Count': [negative_count],
-        'Unique Values': [len(repetition_counts)],
-        'Most Frequent Value': [max(repetition_counts, key=repetition_counts.get)],
-        'Most Frequent Value Count': [max(repetition_counts.values())],
-        'Total Number of Values': [total_values],
-        'Dataset Size (bytes)': [dataset_size],
-        #'Standard Deviation': [std_deviation],
-        #'Skewness': [frequency_skewness],
-       # 'Trend Changes': [trend_changes],
-        #'Highest Precision (decimal places)': [max_precision],
-        #'Value with Highest Precision': max_precision
+        'Maximum Value': max_value,
+        'Minimum Value': min_value,
+        'Average Value': avg_value,
+        'Positive Count': positive_count,
+        'Negative Count': negative_count,
+        'Unique Values': len(repetition_counts),
+        'Most Frequent Value':max(repetition_counts, key=repetition_counts.get),
+        'Most Frequent Value Count': max(repetition_counts.values()),
+        'Total Number of Values': total_values,
+        'Dataset Size (bytes)': dataset_size,
+
     }
 
     results.append(statistics)

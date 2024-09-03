@@ -1,38 +1,32 @@
-import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.pyplot as plt
 
-# Load the dataset
-df = pd.read_csv('results12.csv')
-df['dataset_name'] = 'ACSF1'
-# Assuming 'group_id' is the column you want to group by
-groups = df.groupby('group_id')
+# Load the data
+file_path = '/home/jamalids/Documents/compression-part3/Fcbench/combined_data.csv'
+data = pd.read_csv(file_path)
 
-# Loop through each group and plot
-for group_id, group in groups:
-    plt.figure(figsize=(12, 6))
+# Assuming 'dataset' and 'm' columns exist and are used to differentiate the data
+# You might need to adjust column names based on your actual data structure
 
-    # Adjusting the bar width for comparison
-    bar_width = 0.1
-    index = range(len(group))
+# Plotting three separate figures for different metrics
+metrics_to_plot = ['max_com_ratio', 't-max_com_ratio', 'Non_uniform_1x4', 'comp_ratio_l22', 'comp_ratio_zstd_default']
+titles = ['decompose_comp_Ratio', 'dict_decompose_comp_Ratio', 'Non-uniform 1x4', 'Compression Ratio L22', 'Zstd Default Compression Ratio']
+fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(18, 6))
 
-    # Plotting for each group
-    plt.bar(index, group['com_ratio'], bar_width, label='Com Ratio without Dictionary')
-    plt.bar([i + bar_width for i in index], group['com_ratio_dict'], bar_width, label='Com Ratio with Dictionary')
-    plt.bar([i + 2 * bar_width for i in index], group['com_ratio_tot_d '], bar_width,
-            label='Normal Com Ratio with Dictionary')
-    plt.bar([i + 3 * bar_width for i in index], group['com_ratio_tot'], bar_width, label='Normal Com Ratio')
-    plt.bar([i + 4 * bar_width for i in index], group['comp_ratio_zstd_default'], bar_width,
-            label='comp_ratio_zstd_default')
-    plt.bar([i + 5 * bar_width for i in index], group['comp_ratio_l22'], bar_width, label='comp_ratio_l22')
+# Filter and plot data for each subplot
+for i, ax in enumerate(axes.flatten()):
+    if i < len(metrics_to_plot):  # Check to avoid index errors if less than 3 metrics
+        metric = metrics_to_plot[i]
+        # Pivot data for better plotting by 'dataset' and 'm'
+        pivot_df = data.pivot_table(index=['dataset', 'M'], values=metric, aggfunc='mean').reset_index()
+        for key, grp in pivot_df.groupby('dataset'):
+            ax.plot(grp['M'], grp[metric], marker='o', linestyle='-', label=key)
+        ax.set_title(titles[i])
+        ax.set_xlabel('m Value')
+        ax.set_ylabel('Compression Ratio')
+        ax.legend(title='Dataset', loc='best')
+    else:
+        ax.set_visible(False)  # Hide unused subplots if any
 
-    plt.title(f'Compression Ratio for Group ID: {group_id}')
-    plt.xlabel('Dataset Name')
-    plt.ylabel('Compression Ratio')
-    plt.xticks([i + bar_width / 2 for i in index], group['dataset_name'], rotation=45)
-    plt.legend()
-    plt.tight_layout()
-
-    # Show and save the plot for each group
-
-    plt.savefig(f'CompressionRatio_Group_{group_id}.jpg')
-    plt.show()
+plt.tight_layout()
+plt.show()
