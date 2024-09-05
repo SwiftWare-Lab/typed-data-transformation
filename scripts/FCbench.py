@@ -12,9 +12,13 @@ def calculate_metrics(df):
     avg_t_com_ratio_b2 = df['t_com_ratio_b2'].max()
     avg_com_ratio_b3 = df['com_ratio_b3'].max()
     avg_t_com_ratio_b3 = df['t_com_ratio_b3'].max()
+    R_com_ratio_b1 = df['R_com_ratio_b1'].max()
+    R_com_ratio_b2 = df['R_com_ratio_b1'].max()
+    R_com_ratio_b3 = df['R_com_ratio_b1'].max()
     # Selecting the maximum average compression ratio across the b1, b2, b3
     max_avg_com_ratio = max(avg_com_ratio_b1, avg_com_ratio_b2, avg_com_ratio_b3)
     max_avg_t_com_ratio = max(avg_t_com_ratio_b1, avg_t_com_ratio_b2, avg_t_com_ratio_b3)
+    max_avg_R_com_ratio = max(R_com_ratio_b1, R_com_ratio_b2, R_com_ratio_b3)
     # Additional metrics from the dataframe
     comp_ratio_zstd_default = df['comp_ratio_zstd_default'].max()
     comp_ratio_l22 = df['comp_ratio_l22'].max()
@@ -28,6 +32,7 @@ def calculate_metrics(df):
         'avg_t_com_ratio_b3': avg_t_com_ratio_b3,
         'max_avg_com_ratio': max_avg_com_ratio,
         'max_avg_t_com_ratio':max_avg_t_com_ratio,
+        'max_avg_R_com_ratio':max_avg_R_com_ratio,
         'comp_ratio_zstd_default': comp_ratio_zstd_default,
         'comp_ratio_l22': comp_ratio_l22,
         'Non_uniform_1x4': Non_uniform_1x4
@@ -65,6 +70,7 @@ for i, ax in enumerate(axes):
     x = np.arange(len(subset))  # the label locations
     ax.bar(x - 1.5*width, subset['max_avg_com_ratio'], width, label='Com Ratio_Decompose')
     ax.bar(x - 0.5*width, subset['max_avg_t_com_ratio'], width, label='Com Ratio_Decompose_Dict')
+    ax.bar(x - 2.5 * width, subset['max_avg_R_com_ratio'], width, label='Com Ratio_Decompose_RLE')
     ax.bar(x + 0.5*width, subset['comp_ratio_zstd_default'], width, label='Zstd Default Comp Ratio')
     ax.bar(x + 1.5*width, subset['comp_ratio_l22'], width, label='Zstd 22 Comp Ratio')
     ax.bar(x + 2.5*width, subset['Non_uniform_1x4'], width, label='Non-uniform 1x4')
