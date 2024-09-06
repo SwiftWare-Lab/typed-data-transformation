@@ -736,15 +736,21 @@ def run_and_collect_data(dataset_path):
 
             # Huffman compression
             est_size, Non_uniform_1x4 = huffman_code_array(group)
-            ts_m = bool_array.shape[0]
-            inverse_cw_dict_h, root_h, tree_size_h, encoded_text_h = pattern_based_compressor(bool_array, m, n, ts_m, ts_n)
-            Non_uniform_1x4, encoded_size_h, dic_size_bits_h = measure_total_compressed_size(
-                encoded_text_h, inverse_cw_dict_h)
+            ts_m =  first_10_bits.shape[0]
+            inverse_cw_dict_h, root_h, tree_size_h, encoded_text_10 = pattern_based_compressor( first_10_bits, 1, 10, ts_m, 10)
+            Non_uniform_1x4_10, encoded_size_h, dic_size_bits_h = measure_total_compressed_size(
+                encoded_text_10, inverse_cw_dict_h)
+
+            ts_m =  remaining_22_bits.shape[0]
+            inverse_cw_dict_22, root_22, tree_size_22, encoded_text_22 = pattern_based_compressor( remaining_22_bits, 1, 22,
+                                                                                              ts_m, 22)
+            Non_uniform_1x4_22, encoded_size_22, dic_size_bits_22 = measure_total_compressed_size(
+                encoded_text_22, inverse_cw_dict_22)
             #############################################
             bool_array1 = float_to_ieee754(non_consecutive_array)
             ts_m = bool_array1.shape[0]
-            inverse_cw_dict1, root, tree_size, encoded_text = pattern_based_compressor(bool_array1, m, n, ts_m, ts_n)
-            compressed_size, encoded_size, dic_size_bits = measure_total_compressed_size(
+            inverse_cw_dict1, root, tree_size, encoded_text = pattern_based_compressor(bool_array1, 1, 32 ,ts_m, 8)
+            compressed_size_word, encoded_size, dic_size_bits = measure_total_compressed_size(
                 encoded_text, inverse_cw_dict1)
             max_code_length_32 = max(len(code) for code in inverse_cw_dict1.values())
 
@@ -851,8 +857,12 @@ def run_and_collect_data(dataset_path):
                     result_row["zstd_compressed_ts"] = zstd_compressed_ts_all
                     result_row["zstd_compressed_ts_22_all"] =zstd_compressed_ts_22_all
                     result_row["comp_ratio_l22"] = comp_ratio_l22
-                    result_row["Non_uniform_1x4"] = Non_uniform_1x4
-                    result_row["Non_uniform_1_1x4"] = compressed_size+size_metadata1
+                   # result_row["Non_uniform_1x4"] = Non_uniform_1x4
+                   # result_row["Non_uniform_1_1x4"] = compressed_size+size_metadata1
+                    result_row[" Non_uniform_1x4_10"] =  Non_uniform_1x4_10
+                    result_row[" Non_uniform_1x4_22"] = Non_uniform_1x4_22
+                    result_row["Non_uniform_1x4"] =   compressed_size_word
+
                     result_row["Huffman_22_dict_1x4"] = bool_array_size_bits / (compressed_size22 + size_metadata)
                     result_row["Huffman_22_1x4"] = bool_array_size_bits / (encoded_size22 + size_metadata)
                     result_row["bool_array_size_bits"] = bool_array_size_bits
@@ -864,8 +874,7 @@ def run_and_collect_data(dataset_path):
                     result_row["dic_size_bits22"] = dic_size_bits22
                     result_row["rle_encoded_array10_size_in_bits"] = rle_encoded_array10_size_in_bits
                     result_row["rle_encoded_array22_size_in_bits"] = rle_encoded_array22_size_in_bits
-                    result_row["comp_ratio_RLE_10_22"] = bool_array_size_bits / (
-                                rle_encoded_array10_size_in_bits + rle_encoded_array22_size_in_bits)
+                    result_row["comp_ratio_RLE_10_22"] = bool_array_size_bits / (  rle_encoded_array10_size_in_bits + rle_encoded_array22_size_in_bits)
 
                     results.append(result_row)
 
