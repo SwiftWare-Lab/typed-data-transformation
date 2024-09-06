@@ -571,9 +571,9 @@ def run_and_collect_data(dataset_path):
     verify_flag_final=False
     m, n = 1, 16
     ts_n = 32
-    dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
+    #dataset_path = "/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/AllGestureWiimoteX/AllGestureWiimoteX_TEST.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/UCRArchive_2018 (copy)/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
-   # dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+    dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/data1/hst_wfc3_ir_f32.tsv"
     datasets = [dataset_path]
     #datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
@@ -587,8 +587,8 @@ def run_and_collect_data(dataset_path):
         ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         ts_data1=ts_data1.drop(ts_data1.columns[0], axis=1)
-        #ts_data1=ts_data1.T
-       # ts_data1 = ts_data1.iloc[:, 0:400000]
+        ts_data1=ts_data1.T
+        ts_data1 = ts_data1.iloc[0:1,75:83]
         zstd_compressed_ts_all=0
         zstd_compressed_ts_22_all=0
         for index, row in ts_data1.iterrows():
