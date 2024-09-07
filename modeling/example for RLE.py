@@ -9,6 +9,7 @@ from utils import binary_to_int
 import argparse
 from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,decode_decompose,concat_decompose
 import plotly.graph_objects as go
+import networkx as nx
 
 
 def float_to_ieee754(f):
@@ -98,11 +99,12 @@ def compute_huffman_code(dict_code,original_data_bool,m, n):
 
     return estimated_size, estimated_size + dict_size,codes, root,tree_size,encode_text
 
-def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n):
+def pattern_based_compressor(original_data_bool, m, n,ts_m, ts_n,name):
     # for each rectangle 4x8, convert it to an integer and udpate the dictionary
     rectangles = get_dict(original_data_bool, m, n,ts_m, ts_n)
     # create a dictionary of code words
     estimated_size, estimated_all,cw_dict,root,tree_size,encode_text=compute_huffman_code(rectangles,original_data_bool,m, n)
+    plot_huffman_tree(root,name)
 
     return cw_dict,root,tree_size,encode_text
 def pattern_based_decompressor(inverse_cw_dict,encoded_text ,m, n,ts_m, ts_n):
@@ -202,7 +204,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
             ts_m_l, ts_n_l = leading_zero_array_orig.shape
             if ts_n_l != 0:
                 dict_leading, root_leading, tree_size_leading, encoded_text_leading, = pattern_based_compressor(
-                    leading_zero_array_orig, m, n, ts_m_l, ts_n_l)
+                    leading_zero_array_orig, m, n, ts_m_l, ts_n_l,"leading.png")
                 leading_entropy = calculate_entropy(leading_zero_array_orig)
             else:
                 dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
@@ -212,7 +214,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
             ts_m_c, ts_n_c = content_array_orig.shape
             if ts_n_c != 0:
                 dict_content, root_content, tree_size_content, encoded_text_content = pattern_based_compressor(
-                    content_array_orig, m, n, ts_m_c, ts_n_c)
+                    content_array_orig, m, n, ts_m_c, ts_n_c,"content.png")
                 contents_entropy = calculate_entropy(content_array_orig)
             else:
                 dict_content, root_content, tree_size_content, encoded_text_content = {}, None, 0, ''
@@ -222,7 +224,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
             ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
             if ts_n_t != 0:
                 dict_trailing, root_trailing, tree_size_trailing, encoded_text_trailing = pattern_based_compressor(
-                    trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t)
+                    trailing_mixed_array_orig, m, n, ts_m_t, ts_n_t,"trailing.png")
                 trailing_entropy = calculate_entropy(trailing_mixed_array_orig)
 
             else:
@@ -278,13 +280,16 @@ def compress_with_zstd(data, level=3):
 #########################################################################
 def huffman_code_array(array):
     # compute the frequency of the values
+
     frq_dict = compute_repetition(array)
     pattern_count = np.fromiter(frq_dict.values(), dtype=int)
     binary_code = np.array(range(len(pattern_count)), dtype=int)
     dict_code = {}
     for i in range(len(pattern_count)):
         dict_code[str(binary_code[i])] = pattern_count[i]
-    root = create_huffman_tree(dict_code)
+    #root = create_huffman_tree(dict_code)
+    root = create_huffman_tree(frq_dict)
+    plot_huffman_tree(root, "wordLevel.png")
     # Create Huffman codes dictionary
     codes = {}
     create_huffman_codes(root, "", codes)
@@ -644,6 +649,89 @@ def plot_table_float(float_values, name):
     # Save the figure as a PNG with proper scaling
     fig.write_image(name, scale=3)  # Increase scale for higher resolution
 
+def add_edges1(graph, node, pos=None, x=0, y=0, layer=1, label_pos=None):
+    """
+    Recursively adds edges from the Huffman tree to the NetworkX graph.
+
+    Args:
+        graph: The networkx graph object.
+        node: The current node in the Huffman tree.
+        pos: Dictionary for node positions.
+        x, y: Coordinates for positioning the nodes.
+        layer: The current depth in the tree (for spacing).
+        label_pos: Dictionary for node labels.
+    """
+    if node is not None:
+        # Check if the node is a leaf node
+        if node.char is not None:
+            try:
+                # Try to convert node.char to float and round it to 3 decimals
+                label_pos[node] = f'{round(float(node.char), 3)}'
+            except ValueError:
+                # If conversion fails (for example, if node.char is not a number), show it as is
+                label_pos[node] = f'{node.char}'
+        else:
+            label_pos[node] = f'freq: {node.freq}'  # For internal nodes
+
+        pos[node] = (x, y)
+
+        if node.left:
+            graph.add_edge(node, node.left)
+            add_edges(graph, node.left, pos=pos, x=x - 1 / layer, y=y - 1, layer=layer + 1, label_pos=label_pos)
+        if node.right:
+            graph.add_edge(node, node.right)
+            add_edges(graph, node.right, pos=pos, x=x + 1 / layer, y=y - 1, layer=layer + 1, label_pos=label_pos)
+
+def add_edges(graph, node, pos=None, x=0, y=0, layer=1, label_pos=None):
+    """
+    Recursively adds edges from the Huffman tree to the NetworkX graph.
+
+    Args:
+        graph: The networkx graph object.
+        node: The current node in the Huffman tree.
+        pos: Dictionary for node positions.
+        x, y: Coordinates for positioning the nodes.
+        layer: The current depth in the tree (for spacing).
+        label_pos: Dictionary for node labels.
+    """
+    if node is not None:
+        pos[node] = (x, y)
+        label_pos[node] = f'{node.char}\n{node.freq}' if node.char is not None else f'freq: {node.freq}'
+
+        if node.left:
+            graph.add_edge(node, node.left)
+            add_edges(graph, node.left, pos=pos, x=x - 1 / layer, y=y - 1, layer=layer + 1, label_pos=label_pos)
+        if node.right:
+            graph.add_edge(node, node.right)
+            add_edges(graph, node.right, pos=pos, x=x + 1 / layer, y=y - 1, layer=layer + 1, label_pos=label_pos)
+
+
+# Function to plot the Huffman Tree
+def plot_huffman_tree(root,name):
+    """
+    Plots the Huffman tree using NetworkX and Matplotlib.
+
+    Args:
+        root: The root node of the Huffman tree.
+    """
+    graph = nx.DiGraph()  # Directed graph for Huffman tree
+    pos = {}  # Position dictionary for nodes
+    label_pos = {}  # Labels for nodes
+
+    # Add edges and positions to the graph
+    add_edges(graph, root, pos=pos, label_pos=label_pos)
+
+    # Plot the tree
+    plt.figure(figsize=(12, 8))
+    nx.draw(graph, pos, with_labels=False, node_size=2000, node_color="skyblue", font_size=10, font_weight='bold',
+            arrows=False)
+
+    # Add node labels
+    nx.draw_networkx_labels(graph, pos, labels=label_pos, font_size=10, verticalalignment='center')
+
+    plt.title("Huffman Tree")
+    #plt.show()
+    plt.savefig(name)
 
 def run_and_collect_data(dataset_path):
     results = []
@@ -735,21 +823,22 @@ def run_and_collect_data(dataset_path):
             metadata_array = float_to_ieee754(metadata1)
 
             # Huffman compression
-            est_size, Non_uniform_1x4 = huffman_code_array(group)
+            array = np.round(group, 3)
+            est_size, Non_uniform_1x4 = huffman_code_array(array)
             ts_m =  first_10_bits.shape[0]
-            inverse_cw_dict_h, root_h, tree_size_h, encoded_text_10 = pattern_based_compressor( first_10_bits, 1, 10, ts_m, 10)
+            inverse_cw_dict_h, root_h, tree_size_h, encoded_text_10 = pattern_based_compressor( first_10_bits, 1, 10, ts_m, 10,"10.png")
             Non_uniform_1x4_10, encoded_size_h, dic_size_bits_h = measure_total_compressed_size(
                 encoded_text_10, inverse_cw_dict_h)
 
             ts_m =  remaining_22_bits.shape[0]
             inverse_cw_dict_22, root_22, tree_size_22, encoded_text_22 = pattern_based_compressor( remaining_22_bits, 1, 22,
-                                                                                              ts_m, 22)
+                                                                                              ts_m, 22,"22.png")
             Non_uniform_1x4_22, encoded_size_22, dic_size_bits_22 = measure_total_compressed_size(
                 encoded_text_22, inverse_cw_dict_22)
             #############################################
             bool_array1 = float_to_ieee754(non_consecutive_array)
             ts_m = bool_array1.shape[0]
-            inverse_cw_dict1, root, tree_size, encoded_text = pattern_based_compressor(bool_array1, 1, 32 ,ts_m, 8)
+            inverse_cw_dict1, root, tree_size, encoded_text = pattern_based_compressor(bool_array1, 1, 32 ,ts_m, 8,"32-1.png")
             compressed_size_word, encoded_size, dic_size_bits = measure_total_compressed_size(
                 encoded_text, inverse_cw_dict1)
             max_code_length_32 = max(len(code) for code in inverse_cw_dict1.values())
@@ -783,7 +872,7 @@ def run_and_collect_data(dataset_path):
 
                     # Compress the data
                     inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m, n, ts_m,
-                                                                                              ts_n)
+                                                                                              ts_n,"m-n.png")
                     compressed_size22, encoded_size22, dic_size_bits22 = measure_total_compressed_size(
                         encoded_text, inverse_cw_dict)
                     max_code_length_16 = max(len(code) for code in inverse_cw_dict.values())
