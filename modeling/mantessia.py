@@ -28,13 +28,15 @@ ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
 dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
 ts_data1 = ts_data1.drop(ts_data1.columns[0], axis=1)
 ts_data1 = ts_data1.T
-ts_data1 = ts_data1.iloc[0:1, 75:80]  # Select specific rows and columns as needed
+ts_data1 = ts_data1.iloc[0:1, 77:82]  # Select specific rows and columns as needed
 ts_data1 = ts_data1.astype(np.float32).to_numpy().reshape(-1)
+print(ts_data1)
 
 bit_array = float_to_ieee754(ts_data1)
+print(bit_array)
 
 # Extract mantissa part
-mantissa_data = bit_array[:, 10:32]
+mantissa_data = bit_array[:, 9:32]
 print(mantissa_data)
 
 # Count how many times the bits change in each column
@@ -98,23 +100,38 @@ for window_size in range(min_window_size, max_window_size + 1):
 
 print(f"\nOverall Best Window Size: {best_window_size}")
 print(f"Best interval for min changes is from column {best_interval[0]} to {best_interval[1]} with {lowest_change_sum} bit changes")
-# Plot min and max changes for each window size
-plt.figure(figsize=(10, 6))
-plt.plot(window_sizes, min_changes_per_window, marker='o', label='Min Changes per Window Size', color='blue')
-plt.plot(window_sizes, max_changes_per_window, marker='x', label='Max Changes per Window Size', color='orange')
+float_values = ts_data1  # The original float values
+consecutive_diff = np.abs(np.diff(float_values))
 
+# Create a figure with two subplots
+fig, axs = plt.subplots(2, 1, figsize=(10, 12))  # 2 rows, 1 column
+
+# Plot 1: Min and Max bit changes for each window size
+axs[0].plot(window_sizes, min_changes_per_window, marker='o', label='Min Changes per Window Size', color='blue')
+axs[0].plot(window_sizes, max_changes_per_window, marker='x', label='Max Changes per Window Size', color='orange')
 
 for i, (min_txt, max_txt) in enumerate(zip(min_intervals_per_window, max_intervals_per_window)):
-    plt.annotate(f"Min:{min_txt[0]}-{min_txt[1]}", (window_sizes[i], min_changes_per_window[i]), textcoords="offset points", xytext=(0, 10), ha='center')
-    plt.annotate(f"Max:{max_txt[0]}-{max_txt[1]}", (window_sizes[i], max_changes_per_window[i]), textcoords="offset points", xytext=(0, -15), ha='center', color='orange')
+    axs[0].annotate(f"Min:{min_txt[0]}-{min_txt[1]}", (window_sizes[i], min_changes_per_window[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+    axs[0].annotate(f"Max:{max_txt[0]}-{max_txt[1]}", (window_sizes[i], max_changes_per_window[i]), textcoords="offset points", xytext=(0, -15), ha='center', color='orange')
 
+axs[0].set_xticks(np.arange(min(window_sizes), max(window_sizes) + 1, 1))  # Show only integer ticks on the x-axis
+axs[0].set_title('Minimum and Maximum Bit Changes for Each Window Size')
+axs[0].set_xlabel('Window Size')
+axs[0].set_ylabel('Bit Changes')
+axs[0].legend()
+axs[0].grid(True)
 
-plt.xticks(ticks=np.arange(min(window_sizes), max(window_sizes) + 1, 1))  # Show only integer ticks on the x-axis
+# Plot 2: Consecutive float value changes
+axs[1].plot(consecutive_diff, marker='o', color='purple', label='Consecutive Float Value Changes')
+axs[1].set_title('Trend of Consecutive Float Value Changes')
+axs[1].set_xlabel('Index')
+axs[1].set_ylabel('Absolute Difference between Consecutive Values')
+axs[1].legend()
+axs[1].grid(True)
 
-plt.title('Minimum and Maximum Bit Changes for Each Window Size')
-plt.xlabel('Window Size')
-plt.ylabel('Bit Changes')
-plt.legend()
-plt.grid(True)
-plt.savefig("mantessia.png")
+# Adjust layout
+plt.tight_layout()
+
+# Save and display the combined figure
+plt.savefig("combined_plots.png")
 plt.show()

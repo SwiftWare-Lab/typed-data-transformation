@@ -481,7 +481,8 @@ def run_and_collect_data(dataset_path):
     #datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
     #dataset_path = "/media/samira/sa/result-compression/UCRArchive_2018/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
-    #dataset_path = "/home/jamalids/Documents/2D/data1/num_control_f64.tsv"
+    #dataset_path = "/home/jamalids/Documents/2D/data1/tmp/tpch_order_f64.tsv"
+    dataset_path ="/home/jamalids/Documents/2D/data1/tmp/tpcds_store_f32.tsv"
     #datasets = [dataset_path]
     #fig, axs = plt.subplots(5, 2, figsize=(20, 20))  # Adjust the subplot grid and figure size as needed
    # plt.subplots_adjust(hspace=1)  # Adjust the space between rows
@@ -492,7 +493,7 @@ def run_and_collect_data(dataset_path):
 
     group = ts_data1.drop(ts_data1.columns[0], axis=1)
     group = group.T
-    group = group.iloc[:, 0:10000000]
+    group = group.iloc[:, 100:200]
     group = group.astype(np.float32).to_numpy().reshape(-1)
 
     entropy_float = calculate_entropy_float(group)
@@ -666,13 +667,13 @@ def run_and_collect_data(dataset_path):
 
             results.append(result_row)
 
-    save_results(pd.DataFrame(results))
+    save_results(pd.DataFrame(results), dataset_name)
 
 
     return pd.DataFrame(results)
 
 
-def save_results(df_results):
+def save_results(df_results, name_dataset):
     # Check which com_ratio columns exist dynamically
     com_ratio_cols = [col for col in df_results.columns if col.startswith("com_ratio_b")]
     if com_ratio_cols:  # Ensure the list is not empty
@@ -699,7 +700,7 @@ def save_results(df_results):
 
 
 
-    df_results.to_csv(log_file, index=False, header=True)
+    df_results.to_csv(f"results/{name_dataset}.csv")
 
 
 

@@ -511,7 +511,7 @@ def run_and_collect_data(dataset_path):
     #datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
     #dataset_path = "/media/samira/sa/result-compression/UCRArchive_2018/InsectEPGSmallTrain/InsectEPGSmallTrain_TEST.tsv"
-    #dataset_path = "/home/jamalids/Documents/2D/data1/num_control_f64.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/tmp/tpch_order_f64.tsv"
     datasets = [dataset_path]
     fig, axs = plt.subplots(5, 2, figsize=(20, 20))  # Adjust the subplot grid and figure size as needed
     plt.subplots_adjust(hspace=1)  # Adjust the space between rows
@@ -522,7 +522,7 @@ def run_and_collect_data(dataset_path):
     # ts_data1 = ts_data1.iloc[0:10, 0:3]
     group = ts_data1.drop(ts_data1.columns[0], axis=1)
     group = group.T
-    group = group.iloc[:, 0:100]
+    group = group.iloc[:, 0:1000000]
     group = group.astype(np.float32).to_numpy().reshape(-1)
 
     entropy_float = calculate_entropy_float(group)
@@ -749,10 +749,10 @@ def save_results(df_results, name_dataset, fig, axs):
     series2 = [df_results[col].tolist() for col in t_com_ratio_cols if col in df_results]
     plot_multiple_lines(series2, configs, t_com_ratio_cols, ax=axs[4, 1], y_label="Com_Ratio_Dic", xlabel="Configurations")
 
-    df_results.to_csv(log_file, index=False, header=True)
+    df_results.to_csv(f"results/{name_dataset}.csv")
 
     if not PLOTING_DISABLE:
-        plt.savefig(log_file1)
+        plt.savefig(f"results/{name_dataset}.png")
         plt.close(fig)  # This is crucial to reset the plot state for the next dataset
 
 
