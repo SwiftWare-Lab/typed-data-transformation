@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Specify the directories containing the CSV files
-directories = ['/home/jamalids/Documents/compression-part3/Fcbench/logE', '/home/jamalids/Documents/compression-part3/Fcbench/Results_10000K']
+directories = ['/home/jamalids/Documents/compression-part3/big-data-compression/modeling/results']
 
 # List to hold DataFrames
 dataframes = []
@@ -21,7 +21,7 @@ for directory_path in directories:
 combined_df = pd.concat(dataframes, ignore_index=True)
 
 # Save the combined DataFrame to a new CSV file
-output_path = '/home/jamalids/Documents/compression-part3/Fcbench/combined_data.csv'
+output_path = '/home/jamalids/Documents/compression-part3/big-data-compression/modeling/results/combined_data.csv'
 combined_df.to_csv(output_path, index=False)
 
 print(f'Combined CSV saved to {output_path}')

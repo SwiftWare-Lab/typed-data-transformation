@@ -63,13 +63,13 @@ def compare_consecutive_values(dataset, original_values):
 
 
 # Define the dataset path
-dataset_path ="/home/jamalids/Documents/2D/data1/rsim_f32.tsv"
+dataset_path ="/home/jamalids/Documents/2D/data1/tmp/tpcds_store_f32.tsv"
 
 # Load the dataset
 ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
 ts_data1 = ts_data1.drop(ts_data1.columns[0], axis=1)
 ts_data1 = ts_data1.T
-ts_data1 = ts_data1.iloc[0:1, 2000000:2100000]  # Select specific rows and columns as needed
+ts_data1 = ts_data1.iloc[0:1,0:1000000]  # Select specific rows and columns as needed
 ts_data1 = ts_data1.astype(np.float32).to_numpy().reshape(-1)
 
 # Convert dataset to binary IEEE 754 representation
