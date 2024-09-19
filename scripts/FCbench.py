@@ -13,8 +13,8 @@ def calculate_metrics(df):
     avg_com_ratio_b3 = df['com_ratio_b3'].max()
     avg_t_com_ratio_b3 = df['t_com_ratio_b3'].max()
     R_com_ratio_b1 = df['R_com_ratio_b1'].max()
-    R_com_ratio_b2 = df['R_com_ratio_b1'].max()
-    R_com_ratio_b3 = df['R_com_ratio_b1'].max()
+    R_com_ratio_b2 = df['R_com_ratio_b2'].max()
+    R_com_ratio_b3 = df['R_com_ratio_b3'].max()
     # Selecting the maximum average compression ratio across the b1, b2, b3
     max_avg_com_ratio = max(avg_com_ratio_b1, avg_com_ratio_b2, avg_com_ratio_b3)
     max_avg_t_com_ratio = max(avg_t_com_ratio_b1, avg_t_com_ratio_b2, avg_t_com_ratio_b3)
