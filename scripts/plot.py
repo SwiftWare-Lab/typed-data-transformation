@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV file (update the path as needed)
-file_path = '/home/jamalids/Documents/compression-part3/big-data-compression/modeling/results/tpcds_store_f32.csv'  # Change this to your actual path
+file_path = '/home/jamalids/Documents/compression-part3/big-data-compression/modeling/Decom+zstd.csv'  # Change this to your actual path
 df = pd.read_csv(file_path)
+
 # Create a dictionary that maps old column names to new, more meaningful names
 rename_dict = {
-
     't_com_ratio_b1': 'com_ratio_b1_dict',
     't_com_ratio_b2': 'com_ratio_b2_dict',
     't_com_ratio_b3': 'com_ratio_b3_dict',
@@ -16,11 +16,11 @@ rename_dict = {
     'R_com_ratio_b3': 'RLE_com_ratio_b3',
     'comp_ratio_l22': 'Zstd_comp_ratio_22',
     't-max_com_ratio': 'max_comp_ratio_dict'
-
 }
 
 # Rename the columns in the DataFrame
 df = df.rename(columns=rename_dict)
+
 # First bar chart columns
 bar_columns_1 = [
     'com_ratio_b1', 'com_ratio_b1_dict', 'com_ratio_b2', 'com_ratio_b2_dict', 'com_ratio_b3', 'com_ratio_b3_dict',
@@ -47,9 +47,12 @@ entropy_columns = [
 # Create figure and axes for three subplots
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(18, 18))  # Three plots stacked vertically
 
+# Add space between datasets by modifying the index
+gap_size = 1  # Adjust this value to increase or decrease the space between datasets
+index = np.arange(0, len(df) * (1 + gap_size), 1 + gap_size)
+
 # Plot 1: Compression ratios (First group)
 bar_width = 0.2
-index = np.arange(len(df))  # Assuming each row is a dataset or test case
 
 # Plot the bar chart for each compression ratio column (First group)
 for i, col in enumerate(bar_columns_1):
@@ -97,6 +100,6 @@ ax3.legend(loc='upper left', bbox_to_anchor=(1.05, 1))
 
 # Tight layout for better spacing
 plt.tight_layout()
-plt.savefig('decom+zstd')
+plt.savefig('decom+zstd_with_spacing.png')
 # Show the plots
 plt.show()

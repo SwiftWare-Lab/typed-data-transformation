@@ -6,7 +6,7 @@ import zstandard as zstd
 import pandas as pd
 import numpy as np
 #from matplotlib import pyplot as plt
-
+import gzip
 from utils import binary_to_int
 import argparse
 from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,decode_decompose,concat_decompose
@@ -185,6 +185,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     leading_zstd_22, content_zstd_22, tailing_zstd_22 = [], [], []
     leading_zstd_R, content_zstd_R, tailing_zstd_R = [], [], []
     leading_zstd_22_R, content_zstd_22_R, tailing_zstd_22_R = [], [], []
+    leading_gzip_R, content_gzip_R, tailing_gzip_R = [], [], []
+    leading_gzip, content_gzip, tailing_gzip = [], [], []
 
     for i in tune_decomp:
         print("Bnd1: ", bnd1, "Bnd2: ", bnd2)
@@ -219,12 +221,15 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
                 leadinf_float=bits_to_float32(leading_zero_array_orig)
                 comp_zstd_leading,leading_zstd_ratio=compress_with_zstd(leadinf_float, level=3)
                 comp_zstd_leading_22, leading_zstd_ratio_22 = compress_with_zstd(leadinf_float, level=22)
+                comp_gzip_leading, leading_gzip_ratio = compress_with_gzip(leadinf_float)
+
             else:
                 dict_leading, root_leading, tree_size_leading, encoded_text_leading = {}, None, 0, ''
                 leading_entropy = 0
                 RLE_size_L=0
                 comp_zstd_leading, leading_zstd_ratio=0,0
                 comp_zstd_leading_22, leading_zstd_ratio_22 = 0, 0
+                comp_gzip_leading, leading_gzip_ratio=0,0
 
             # Compress content array
             ts_m_c, ts_n_c = content_array_orig.shape
@@ -238,6 +243,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
                 content_float = bits_to_float32(content_array_orig)
                 comp_zstd_content, content_zstd_ratio = compress_with_zstd(content_float, level=3)
                 comp_zstd_content_22, content_zstd_ratio_22 = compress_with_zstd(content_float, level=22)
+                comp_gzip_content, content_gzip_ratio = compress_with_gzip(content_float)
 
             else:
                 dict_content, root_content, tree_size_content, encoded_text_content = {}, None, 0, ''
@@ -245,6 +251,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
                 RLE_size_c=0
                 comp_zstd_content, content_zstd_ratio=0,0
                 comp_zstd_content_22, content_zstd_ratio_22=0,0
+                comp_gzip_content, content_gzip_ratio =0,0
+
 
                 # Compress trailing mixed array
             ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
@@ -258,6 +266,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
                 trailing_float = bits_to_float32(trailing_mixed_array_orig)
                 comp_zstd_trailing, trailing_zstd_ratio = compress_with_zstd(trailing_float, level=3)
                 comp_zstd_trailing_22, trailing_zstd_ratio_22 = compress_with_zstd(trailing_float, level=22)
+                comp_gzip_trailing, trailing_gzip_ratio = compress_with_gzip(trailing_float)
 
 
 
@@ -267,6 +276,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
                 RLE_size_t=0
                 comp_zstd_trailing, trailing_zstd_ratio=0,0
                 comp_zstd_trailing_22, trailing_zstd_ratio_22=0,0
+                comp_gzip_trailing, trailing_gzip_ratio=0,0
 
             # Store compressed sizes and dictionaries
             leading_RlE.append(RLE_size_L)
@@ -302,12 +312,18 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
             leading_zero_array_orig1.append(leading_zero_array_orig)
             content_array_orig1.append(content_array_orig)
             trailing_mixed_array_orig1.append(trailing_mixed_array_orig)
+            leading_gzip_R.append(leading_gzip_ratio)
+            content_gzip_R.append(content_gzip_ratio)
+            tailing_gzip_R.append(trailing_gzip_ratio)
+            leading_gzip.append(comp_gzip_leading)
+            content_gzip.append(comp_gzip_content)
+            tailing_gzip.append(comp_gzip_trailing)
 
     return (lead_comp_size, tail_comp_size, content_comp_size, lead_comp_size_d, tail_comp_size_d, content_comp_size_d,lead_entropy, tail_entropy, content_entropy,lead_shape_m,
             tail_shap_m, content_shap_m,lead_shape_n, tail_shap_n, content_shap_n,leading_zero_array_orig1,
             content_array_orig1,trailing_mixed_array_orig1,leading_RlE,content_RlE,tailing_RlE,leading_zstd,  content_zstd,tailing_zstd,
             leading_zstd_22,content_zstd_22, tailing_zstd_22,leading_zstd_R, content_zstd_R,tailing_zstd_R,
-            leading_zstd_22_R,content_zstd_22_R, tailing_zstd_22_R)
+            leading_zstd_22_R,content_zstd_22_R, tailing_zstd_22_R,leading_gzip_R, content_gzip_R,tailing_gzip_R,leading_gzip, content_gzip,tailing_gzip)
 
 
 def bits_to_float32(bit_array):
@@ -385,112 +401,28 @@ def compress_with_zstd(data, level=3):
     print("level",level)
     cctx = zstd.ZstdCompressor(level=level)
     compressed = cctx.compress(data)
-    #parse_zstd_compressed_data(compressed)
+
     # comp ratio
     print("data",len(data.tobytes()))
     print("compressed size",len(compressed))
     comp_ratio = len(data.tobytes()) / len(compressed)
     return compressed, comp_ratio
 #########################################################################
+def compress_with_gzip(array):
+    # Step 2: Convert the array to a byte representation
+    array_bytes = array.tobytes()
 
-import struct
-def parse_zstd_compressed_data(compressed_data):
-    cursor = 0
-    compressed_size = len(compressed_data)
+    # Step 3: Compress the byte representation using gzip
+    compressed_data = gzip.compress(array_bytes)
 
-    print("Analyzing zstd compressed data in detail...")
-    print(f"Total compressed size: {compressed_size} bytes")
+    # Step 4: Calculate original and compressed sizes
+    original_size = len(array_bytes)  # Size of the original array in bytes
+    compressed_size = len(compressed_data)  # Size of the compressed data in bytes
 
-    # Step 1: Read the frame header
-    frame_header = compressed_data[cursor:cursor + 4]
-    magic_number = struct.unpack('<I', frame_header)[0]
-    if magic_number != 0xFD2FB528:
-        print("Not a valid zstd frame")
-        return
-    cursor += 4  # Skip the magic number
+    # Step 5: Calculate the compression ratio
+    compression_ratio = original_size / compressed_size
+    return  compressed_size ,compression_ratio
 
-    # Frame header
-    # Optional header fields and dictionary ID can be present based on the frame type
-    # We need to parse this properly for accurate results
-
-    # Reading the frame content size and dictionary ID (if present)
-    frame_content_size, dictionary_id = None, None
-
-    # Step 2: Check frame descriptor (1 byte) to get frame content size field presence and dictionary ID
-    frame_descriptor = compressed_data[cursor]
-    cursor += 1
-    frame_content_size_flag = frame_descriptor >> 6
-    dictionary_id_flag = (frame_descriptor >> 5) & 0x1
-
-    if frame_content_size_flag:
-        if frame_content_size_flag == 1:
-            frame_content_size = compressed_data[cursor]
-            cursor += 1
-        elif frame_content_size_flag == 2:
-            frame_content_size = struct.unpack('<H', compressed_data[cursor:cursor + 2])[0]
-            cursor += 2
-        elif frame_content_size_flag == 3:
-            frame_content_size = struct.unpack('<I', compressed_data[cursor:cursor + 4])[0]
-            cursor += 4
-        print(f"Frame content size: {frame_content_size} bytes")
-
-    if dictionary_id_flag:
-        dictionary_id = struct.unpack('<I', compressed_data[cursor:cursor + 4])[0]
-        cursor += 4
-        print(f"Dictionary ID: {dictionary_id}")
-
-    # Step 3: Read the blocks
-    total_uncompressed_size = 0
-    while cursor < compressed_size:
-        # Read block header
-        block_header = compressed_data[cursor:cursor + 3]
-        if len(block_header) < 3:
-            break
-
-        # Extract block size and type
-        block_descriptor = struct.unpack('<H', block_header[:2])[0]
-        block_type = (block_descriptor & 0x1800) >> 11
-        block_size = block_descriptor & 0x07FF
-
-        cursor += 3  # Move cursor past block header
-
-        # Identify block type and behavior
-        if block_type == 0:
-            block_type_str = "Raw (uncompressed)"
-            # Uncompressed data, block size is actual data size
-            uncompressed_block_size = block_size
-        elif block_type == 1:
-            block_type_str = "RLE (Run-Length Encoded)"
-            # RLE stores a single byte and its repetition count
-            uncompressed_block_size = block_size
-        elif block_type == 2:
-            block_type_str = "Compressed using FSE or Huffman"
-            # Compressed, block size here is compressed size, we do not know uncompressed size directly
-            uncompressed_block_size = None  # To indicate unknown at this point
-        else:
-            block_type_str = "Reserved or unknown"
-            uncompressed_block_size = None
-
-        # If it's an uncompressed or RLE block, we can determine the size directly
-        if uncompressed_block_size is not None:
-            total_uncompressed_size += uncompressed_block_size
-
-        print(f"Block at offset {cursor}: Type = {block_type_str}, Block Size = {block_size} bytes")
-
-        # Move cursor past this block's content
-        cursor += block_size
-
-        # End of frame if block size is 0
-        if block_size == 0:
-            print("End of frame detected.")
-            break
-
-    print(f"Total reported uncompressed size (excluding compressed blocks): {total_uncompressed_size} bytes")
-
-    if frame_content_size is not None:
-        print(f"Reported frame content size: {frame_content_size} bytes")
-
-    print("Detailed analysis completed.")
 
 ####################################################
 def huffman_code_array(array):
@@ -680,7 +612,7 @@ def run_and_collect_data(dataset_path):
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
         group = group.T
-        group = group.iloc[:, 0:5000000]
+        group = group.iloc[:, 0:1000000]
         verify_flag_final = False
         m, n = 8, 1
         ts_n = 32
@@ -695,10 +627,11 @@ def run_and_collect_data(dataset_path):
         positive_values = np.sum(group > 0)
         negative_values = np.sum(group < 0)
 
-        # Zstd and Huffman
+        # Zstd
         zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
         zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
-
+        #gzip
+        gzip_compressed_ts_l22, comp_ratio_gzip=compress_with_gzip(group)
         bool_array = float_to_ieee754(group)
         bool_array_size_bits = bool_array.nbytes  # Size in bits
 
@@ -761,10 +694,8 @@ def run_and_collect_data(dataset_path):
                  trailing_mixed_array_orig, leading_RlE, content_RlE, tailing_RlE, leading_zstd, content_zstd,
                  tailing_zstd,
                  leading_zstd_22, content_zstd_22, tailing_zstd_22, leading_zstd_R, content_zstd_R, tailing_zstd_R,
-                 leading_zstd_22_R, content_zstd_22_R, tailing_zstd_22_R) = decomposition_based_compression(bool_array,
-                                                                                                            l_z_array,
-                                                                                                            t_z_array,
-                                                                                                            m, n)
+                 leading_zstd_22_R, content_zstd_22_R, tailing_zstd_22_R,leading_gzip_R, content_gzip_R,tailing_gzip_R,leading_gzip, content_gzip,tailing_gzip) \
+                    = decomposition_based_compression(bool_array,l_z_array,t_z_array,m, n)
 
                 # Store results dynamically
                 result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
@@ -776,6 +707,8 @@ def run_and_collect_data(dataset_path):
                 zstd_encoded_b_22 = {}
                 zstd_encoded_b_R = {}
                 zstd_encoded_b_R_22 = {}
+                gzip_encoded_b_R = {}
+                gzip_encoded_b = {}
 
                 # Process leading part
                 for idx, (encoded_array, dictionary, lead_entropy1, lead_shap_m1,lead_shape_n1) in enumerate(
@@ -903,7 +836,43 @@ def run_and_collect_data(dataset_path):
                 for idx, tailing_zstd1 in enumerate(tailing_zstd_22_R, start=1):
                     result_row[f"b{idx}_zstd22_tailing_comp_ratio"] = tailing_zstd1
                     zstd_encoded_b_R_22[idx] = zstd_encoded_b_R_22.get(idx, 0) + tailing_zstd1
-                ################################################################
+                ########################gzip############################
+                for idx, leading_gzip1 in enumerate(leading_gzip, start=1):
+                    if leading_gzip1==0:
+                        result_row[f"b{idx}_gzip_leading_size"]=0
+                    else:
+                        result_row[f"b{idx}_gzip_leading_size"] = (leading_gzip1) * 8
+                        gzip_encoded_b[idx] = gzip_encoded_b.get(idx, 0) + (leading_gzip1) * 8
+
+                for idx, content_gzip1 in enumerate(content_gzip, start=1):
+                    if content_gzip1==0:
+                        result_row[f"b{idx}_gzip_content_size"]=0
+                    else:
+                        result_row[f"b{idx}_gzip_content_size"] = (content_gzip1) * 8
+                        gzip_encoded_b[idx] = gzip_encoded_b.get(idx, 0) + (content_gzip1) * 8
+
+
+                for idx, tailing_gzip1 in enumerate(tailing_gzip, start=1):
+                    if tailing_gzip1==0:
+                        result_row[f"b{idx}_gzip_tailing_size"] =0
+                    else:
+                        result_row[f"b{idx}_gzip_tailing_size"] = (tailing_gzip1) * 8
+                        gzip_encoded_b[idx] = gzip_encoded_b.get(idx, 0) + (tailing_gzip1) * 8
+
+                for idx, leading_gzip1 in enumerate(leading_gzip_R, start=1):
+                    result_row[f"b{idx}_gzip_leading_comp_ratio"] = leading_gzip1
+                    gzip_encoded_b_R[idx] = gzip_encoded_b_R.get(idx, 0) + leading_gzip1
+
+                for idx, content_gzip1 in enumerate(content_gzip_R, start=1):
+                    result_row[f"b{idx}_gzip_content_comp_ratio"] = content_gzip1
+                    gzip_encoded_b_R[idx] = gzip_encoded_b_R.get(idx, 0) + content_gzip1
+
+                for idx, tailing_gzip1 in enumerate(tailing_gzip_R, start=1):
+                    result_row[f"b{idx}_gzip_tailing_comp_ratio"] = tailing_gzip1
+                    gzip_encoded_b_R[idx] = gzip_encoded_b_R.get(idx, 0) + tailing_gzip1
+################################################################################################3
+
+
                 # Calculate compression ratios dynamically for all available `b` components
                 for idx in encoded_b:
                     result_row[f"com_ratio_b{idx}"] = bool_array_size_bits / (encoded_b[idx] + size_metadata) if \
@@ -922,9 +891,14 @@ def run_and_collect_data(dataset_path):
                     result_row[f"zstd_com_ratio_b{idx}"] = bool_array_size_bits / (
                                 zstd_encoded_b[idx] + size_metadata) if \
                         zstd_encoded_b[idx] > 0 else None
+                for idx in gzip_encoded_b:
+                    result_row[f"gzip_com_ratio_b{idx}"] = bool_array_size_bits / (
+                                gzip_encoded_b[idx] + size_metadata) if \
+                        gzip_encoded_b[idx] > 0 else None
                 # Store Zstd and Huffman results
                 result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
                 result_row["comp_ratio_l22"] = comp_ratio_l22
+                result_row["comp_ratio_gzip"] = comp_ratio_gzip
                 result_row["Non_uniform_1x4"] = Non_uniform_1x4
                 result_row["Non_uniform_1x4_1"] = bool_array_size_bits / Non_uniform_1x4_1
                 result_row["bool_array_size_bits"] = bool_array_size_bits
@@ -942,6 +916,87 @@ def run_and_collect_data(dataset_path):
 
 
 def save_results(df_results, name_dataset):
+    # Check which com_ratio columns exist dynamically
+    com_ratio_cols = [col for col in df_results.columns if col.startswith("com_ratio_b")]
+    if com_ratio_cols:  # Ensure the list is not empty
+        df_results["max_com_ratio"] = df_results[com_ratio_cols].max(axis=1)
+        Decomposion_pattern = df_results["max_com_ratio"].max()
+    else:
+        Decomposion_pattern = 0  # Fallback value if no columns exist
+
+    # Similarly handle the entropy columns dynamically
+    entropy_cols = [col for col in df_results.columns if col.endswith("_entropy")]
+    if entropy_cols:  # Ensure the list is not empty
+        entropy_full_data = df_results[entropy_cols].max().max()
+    else:
+        entropy_full_data = 0  # Fallback value if no columns exist
+
+    # Handle t_com_ratio columns
+    t_com_ratio_cols = [col for col in df_results.columns if col.startswith("t_com_ratio_b")]
+    if t_com_ratio_cols:  # Ensure the list is not empty
+        df_results["t-max_com_ratio"] = df_results[t_com_ratio_cols].max(axis=1)
+        Decomposion_pattern_with_dict = df_results["t-max_com_ratio"].max()
+    else:
+        Decomposion_pattern_with_dict = 0  # Fallback value if no columns exist
+
+    # Handle zstd compression ratio columns
+    zstd_22_com_ratio_cols = [col for col in df_results.columns if col.startswith("zstd_22_com_ratio_b")]
+    if zstd_22_com_ratio_cols:  # Ensure the list is not empty
+        df_results["max_Decom+zstd_22_com_ratio"] = df_results[zstd_22_com_ratio_cols].max(axis=1)
+
+    zstd_com_ratio_cols = [col for col in df_results.columns if col.startswith("zstd_com_ratio_b")]
+    if zstd_com_ratio_cols:  # Ensure the list is not empty
+        df_results["max_Decom+zstd_com_ratio"] = df_results[zstd_com_ratio_cols].max(axis=1)
+
+    # Handle gzip compression ratio columns (New Part)
+    gzip_com_ratio_cols = [col for col in df_results.columns if col.startswith("gzip_com_ratio_b")]
+    if gzip_com_ratio_cols:  # Ensure the list is not empty
+        df_results["max_Decom+gzip_com_ratio"] = df_results[gzip_com_ratio_cols].max(axis=1)
+
+    # Loop through each row and calculate the entropy for the component with the maximum zstd compression ratio
+    for idx, row in df_results.iterrows():
+        # Find the column that gave the maximum zstd compression ratio for the current row
+        max_decom_ratio_col = row[zstd_com_ratio_cols].idxmax()
+        max_decom_ratio_value = row[max_decom_ratio_col]
+        df_results.at[idx, "max_Decom+zstd_com_ratio"] = max_decom_ratio_value
+
+        # Extract the index of the `b` component with the maximum compression ratio
+        b_idx = max_decom_ratio_col.split('_')[-1].replace('b', '')
+
+        # Calculate the sum of entropies for the component that gave the max zstd compression ratio
+        leading_entropy = row.get(f"b{b_idx}_leading_entropy", 0) * row.get(f"b{b_idx}_leading_Wieght_size", 0)
+        content_entropy = row.get(f"b{b_idx}_content_entropy", 0) * row.get(f"b{b_idx}_content_Wieght_size", 0)
+        tailing_entropy = row.get(f"b{b_idx}_tailing_entropy", 0) * row.get(f"b{b_idx}_tailingt_Wieght_size", 0)
+
+        # Sum up the entropies for the current row
+        sum_entropy = leading_entropy + content_entropy + tailing_entropy
+        df_results.at[idx, f"sum_entropy_b{b_idx}"] = sum_entropy
+
+        # Find the column that gave the maximum gzip compression ratio for the current row
+        max_gzip_ratio_col = row[gzip_com_ratio_cols].idxmax()
+        max_gzip_ratio_value = row[max_gzip_ratio_col]
+        df_results.at[idx, "max_Decom+gzip_com_ratio"] = max_gzip_ratio_value
+
+        # Extract the index of the `b` component with the maximum gzip compression ratio
+        b_idx_gzip = max_gzip_ratio_col.split('_')[-1].replace('b', '')
+
+        # Calculate the sum of entropies for the component that gave the max gzip compression ratio
+        leading_entropy_gzip = row.get(f"b{b_idx_gzip}_leading_entropy", 0) * row.get(f"b{b_idx_gzip}_leading_Wieght_size", 0)
+        content_entropy_gzip = row.get(f"b{b_idx_gzip}_content_entropy", 0) * row.get(f"b{b_idx_gzip}_content_Wieght_size", 0)
+        tailing_entropy_gzip = row.get(f"b{b_idx_gzip}_tailing_entropy", 0) * row.get(f"b{b_idx_gzip}_tailingt_Wieght_size", 0)
+
+        # Sum up the entropies for the current row
+        sum_entropy_gzip = leading_entropy_gzip + content_entropy_gzip + tailing_entropy_gzip
+        df_results.at[idx, f"sum_entropy_b{b_idx_gzip}_gzip"] = sum_entropy_gzip
+
+        # Optionally print or log the result for the current row
+        print(f"Row {idx}: Max Zstd Compression Ratio Component: b{b_idx}, Sum Entropy: {sum_entropy}")
+        print(f"Row {idx}: Max Gzip Compression Ratio Component: b{b_idx_gzip}, Sum Entropy (gzip): {sum_entropy_gzip}")
+
+    df_results.to_csv("Decom+zstd+gzip.csv")
+    return df_results
+
+def save_results1(df_results, name_dataset):
     # Check which com_ratio columns exist dynamically
     com_ratio_cols = [col for col in df_results.columns if col.startswith("com_ratio_b")]
     if com_ratio_cols:  # Ensure the list is not empty
