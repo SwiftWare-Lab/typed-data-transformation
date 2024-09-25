@@ -10,8 +10,8 @@ import gzip
 from utils import binary_to_int
 import argparse
 from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,decode_decompose,concat_decompose
-
-
+##################################
+#########################
 def float_to_ieee754(f):
     """Convert a float or a numpy array of floats to their IEEE 754 binary representation and return as an integer array."""
     def float_to_binary_array(single_f):
@@ -277,6 +277,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
                 comp_zstd_trailing, trailing_zstd_ratio=0,0
                 comp_zstd_trailing_22, trailing_zstd_ratio_22=0,0
                 comp_gzip_trailing, trailing_gzip_ratio=0,0
+
 
             # Store compressed sizes and dictionaries
             leading_RlE.append(RLE_size_L)
@@ -600,7 +601,9 @@ def find_mismatch(reconstructed_data, final_decoded_data):
         for idx in mismatches:
             print(f"Index {idx}: Reconstructed = {reconstructed_data[idx]}, Original = {final_decoded_data[idx]}")
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/tmp/"
+    dataset_path = "/home/jamalids/Documents/2D/data1/DB/"
+    #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+    #datasets = [dataset_path]
     datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
                 f.endswith('.tsv')]
     results = []
@@ -611,8 +614,9 @@ def run_and_collect_data(dataset_path):
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
+        group=group.iloc[0:3000000,:]
         group = group.T
-        group = group.iloc[:, 0:1000000]
+        #group = group.iloc[:, 0:3000000]
         verify_flag_final = False
         m, n = 8, 1
         ts_n = 32
@@ -694,8 +698,8 @@ def run_and_collect_data(dataset_path):
                  trailing_mixed_array_orig, leading_RlE, content_RlE, tailing_RlE, leading_zstd, content_zstd,
                  tailing_zstd,
                  leading_zstd_22, content_zstd_22, tailing_zstd_22, leading_zstd_R, content_zstd_R, tailing_zstd_R,
-                 leading_zstd_22_R, content_zstd_22_R, tailing_zstd_22_R,leading_gzip_R, content_gzip_R,tailing_gzip_R,leading_gzip, content_gzip,tailing_gzip) \
-                    = decomposition_based_compression(bool_array,l_z_array,t_z_array,m, n)
+                 leading_zstd_22_R, content_zstd_22_R, tailing_zstd_22_R,leading_gzip_R, content_gzip_R,tailing_gzip_R,
+                 leading_gzip, content_gzip,tailing_gzip)  = decomposition_based_compression(bool_array,l_z_array,t_z_array,m, n)
 
                 # Store results dynamically
                 result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
@@ -908,6 +912,7 @@ def run_and_collect_data(dataset_path):
                 result_row["len(metadata)"] = len(metadata)
                 result_row["dataset_name"] = dataset_name
 
+
                 results.append(result_row)
 
         save_results(pd.DataFrame(results), dataset_name)
@@ -967,10 +972,17 @@ def save_results(df_results, name_dataset):
         leading_entropy = row.get(f"b{b_idx}_leading_entropy", 0) * row.get(f"b{b_idx}_leading_Wieght_size", 0)
         content_entropy = row.get(f"b{b_idx}_content_entropy", 0) * row.get(f"b{b_idx}_content_Wieght_size", 0)
         tailing_entropy = row.get(f"b{b_idx}_tailing_entropy", 0) * row.get(f"b{b_idx}_tailingt_Wieght_size", 0)
+        ###########################################################################################################
+        # Calculate the sum of entropies for the component that gave the max zstd compression ratio
+        leading_entropy_sh = row.get(f"b{b_idx}_leading_entropy", 0)
+        content_entropy_sh = row.get(f"b{b_idx}_content_entropy", 0)
+        tailing_entropy_sh = row.get(f"b{b_idx}_tailing_entropy", 0)
 
         # Sum up the entropies for the current row
         sum_entropy = leading_entropy + content_entropy + tailing_entropy
+        sum_entropy_sh = leading_entropy_sh + content_entropy_sh + tailing_entropy_sh
         df_results.at[idx, f"sum_entropy_b{b_idx}"] = sum_entropy
+        df_results.at[idx, f"sum_entropy_sh_b{b_idx}"] = sum_entropy_sh
 
         # Find the column that gave the maximum gzip compression ratio for the current row
         max_gzip_ratio_col = row[gzip_com_ratio_cols].idxmax()
@@ -985,9 +997,15 @@ def save_results(df_results, name_dataset):
         content_entropy_gzip = row.get(f"b{b_idx_gzip}_content_entropy", 0) * row.get(f"b{b_idx_gzip}_content_Wieght_size", 0)
         tailing_entropy_gzip = row.get(f"b{b_idx_gzip}_tailing_entropy", 0) * row.get(f"b{b_idx_gzip}_tailingt_Wieght_size", 0)
 
+        leading_entropy_sh_gzip = row.get(f"b{b_idx_gzip}_leading_entropy", 0)
+        content_entropy_sh_gzip = row.get(f"b{b_idx_gzip}_content_entropy", 0)
+        tailing_entropy_sh_gzip = row.get(f"b{b_idx_gzip}_tailing_entropy", 0)
+
         # Sum up the entropies for the current row
         sum_entropy_gzip = leading_entropy_gzip + content_entropy_gzip + tailing_entropy_gzip
+        sum_entropy_sh_gzip = leading_entropy_sh_gzip + content_entropy_sh_gzip + tailing_entropy_sh_gzip
         df_results.at[idx, f"sum_entropy_b{b_idx_gzip}_gzip"] = sum_entropy_gzip
+        df_results.at[idx, f"sum_entropy_b{b_idx_gzip}_sh_gzip"] = sum_entropy_sh_gzip
 
         # Optionally print or log the result for the current row
         print(f"Row {idx}: Max Zstd Compression Ratio Component: b{b_idx}, Sum Entropy: {sum_entropy}")

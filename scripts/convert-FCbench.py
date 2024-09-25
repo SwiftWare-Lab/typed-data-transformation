@@ -3,16 +3,21 @@ import numpy as np
 import os
 
 # Define tasks and data types
-tasks = ['tpcds_catalog_f32', 'tpcds_store_f32','tpcds_web_f32','tpch_lineitem_f32'
-         ,'tpch_order_f64','tpcxbb_store_f64','tpcxbb_web_f64']
-dts = ['f32', 'f32','f32','f32','f64','f64','f64']
+tasks = ['astro_mhd_f64', 'astro_pt_f64','g24_78_usb2_f32','hdr_night_f32'
+         ,'hdr_palermo_f32','jane_street_f64','miranda3d_f32','msg_bt_f64',
+         'nyc_taxi2015_f64','phone_gyro_f64','solar_wind_f32','spain_gas_price_f64',
+         'spitzer_irac_f32','ts_gas_f32','turbulence_f32','wave_f32','wesad_chest_f64']
+dts = ['f64', 'f64','f32','f32',
+       'f32','f64','f32','f64'
+       ,'f64','f64','f32','f64'
+       ,'f32','f32','f32','f32','f64']
 
 # Define the data type dictionary
 DT = {'f32': np.float32, 'f64': np.float64}
 
 # Specify the directory containing the data
-datadir = "/home/jamalids/Documents/2D/data1/tmp/"
-datadir1 = "/home/jamalids/Documents/2D/data1/tmp/"
+datadir = "/home/jamalids/Documents/2D/data1/all data/FCBench/"
+datadir1 = "/home/jamalids/Documents/2D/data1/all data/FCBench/"
 # Iterate over each task and corresponding data type
 for K in range(len(tasks)):
     task = tasks[K]
