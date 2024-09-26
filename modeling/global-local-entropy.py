@@ -624,7 +624,23 @@ def find_mismatch(reconstructed_data, final_decoded_data):
         for idx in mismatches:
             print(f"Index {idx}: Reconstructed = {reconstructed_data[idx]}, Original = {final_decoded_data[idx]}")
 
+def calculate_exact_metadata_size(metadata):
+    total_bits = 0
 
+    for entry in metadata:
+        start_index = entry['start_index']
+        value = entry['value']
+        count = entry['count']
+
+        # Calculate the number of bits required for each field
+        start_index_bits = math.ceil(math.log2(start_index +1))
+        value_bits =  math.ceil(math.log2(value +1))
+        count_bits = math.ceil(math.log2(count + 1))  # Number of bits for the count
+
+        # Total bits for this metadata entry
+        total_bits += start_index_bits + value_bits + count_bits
+
+    return total_bits
 def run_and_collect_data(dataset_path):
     dataset_path = "/home/jamalids/Documents/2D/data1/TS/L/ts_gas_f32.tsv"
     #datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
@@ -639,18 +655,20 @@ def run_and_collect_data(dataset_path):
         print(f"Processing dataset: {dataset_name}")
 
         group_f = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group_f = group_f.iloc[0:4000000, :].T
+        #group_f = group_f.iloc[0:4000000, :].T
+        group_f=group_f.T
         group_f = group_f.astype(np.float32).to_numpy().reshape(-1)
         entropy_float_all = calculate_entropy_float(group_f)
 
         # Determine total elements and break into blocks of 1,000 records
         total_records = len(group_f)
-        block_size =100000
-        max_blocks = 40
+        block_size =1000000
+        max_blocks = 7
         num_blocks = min(total_records // block_size, max_blocks)
 
         # Process each block of 1,000 records
         for block_idx in range(num_blocks):
+
             start_idx = block_idx * block_size
             end_idx = start_idx + block_size
             block_data = group_f[start_idx:end_idx]
@@ -678,7 +696,8 @@ def run_and_collect_data(dataset_path):
             metadata1 = convert_RLE(metadata)
             metadata_array = float_to_ieee754(metadata1)
             group2 = block_data
-            size_metadata = len(metadata) * 96  # Example size calculation
+            size_metadata1 = len(metadata) * 96  # Example size calculation
+            size_metadata = calculate_exact_metadata_size(metadata)
             group3 = non_consecutive_array
             new_array_size = group3.shape[0] - group3.shape[0] % 8
             group3 = group3[:new_array_size]
