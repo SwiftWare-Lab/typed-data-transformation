@@ -166,12 +166,12 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     # Set bounds based on ad-hoc conditions
     bnd1 = max_lead if max_lead < 28 else avg_lead
     bnd2 = min_tail if min_tail >= 4 else 32-avg_tail
-    #bnd1=5
-    #bnd2=32-3
+    bnd1=8
+    bnd2=32-8
     print("Bnd1: ", bnd1, "Bnd2:",bnd2 )
 
     # Tune decomposition steps
-    tune_decomp = [0, 1,2]
+    tune_decomp = [0, 8,16]
 
     # Initialize lists to store compressed sizes and dictionaries
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
@@ -600,8 +600,25 @@ def find_mismatch(reconstructed_data, final_decoded_data):
         # Print the mismatched values with their indices
         for idx in mismatches:
             print(f"Index {idx}: Reconstructed = {reconstructed_data[idx]}, Original = {final_decoded_data[idx]}")
+def calculate_exact_metadata_size(metadata):
+    total_bits = 0
+
+    for entry in metadata:
+        start_index = entry['start_index']
+        value = entry['value']
+        count = entry['count']
+
+        # Calculate the number of bits required for each field
+        start_index_bits = math.ceil(math.log2(start_index +1))
+        value_bits =  math.ceil(math.log2(value +1))
+        count_bits = math.ceil(math.log2(count + 1))  # Number of bits for the count
+
+        # Total bits for this metadata entry
+        total_bits += start_index_bits + value_bits + count_bits
+
+    return total_bits
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/DB/"
+    dataset_path = "/home/jamalids/Documents/2D/data1/test_low/"
     #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
     #datasets = [dataset_path]
     datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
@@ -614,7 +631,7 @@ def run_and_collect_data(dataset_path):
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[0:3000000,:]
+        group=group.iloc[0:4000000,:]
         group = group.T
         #group = group.iloc[:, 0:3000000]
         verify_flag_final = False
@@ -644,8 +661,11 @@ def run_and_collect_data(dataset_path):
         metadata1 = convert_RLE(metadata)
         metadata_array = float_to_ieee754(metadata1)
         group2 = group
-        size_metadata = len(metadata) * 96  # Example size calculation
+        #size_metadata = len(metadata) * 96  # Example size calculation
+        size_metadata = calculate_exact_metadata_size(metadata)
         group3 = non_consecutive_array
+
+
         new_array_size = group3.shape[0] - group3.shape[0] % m
         group3 = group3[:new_array_size]
         ts_m1 = group3.shape[0]
@@ -660,16 +680,17 @@ def run_and_collect_data(dataset_path):
                                                                                            inverse_cw_dict)
         Non_uniform_1x4 = bool_array_size_bits / (compressed_size_w + size_metadata)
 
-        pattern_size_list = [8]
-        n_list = [1]
+        pattern_size_list = [2]
+        n_list = [8]
         for m in pattern_size_list:
             for n in n_list:
                 print("m", m, "n", n)
-                group1 = group2
-                new_array_size = group1.shape[0] - group1.shape[0] % m
-                group1 = group1[:new_array_size]
-                bool_array2 = float_to_ieee754(group1)
+                #group1 = group2
+               # new_array_size = group1.shape[0] - group1.shape[0] % m
+               # group1 = group1[:new_array_size]
+               # bool_array2 = float_to_ieee754(group1)
                 group = non_consecutive_array
+
 
                 # Reshape group based on `m`
                 new_array_size = group.shape[0] - group.shape[0] % m
@@ -906,10 +927,12 @@ def run_and_collect_data(dataset_path):
                 result_row["Non_uniform_1x4"] = Non_uniform_1x4
                 result_row["Non_uniform_1x4_1"] = bool_array_size_bits / Non_uniform_1x4_1
                 result_row["bool_array_size_bits"] = bool_array_size_bits
-                result_row["entropy_all"] = entropy_all
+                result_row["entropy_remainig"] = entropy_all
+                result_row["entropy_float"] = entropy_float
                 result_row["dataset_name"] = dataset_name
                 result_row["verify_flag_final"] = verify_flag_final
                 result_row["len(metadata)"] = len(metadata)
+                result_row["len(non_consecutive_array)"] = len(non_consecutive_array)
                 result_row["dataset_name"] = dataset_name
 
 

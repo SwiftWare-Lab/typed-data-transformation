@@ -184,8 +184,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     # Set bounds based on ad-hoc conditions
     bnd1 = max_lead if max_lead < 28 else avg_lead
     bnd2 = min_tail if min_tail >= 4 else 32-avg_tail
-    #bnd1=5
-    #bnd2=32-3
+   # bnd1=16
+    #bnd2=32-8
     print("Bnd1: ", bnd1, "Bnd2:",bnd2 )
 
     # Tune decomposition steps
@@ -487,9 +487,9 @@ PLOTING_DISABLE = False
 
 def split_array_on_multiple_consecutive_values(data, threshold_percentage=9):
     total_length = len(data)
-    threshold = total_length * (threshold_percentage / 100.0)
-    print("threshold",threshold)
-    threshold=3
+    #threshold = total_length * (threshold_percentage / 100.0)
+   # print("threshold",threshold)
+    threshold=2
 
 
     total_length = len(data)
@@ -642,10 +642,10 @@ def calculate_exact_metadata_size(metadata):
 
     return total_bits
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/TS/L/ts_gas_f32.tsv"
-    #datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
+    dataset_path = "/home/jamalids/Documents/2D/data1/test_low/"
+    datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
     results = []
-    datasets = [dataset_path]
+   # datasets = [dataset_path]
 
     for dataset_path in datasets:
         result_row = {}
@@ -655,7 +655,7 @@ def run_and_collect_data(dataset_path):
         print(f"Processing dataset: {dataset_name}")
 
         group_f = ts_data1.drop(ts_data1.columns[0], axis=1)
-        #group_f = group_f.iloc[0:4000000, :].T
+        group_f = group_f.iloc[0:4000000, :].T
         group_f=group_f.T
         group_f = group_f.astype(np.float32).to_numpy().reshape(-1)
         entropy_float_all = calculate_entropy_float(group_f)
@@ -663,7 +663,7 @@ def run_and_collect_data(dataset_path):
         # Determine total elements and break into blocks of 1,000 records
         total_records = len(group_f)
         block_size =1000000
-        max_blocks = 7
+        max_blocks = 4
         num_blocks = min(total_records // block_size, max_blocks)
 
         # Process each block of 1,000 records
@@ -688,7 +688,7 @@ def run_and_collect_data(dataset_path):
             gzip_compressed_ts_l22, comp_ratio_gzip = compress_with_gzip(block_data)
             bool_array = float_to_ieee754(block_data)
             bool_array_size_bits = bool_array.nbytes  # Size in bits
-
+            entropy_Block_all = calculate_entropy_float(block_data)
             # Split array and apply RLE
             non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(block_data, threshold_percentage=1)
            # non_consecutive_array=block_data
@@ -724,12 +724,14 @@ def run_and_collect_data(dataset_path):
                     group1 = group1[:new_array_size]
                     bool_array2 = float_to_ieee754(group1)
                     group = non_consecutive_array
+                    size_remaining_data=len(group1)
 
                     # Reshape group based on `m`
                     new_array_size = group.shape[0] - group.shape[0] % m
                     group = group[:new_array_size]
                     ts_m = group.shape[0]
                     entropy_float=calculate_entropy_float(group)
+                    size_remaining_data = len(group)
 
                     bool_array = float_to_ieee754(group)
                     entropy_all = calculate_entropy(bool_array)
@@ -965,10 +967,12 @@ def run_and_collect_data(dataset_path):
                     result_row["entropy_all"] = entropy_all
                     result_row["entropy_float"] = entropy_float
                     result_row["entropy_float_all"] = entropy_float_all
-
+                    result_row["entropy_Block_all"] = entropy_Block_all
                     result_row["dataset_name"] = dataset_name
                    # result_row["verify_flag_final"] = verify_flag_final
                     result_row["len(metadata)"] = len(metadata)
+                    result_row["size_remaining_data"] = size_remaining_data
+
                     result_row["dataset_name"] = dataset_name
                     result_row["block_idx"] = block_idx
 
@@ -1020,12 +1024,23 @@ def save_results(df_results, name_dataset):
     # Loop through each row and calculate the entropy for the component with the maximum zstd compression ratio
     for idx, row in df_results.iterrows():
         # Find the column that gave the maximum zstd compression ratio for the current row
-        max_decom_ratio_col = row[zstd_com_ratio_cols].idxmax()
-        max_decom_ratio_value = row[max_decom_ratio_col]
+        #max_decom_ratio_col = row[zstd_com_ratio_cols].idxmax()
+        if not row[zstd_com_ratio_cols].empty and row[zstd_com_ratio_cols].notna().all():
+            max_decom_ratio_col = row[zstd_com_ratio_cols].idxmax()
+            max_decom_ratio_value = row[max_decom_ratio_col]
+        else:
+            max_decom_ratio_col = None  # Or handle the case when no valid data exists
+            max_decom_ratio_value = None
+
         df_results.at[idx, "max_Decom+zstd_com_ratio"] = max_decom_ratio_value
 
+        if max_decom_ratio_col is not None:
+            b_idx = max_decom_ratio_col.split('_')[-1].replace('b', '')
+        else:
+            b_idx = None  # Handle this case appropriately, or provide a default value
+
         # Extract the index of the `b` component with the maximum compression ratio
-        b_idx = max_decom_ratio_col.split('_')[-1].replace('b', '')
+        #b_idx = max_decom_ratio_col.split('_')[-1].replace('b', '')
 
         # Calculate the sum of entropies for the component that gave the max zstd compression ratio
         leading_entropy = row.get(f"b{b_idx}_leading_entropy", 0) * row.get(f"b{b_idx}_leading_Wieght_size", 0)
@@ -1044,12 +1059,26 @@ def save_results(df_results, name_dataset):
         df_results.at[idx, f"sum_entropy_sh_b{b_idx}"] = sum_entropy_sh
 
         # Find the column that gave the maximum gzip compression ratio for the current row
-        max_gzip_ratio_col = row[gzip_com_ratio_cols].idxmax()
-        max_gzip_ratio_value = row[max_gzip_ratio_col]
+        if not row[gzip_com_ratio_cols].empty and row[gzip_com_ratio_cols].notna().any():
+            max_gzip_ratio_col = row[gzip_com_ratio_cols].idxmax()
+            max_gzip_ratio_value = row[max_gzip_ratio_col]
+        else:
+            max_gzip_ratio_col = None  # Handle the case where there is no valid max value
+            max_gzip_ratio_value = None
+
+            # Optionally, print a warning or log the issue
+            print("Warning: No valid gzip compression ratio values found.")
+       # max_gzip_ratio_col = row[gzip_com_ratio_cols].idxmax()
+      #  max_gzip_ratio_value = row[max_gzip_ratio_col]
         df_results.at[idx, "max_Decom+gzip_com_ratio"] = max_gzip_ratio_value
 
         # Extract the index of the `b` component with the maximum gzip compression ratio
-        b_idx_gzip = max_gzip_ratio_col.split('_')[-1].replace('b', '')
+        if max_gzip_ratio_col is not None:
+            b_idx_gzip = max_gzip_ratio_col.split('_')[-1].replace('b', '')
+        else:
+            b_idx_gzip = None  # Handle this case appropriately, or provide a default value
+
+       # b_idx_gzip = max_gzip_ratio_col.split('_')[-1].replace('b', '')
 
         # Calculate the sum of entropies for the component that gave the max gzip compression ratio
         leading_entropy_gzip = row.get(f"b{b_idx_gzip}_leading_entropy", 0) * row.get(f"b{b_idx_gzip}_leading_Wieght_size", 0)
