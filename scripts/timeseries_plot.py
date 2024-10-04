@@ -2,26 +2,26 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the CSV file
-file_path = "/home/jamalids/Documents/compression-part3/big-data-compression/modeling/citytemp_f32.tsv"
+file_path = "/home/jamalids/Documents/compression-part3/big-data-compression/modeling/HPC/HPC_L_all.csv"
 data = pd.read_csv(file_path)
 
 # Calculate the averages for specific columns
 grouped_data = data.groupby('dataset_name').agg({
-    'entropy_all': 'mean',
-    'entropy_float_all': 'mean',
-    't-max_com_ratio': 'mean',
-    'max_Decom+zstd_22_com_ratio': 'mean',
-    'max_Decom+zstd_com_ratio': 'mean',
-    'max_Decom+gzip_com_ratio': 'mean',
-    'comp_ratio_zstd_default': 'mean',
-    'comp_ratio_l22': 'mean',
-    'comp_ratio_gzip': 'mean',
-    'Non_uniform_1x4': 'mean'
+    'entropy_remainig': 'max',
+    'entropy_float': 'max',
+    't-max_com_ratio': 'max',
+    'max_Decom+zstd_22_com_ratio': 'max',
+    'max_Decom+zstd_com_ratio': 'max',
+    'max_Decom+gzip_com_ratio': 'max',
+    'comp_ratio_zstd_default': 'max',
+    'comp_ratio_l22': 'max',
+    'comp_ratio_gzip': 'max',
+    'Non_uniform_1x4': 'max'
 }).reset_index()
 
 # Plot the data
 fig, ax1 = plt.subplots(figsize=(12, 8))
-
+grouped_data.to_csv("hpc_l_agg.csv")
 # Bar plot for compression ratios with custom legend names
 bar_columns = ['t-max_com_ratio', 'max_Decom+zstd_22_com_ratio', 'max_Decom+zstd_com_ratio', 'max_Decom+gzip_com_ratio',
                'comp_ratio_zstd_default', 'comp_ratio_l22', 'comp_ratio_gzip']
@@ -47,8 +47,8 @@ ax1.legend(loc='upper left')
 
 # Line plot for average entropies with custom legend names
 ax2 = ax1.twinx()
-ax2.plot([pos + (len(bar_columns) / 2) * bar_width for pos in positions], grouped_data['entropy_all'], color='r', marker='o', label='Average Entropy of time series')
-ax2.plot([pos + (len(bar_columns) / 2) * bar_width for pos in positions], grouped_data['entropy_float_all'], color='g', marker='s', label='Entropy of all data')
+ax2.plot([pos + (len(bar_columns) / 2) * bar_width for pos in positions], grouped_data['entropy_remainig'], color='r', marker='o', label='Average Entropy ofentropy_remainig')
+ax2.plot([pos + (len(bar_columns) / 2) * bar_width for pos in positions], grouped_data['entropy_float'], color='g', marker='s', label='Entropy of all data')
 ax2.set_ylabel('Average Entropies')
 ax2.legend(loc='upper right')
 
@@ -85,8 +85,8 @@ ax1.legend(loc='upper left')
 
 # Line plot for entropy values on the secondary axis
 ax2 = ax1.twinx()
-ax2.plot([p + (len(bar_columns) / 2) * bar_width for p in positions], data['entropy_all'], color='r', marker='o', label='Entropy each block')
-ax2.plot([p + (len(bar_columns) / 2) * bar_width for p in positions], data['entropy_float_all'], color='g', marker='s', label='Entropy_All')
+ax2.plot([p + (len(bar_columns) / 2) * bar_width for p in positions], data['entropy_remainig'], color='r', marker='o', label='Entropy remainig')
+ax2.plot([p + (len(bar_columns) / 2) * bar_width for p in positions], data['entropy_floatl'], color='g', marker='s', label='Entropy_All')
 ax2.set_ylabel('Entropy Values')
 ax2.legend(loc='upper right')
 

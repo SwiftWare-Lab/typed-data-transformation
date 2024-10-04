@@ -666,7 +666,7 @@ def run_and_collect_data(dataset_path):
     #datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
 
-    dataset_path = "/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/num_brain_f64.tsv"
     datasets = [dataset_path]
 
     for dataset_path in datasets:
@@ -732,7 +732,7 @@ def run_and_collect_data(dataset_path):
         # Huffman compression
         #est_size, Non_uniform_1x4_2 = huffman_code_array(non_consecutive_array)
         #Non_uniform_1x4_2=Non_uniform_1x4_2+size_metadata
-        #ts_m1 = non_consecutive_array.shape[0]
+        ts_m1 = non_consecutive_array.shape[0]
         bool_array2 = float_to_ieee754(non_consecutive_array)
         m1=1
         n1=32
