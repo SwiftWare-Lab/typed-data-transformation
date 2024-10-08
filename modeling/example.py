@@ -520,10 +520,36 @@ def plot_huffman_tree(root,name):
     plt.title("Huffman Tree")
     #plt.show()
     plt.savefig(name)
+
+def plot_bitmap_standalone(bool_array,name):
+    """
+    Plots a standalone bitmap visualization of the boolean array representing IEEE 754 binary format.
+
+    Args:
+        bool_array: Numpy array of shape (n, 32), where n is the number of floats and 32 is the bit length.
+        filename: The name of the file to save the bitmap plot.
+    """
+    plt.figure(figsize=(10, 10))  # Create a new figure with a specific size
+
+    # Create the bitmap plot
+    plt.imshow(bool_array, cmap='gray_r', aspect='auto')
+
+    # Add labels and title
+    plt.title('IEEE 754 Bit Representation Bitmap')
+    plt.xlabel('Bit Position')
+    plt.ylabel('Float Index')
+
+    # Add a color bar to indicate 0 and 1 mapping
+    plt.colorbar(label='Bit Value')
+
+    # Save the figure
+    plt.savefig(name)
+    plt.show()  # Display the plot
+
 def split_array_on_multiple_consecutive_values(data, threshold_percentage=9):
     total_length = len(data)
     threshold = total_length * (threshold_percentage / 100.0)
-    threshold=20
+    threshold=3
     total_length = len(data)
     consecutive_count = 1
     start_idx = 0
@@ -666,7 +692,7 @@ def run_and_collect_data(dataset_path):
     #datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
 
-    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/num_brain_f64.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/TS/L/citytemp_f32.tsv"
     datasets = [dataset_path]
 
     for dataset_path in datasets:
@@ -679,7 +705,7 @@ def run_and_collect_data(dataset_path):
         #ts_data1 = ts_data1.iloc[0:10, 0:3]
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
         group = group.T
-        group = group.iloc[0:1,75:83]
+        group = group.iloc[0:1,0:4000000]
         group = group.astype(np.float32).to_numpy().reshape(-1)
 
         entropy_float = calculate_entropy_float(group)
@@ -721,6 +747,12 @@ def run_and_collect_data(dataset_path):
 
         bool_array = float_to_ieee754(group)
         bool_array_size_bits = bool_array.nbytes  # Size in bits
+        # Plot the bitmap representation
+        plot_bitmap_standalone(bool_array,"all.png")
+
+        # Save the figure
+        plt.savefig("bitmap_representation.png")
+        plt.show()
 
         # Split array and apply RLE
         non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(group, threshold_percentage=1)
@@ -736,6 +768,11 @@ def run_and_collect_data(dataset_path):
         bool_array2 = float_to_ieee754(non_consecutive_array)
         m1=1
         n1=32
+        plot_bitmap_standalone(bool_array2,"nonconsequative.png")
+
+        # Save the figure
+        plt.savefig("bitmap_representation.png")
+        plt.show()
 
         inverse_cw_dict, root, tree_size, encoded_text = pattern_based_compressor(bool_array, m1, n1, ts_m1, ts_n,"huffman1-4.png")
         s_uniform_1x4, tot_encoded_size, tot_dic_size_bits = measure_total_compressed_size(

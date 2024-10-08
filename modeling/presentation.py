@@ -7,6 +7,9 @@ import pandas as pd
 import numpy as np
 #from matplotlib import pyplot as plt
 import gzip
+
+from matplotlib import pyplot as plt
+
 from utils import binary_to_int
 import argparse
 from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,decode_decompose,concat_decompose
@@ -171,7 +174,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     print("Bnd1: ", bnd1, "Bnd2:",bnd2 )
 
     # Tune decomposition steps
-    tune_decomp = [0, 8,16]
+    tune_decomp = [0, 8]
 
     # Initialize lists to store compressed sizes and dictionaries
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
@@ -203,8 +206,14 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
             print("Tune Decomp: ", i)
 
             # Decompose the array into three parts
-            leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,
-                                                                                                           image_ts)
+            leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,image_ts)
+            name = f"{bnd1}_{bnd2}_leading.png"
+            plot_bitmap_standalone(leading_zero_array_orig, name)
+            name = f"{bnd1}_{bnd2}_content.png"
+            plot_bitmap_standalone(content_array_orig, name)
+            name = f"{bnd1}_{bnd2}_trailing.png"
+            plot_bitmap_standalone(trailing_mixed_array_orig, name)
+
             tl_m, tl_n = leading_zero_array_orig.shape
             tc_m, tc_n = content_array_orig.shape
             tt_m, tt_n = trailing_mixed_array_orig.shape
@@ -302,7 +311,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
             tail_comp_size.append(encoded_text_trailing)
             content_comp_size.append(encoded_text_content)
             lead_entropy.append(leading_entropy)
-            tail_entropy.append(trailing_entropy)
+            tail_entropy.append( trailing_entropy)
             content_entropy.append(contents_entropy)
             lead_shape_m.append(tl_m)
             tail_shap_m.append(tt_m)
@@ -626,8 +635,36 @@ def calculate_exact_metadata_size(metadata):
         total_bits += start_index_bits + value_bits + count_bits
 
     return total_bits
+
+########################################################################
+def plot_bitmap_standalone(bool_array,name):
+    """
+    Plots a standalone bitmap visualization of the boolean array representing IEEE 754 binary format.
+
+    Args:
+        bool_array: Numpy array of shape (n, 32), where n is the number of floats and 32 is the bit length.
+        filename: The name of the file to save the bitmap plot.
+    """
+    plt.figure(figsize=(10, 10))  # Create a new figure with a specific size
+
+    # Create the bitmap plot
+    plt.imshow(bool_array, cmap='gray_r', aspect='auto')
+
+    # Add labels and title
+    plt.title('IEEE 754 Bit Representation Bitmap')
+    plt.xlabel('Bit Position')
+    plt.ylabel('Float Index')
+
+    # Add a color bar to indicate 0 and 1 mapping
+    plt.colorbar(label='Bit Value')
+
+    # Save the figure
+    plt.savefig(name)
+    plt.show()  # Display the plot
+
+####################################################################
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/msg_bt_f64.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/astro_pt_f64.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
     datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
@@ -664,6 +701,8 @@ def run_and_collect_data(dataset_path):
         gzip_compressed_ts_l22, comp_ratio_gzip=compress_with_gzip(group)
         bool_array = float_to_ieee754(group)
         bool_array_size_bits = bool_array.nbytes  # Size in bits
+        filename = f"{dataset_name}_all.png"
+        plot_bitmap_standalone(bool_array,filename)
 
         # Split array and apply RLE
         non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(group, threshold_percentage=1)
@@ -681,6 +720,8 @@ def run_and_collect_data(dataset_path):
         m1 = 1
         n1 = 32
         bool_array3 = float_to_ieee754(group3)
+        filename1 = f"{dataset_name}_non_consecutive.png"
+        plot_bitmap_standalone(bool_array3, filename1)
 
         # Huffman compression
         est_size, Non_uniform_1x4_1 = huffman_code_array(non_consecutive_array)
