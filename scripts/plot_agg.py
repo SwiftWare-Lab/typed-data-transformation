@@ -1,7 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-file_path = "/home/jamalids/Documents/compression-part3/big-data-compression/modeling/final/H_E_agg.csv"
+file_path = "/home/jamalids/Documents/compression-part3/final/final/ALL_agg.csv"
+#file_path="/home/jamalids/Documents/compression-part3/big-data-compression/modeling/hst/Decom+zstd+gzip.csv"
 low_entropy_data1 = pd.read_csv(file_path)
 # Sort data based on 'entropy_float'
 low_entropy_data= low_entropy_data1.sort_values(by='entropy_float')
@@ -83,7 +84,7 @@ for ratio_col, color, label in zip(['comp_ratio_zstd_default', 'comp_ratio_l22',
 # Customize the plot for better presentation
 plt.xlabel('Entropy ', fontsize=12)
 plt.ylabel('Compression Ratio', fontsize=12)
-plt.title('Correlation between Entropy and Compression Ratios with Trend Lines', fontsize=14)
+#plt.title('Correlation between Entropy and Compression Ratios with Trend Lines', fontsize=14)
 plt.legend(title="Compression Ratios", fontsize=10)
 
 # Set x-axis to use entropy as continuous float numbers
@@ -94,4 +95,47 @@ plt.grid(True, linestyle='--', alpha=0.7)
 # Display the plot with scatter points and trend lines
 plt.tight_layout()
 plt.savefig('h_comp_ratios.png', dpi=300)
+plt.show()
+###########################################
+from sklearn.linear_model import LinearRegression
+import numpy as np
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 6))
+
+# Prepare data for linear regression
+X = data['entropy_float'].values.reshape(-1, 1)
+
+# Fit linear regression models for each compression ratio
+for ratio_col, color, label in zip(['comp_ratio_zstd_default', 'comp_ratio_l22', 'comp_ratio_gzip'],
+                                   ['orange', 'red', 'green'],
+                                   ['comp_ratio_zstd_default', 'comp_ratio_zstd_22', 'comp_ratio_gzip']):
+    y = data[ratio_col].values
+    model = LinearRegression().fit(X, y)
+    y_pred = model.predict(X)
+
+    # Scatter plot
+    plt.scatter(data['entropy_float'], y, label=label, color=color)
+
+    # Plot the regression line
+    plt.plot(data['entropy_float'], y_pred, color=color, linestyle='--')
+
+# Customize the plot for better presentation
+plt.xlabel('Entropy', fontsize=12)
+plt.ylabel('Compression Ratio', fontsize=12)
+plt.legend(title="Compression Ratios", fontsize=10)
+
+# Set x-axis to use entropy as continuous float numbers
+plt.xticks(np.arange(0, data['entropy_float'].max() + 1, step=1))
+
+# Remove upper and right axes
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+
+# Remove grid lines
+plt.grid(False)
+
+# Display the plot with scatter points and trend lines
+plt.tight_layout()
+plt.savefig('h_comp_ratios11.png', dpi=300)
 plt.show()

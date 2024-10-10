@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV file (update the path as needed)
-file_path = '/home/jamalids/Documents/compression-part3/big-data-compression/modeling/Decom+zstd+gzip.csv'  # Change this to your actual path
+#file_path = '/home/jamalids/Documents/compression-part3/results_V2_present/result2M/Decom+zstd+gzip.csv'  # Change this to your actual path
+file_path="/home/jamalids/Documents/compression-part3/big-data-compression/modeling/hst/Decom+zstd+gzip.csv"
 df = pd.read_csv(file_path)
 gmean_com_ratio_zstd = np.power(np.prod(df['comp_ratio_zstd_default']), 1/len(df['comp_ratio_zstd_default']))
 gmean_decom = np.power(np.prod(df['max_Decom+zstd_com_ratio']), 1/len(df['max_Decom+zstd_com_ratio']))
@@ -69,3 +70,25 @@ plt.tight_layout()
 plt.savefig("zstd_entropy_archive.png")
 
 plt.show()
+
+# Prepare a new DataFrame to store the calculated values displayed in the plots
+plot_data = pd.DataFrame({
+    'dataset_name': df['dataset_name'],
+    'comp_ratio_zstd_default': df['comp_ratio_zstd_default'],
+    'comp_ratio_l22': df['comp_ratio_l22'],
+    'zstd_22_com_ratio_b1': df['zstd_22_com_ratio_b1'],
+    'zstd_22_com_ratio_b2': df['zstd_22_com_ratio_b2'],
+    'zstd_com_ratio_b1': df['zstd_com_ratio_b1'],
+    'zstd_com_ratio_b2': df['zstd_com_ratio_b2'],
+    'entropy_float': df['entropy_float'],
+    'entropy_remainig': df['entropy_remainig'],
+    'b1_leading_entropy': df['b1_leading_entropy'],
+    'b2_leading_entropy': df['b2_leading_entropy'],
+    'b1_content_entropy': df['b1_content_entropy'],
+    'b2_content_entropy': df['b2_content_entropy'],
+    'b1_tailing_entropy': df['b1_tailing_entropy'],
+    'b2_tailing_entropy': df['b2_tailing_entropy'],
+    'gmean_com_ratio_zstd': gmean_com_ratio_zstd,
+    'gmean_decom': gmean_decom
+})
+plot_data.to_csv("plots_data.csv")

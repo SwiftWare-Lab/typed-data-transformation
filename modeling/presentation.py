@@ -651,7 +651,7 @@ def plot_bitmap_standalone(bool_array,name):
     plt.imshow(bool_array, cmap='gray_r', aspect='auto')
 
     # Add labels and title
-    plt.title('IEEE 754 Bit Representation Bitmap')
+    #plt.title('IEEE 754 Bit Representation Bitmap')
     plt.xlabel('Bit Position')
     plt.ylabel('Float Index')
 
@@ -665,7 +665,7 @@ def plot_bitmap_standalone(bool_array,name):
 ####################################################################
 def run_and_collect_data(dataset_path):
    # dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/"
-    dataset_path ="/home/jamalids/Documents/2D/data1/HPC/H/turbulence_f32.tsv"
+    dataset_path ="/home/jamalids/Documents/2D/data1/OBS/l/hst_wfc3_ir_f32.tsv"
     datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
             #  f.endswith('.tsv')]
@@ -677,7 +677,7 @@ def run_and_collect_data(dataset_path):
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[0:20000,:]
+        group=group.iloc[0:4000000,:]
         group = group.T
         #group = group.iloc[:, 0:3000000]
         verify_flag_final = False
