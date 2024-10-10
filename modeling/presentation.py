@@ -157,7 +157,7 @@ def decompose_array_three(max_lead, min_tail, array):
     return leading_zero_array, content_array, trailing_zero_array
 
 
-def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m, n):
+def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m, n,datasetname):
     # Calculate min, max, and avg for leading and tail zeros
     min_lead, max_lead, avg_lead = int(np.min(leading_zero_pos)), int(np.max(leading_zero_pos)), int(
         np.mean(leading_zero_pos))
@@ -207,11 +207,11 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
 
             # Decompose the array into three parts
             leading_zero_array_orig, content_array_orig, trailing_mixed_array_orig = decompose_array_three(bnd1, bnd2,image_ts)
-            name = f"{bnd1}_{bnd2}_leading.png"
+            name = f"{bnd1}_{bnd2}_{datasetname}leading.png"
             plot_bitmap_standalone(leading_zero_array_orig, name)
-            name = f"{bnd1}_{bnd2}_content.png"
+            name = f"{bnd1}_{bnd2}_{datasetname}content.png"
             plot_bitmap_standalone(content_array_orig, name)
-            name = f"{bnd1}_{bnd2}_trailing.png"
+            name = f"{bnd1}_{bnd2}_{datasetname}trailing.png"
             plot_bitmap_standalone(trailing_mixed_array_orig, name)
 
             tl_m, tl_n = leading_zero_array_orig.shape
@@ -664,11 +664,11 @@ def plot_bitmap_standalone(bool_array,name):
 
 ####################################################################
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/astro_pt_f64.tsv"
-    #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+   # dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/"
+    dataset_path ="/home/jamalids/Documents/2D/data1/HPC/H/turbulence_f32.tsv"
     datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
-          #      f.endswith('.tsv')]
+            #  f.endswith('.tsv')]
     results = []
     for dataset_path in datasets:
         result_row = {}
@@ -677,7 +677,7 @@ def run_and_collect_data(dataset_path):
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[0:4000000,:]
+        group=group.iloc[0:20000,:]
         group = group.T
         #group = group.iloc[:, 0:3000000]
         verify_flag_final = False
@@ -730,7 +730,7 @@ def run_and_collect_data(dataset_path):
                                                                                            inverse_cw_dict)
         Non_uniform_1x4 = bool_array_size_bits / (compressed_size_w + size_metadata)
 
-        pattern_size_list = [4]
+        pattern_size_list = [1]
         n_list = [8]
         for m in pattern_size_list:
             for n in n_list:
@@ -770,7 +770,7 @@ def run_and_collect_data(dataset_path):
                  tailing_zstd,
                  leading_zstd_22, content_zstd_22, tailing_zstd_22, leading_zstd_R, content_zstd_R, tailing_zstd_R,
                  leading_zstd_22_R, content_zstd_22_R, tailing_zstd_22_R,leading_gzip_R, content_gzip_R,tailing_gzip_R,
-                 leading_gzip, content_gzip,tailing_gzip)  = decomposition_based_compression(bool_array,l_z_array,t_z_array,m, n)
+                 leading_gzip, content_gzip,tailing_gzip)  = decomposition_based_compression(bool_array,l_z_array,t_z_array,m, n,dataset_name)
 
                 # Store results dynamically
                 result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
