@@ -53,7 +53,7 @@ def chimp_encode(xor_array):
         return 1 + 5 + 5 + center_bits
 
 
-dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+dataset_path ="/home/jamalids/Documents/2D/data1/HPC/H/wave_f32.tsv"
 ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
 dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
 ts_data1=ts_data1.drop(ts_data1.columns[0], axis=1)

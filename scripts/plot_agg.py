@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-file_path = "/home/jamalids/Documents/compression-part3/final/final/ALL_agg.csv"
+file_path = "/home/jamalids/Documents/compression-part3/final/final/H_E_agg.csv"
 #file_path="/home/jamalids/Documents/compression-part3/big-data-compression/modeling/hst/Decom+zstd+gzip.csv"
 low_entropy_data1 = pd.read_csv(file_path)
 # Sort data based on 'entropy_float'

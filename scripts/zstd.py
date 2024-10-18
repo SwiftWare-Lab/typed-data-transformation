@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV file (update the path as needed)
-file_path = '/home/jamalids/Documents/compression-part3/big-data-compression/modeling/HPC_L_horizental.csv'  # Change this to your actual path
+file_path = "/home/jamalids/Documents/compression-part3/final/final/L_E_agg_P.csv"  # Change this to your actual path
 df = pd.read_csv(file_path)
 gmean_com_ratio_zstd = np.power(np.prod(df['comp_ratio_zstd_default']), 1/len(df['comp_ratio_zstd_default']))
 gmean_decom = np.power(np.prod(df['max_Decom+zstd_com_ratio']), 1/len(df['max_Decom+zstd_com_ratio']))
@@ -15,18 +15,22 @@ print(gmean_decom)
 fig, ax1 = plt.subplots(figsize=(10, 6))
 
 # Bar chart data
-bar_width = 0.15
+bar_width = 0.20
 index = range(len(df) * 2)  # Adding space by expanding the range
 
-# Plotting the bars with space between datasets
-ax1.bar(index[::2], df['comp_ratio_zstd_default'], bar_width, label='Zstd Default')
-ax1.bar([i + bar_width for i in index[::2]], df['comp_ratio_l22'], bar_width, label='Zstd_22')
-ax1.bar([i + 2*bar_width for i in index[::2]], df['max_Decom+zstd_com_ratio'], bar_width, label='Decompose+Zstd ')
-ax1.bar([i + 3*bar_width for i in index[::2]], df['max_Decom+zstd_22_com_ratio'], bar_width, label='Decompose+Zstd_22')
-ax1.bar([i + 4*bar_width for i in index[::2]], df['comp_ratio_gzip'], bar_width, label='comp_ratio_gzip')
-ax1.bar([i + 5*bar_width for i in index[::2]], df['max_Decom+gzip_com_ratio'], bar_width, label='Decom+gzip')
-ax1.bar([i + 6*bar_width for i in index[::2]], df['max_com_ratio'], bar_width, label='Decomp+our method')
-ax1.bar([i + 7*bar_width for i in index[::2]], df['Non_uniform_1x4'], bar_width, label='Non_uniform_1x4')
+# Defining custom colors for each bar
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#17becf']
+
+# Plotting bars with custom colors
+ax1.bar(index[::2], df['comp_ratio_zstd_default'], bar_width, label='comp_ratio_Zstd Default', color=colors[0])
+ax1.bar([i + bar_width for i in index[::2]], df['comp_ratio_l22'], bar_width, label='comp_ratio_Zstd_22', color=colors[1])
+ax1.bar([i + 2*bar_width for i in index[::2]], df['comp_ratio_gzip'], bar_width, label='comp_ratio_gzip', color=colors[2])
+ax1.bar([i + 3*bar_width for i in index[::2]], df['max_Decom+zstd_com_ratio'], bar_width, label='SpDecomp+comp_ratio_Zstd', color=colors[3])
+ax1.bar([i + 4*bar_width for i in index[::2]], df['max_Decom+zstd_22_com_ratio'], bar_width, label='SpDecomp+comp_ratio_22', color=colors[4])
+ax1.bar([i + 5*bar_width for i in index[::2]], df['max_Decom+gzip_com_ratio'], bar_width, label='SpDecomp+comp_ratio_gzip', color=colors[5])
+
+#ax1.bar([i + 6*bar_width for i in index[::2]], df['max_com_ratio'], bar_width, label='Decomp+our method')
+#ax1.bar([i + 7*bar_width for i in index[::2]], df['Non_uniform_1x4'], bar_width, label='Non_uniform_1x4')
 ax1.set_yscale('log')
 # Labels for bar chart
 ax1.set_xlabel('Dataset')
@@ -51,9 +55,12 @@ ax2.legend(loc='upper right')
 ax2.set_ylim(1, ax2.get_ylim()[1])
 # Move the line plot legend outside the plot (below the first legend)
 ax2.legend(loc='upper left', bbox_to_anchor=(1.05, 0.2), title="Entropies")
+#plt.title('Compression Ratios and Entropies for Datasets that have High Entropy after Removing Repetitive Consecutive Values', loc='left', fontsize=11)
 
-plt.title('Compression Ratios and Entropies for Different Datasets')
+
+
+plt.title('Compression Ratios and Entropies for Datasets that has Low_entropy Datasets')
 plt.tight_layout()
-plt.savefig("zstd_gzip_entropy_archive.png")
+plt.savefig("Low.png")
 
 plt.show()

@@ -4,10 +4,15 @@ import pandas as pd
 from scipy.stats import entropy, skew
 
 # Load the dataset
-dataset_path = "/home/jamalids/Documents/2D/data1/OBS/h/"
+dataset_path = "/home/jamalids/Documents/2D/data1/"
 datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
 results = []
-
+def calculate_entropy_float(data):
+    """Calculate the Shannon entropy of quantized data."""
+    value, counts = np.unique(data, return_counts=True)
+    probabilities = counts / counts.sum()
+    entropy = -np.sum(probabilities * np.log2(probabilities))
+    return entropy
 for dataset_path in datasets:
     ts_data = pd.read_csv(dataset_path, delimiter='\t', header=None)
     ts_data = ts_data.drop(ts_data.columns[0], axis=1)
@@ -16,13 +21,14 @@ for dataset_path in datasets:
     ts_data1 = ts_data1.T
     ts_data1 = ts_data1.astype(np.float64).to_numpy().reshape(-1)
     dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
-
+    #calculate_entropy_float(ts_data1)
     # Calculate precision (optional, commented out in your original code)
     # precision_counts = [count_decimal_digits(value) for value in ts_data1 if not np.isnan(value)]
     # max_precision = np.max(precision_counts)
     # average_precision = np.mean(precision_counts)
 
     # Calculate other statistics
+    Entropy=calculate_entropy_float(ts_data1)
     max_value = np.max(ts_data1)
     min_value = np.min(ts_data1)
     avg_value = np.mean(ts_data1)
@@ -63,6 +69,7 @@ for dataset_path in datasets:
         'Total Number of Values': total_values,
         'Dataset Size (bytes)': dataset_size,
         'Average Difference of Consecutive Values': avg_diff,  # Added average difference of consecutive values
+        'Entropy':Entropy
     }
 
     results.append(statistics)

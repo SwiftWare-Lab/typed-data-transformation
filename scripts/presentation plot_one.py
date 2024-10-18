@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV file (update the path as needed)
-file_path = "/home/jamalids/Documents/compression-part3/big-data-compression/modeling/hst/Decom+zstd+gzip.csv"
+file_path = "/home/jamalids/Documents/compression-part3/final/final/ALL_agg.csv"
 df = pd.read_csv(file_path)
 
 # Rename the column from 'comp_ratio_l22' to 'com_ratio_22'
 df = df.rename(columns={'comp_ratio_l22': 'zstd_com_ratio_22'})
-df = df.rename(columns={'zstd_22_com_ratio_b1': 'Decompose+zstd_22_com_ratio'})
-df = df.rename(columns={'zstd_com_ratio_b1': 'Decompose+zstd_com_ratio'})
+df = df.rename(columns={'max_Decom+zstd_22_com_ratio': 'Decompose+zstd_22_com_ratio'})
+df = df.rename(columns={'max_Decom+zstd_com_ratio': 'Decompose+zstd_com_ratio'})
 
 # Convert specific columns to numeric, forcing errors to NaN (in case there are non-numeric values)
 columns_to_convert = ['comp_ratio_zstd_default', 'zstd_com_ratio_22', 'Decompose+zstd_22_com_ratio', 'Decompose+zstd_com_ratio']

@@ -38,9 +38,12 @@ def plot_table(float_values, name):
     fig.write_image(name, scale=3)  # Save the figure
 
 # Example usage
-float_values = [
+float_values1 = [
     (0.791931, 1), (0.799409, 1), (0.800794, 1), (0.803958, 1),
     (0.795394, 1), (0.780945, 1), (0.759362, 1), (0.733009, 1)
+]
+float_values = [
+    (0.791931, 1)
 ]
 
 plot_table(float_values, "tuple_table_single_row_with_borders.png")

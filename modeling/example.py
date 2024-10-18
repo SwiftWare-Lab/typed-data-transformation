@@ -27,7 +27,19 @@ def float_to_ieee754(f):
     else:
         # Apply the conversion to a single float
         return float_to_binary_array(f)
+def float_to_ieee754_64(f):
+    """Convert a float or a numpy array of floats to their IEEE 754 64-bit binary representation and return as an integer array."""
+    def float_to_binary_array(double_f):
+        """Convert a single float to an integer array representing its IEEE 754 64-bit binary form."""
+        binary_str = format(np.float64(double_f).view(np.uint64), '064b')
+        return np.array([int(bit) for bit in binary_str], dtype=np.uint8)
 
+    if isinstance(f, np.ndarray):
+        # Apply the conversion to each element in the numpy array
+        return np.array([float_to_binary_array(double_f) for double_f in f.ravel()]).reshape(f.shape + (64,))
+    else:
+        # Apply the conversion to a single float
+        return float_to_binary_array(f)
 def calculate_entropy_float(data):
     """Calculate the Shannon entropy of quantized data."""
     value, counts = np.unique(data, return_counts=True)
@@ -468,8 +480,47 @@ def plot_table_float(float_values, name):
     # Save the figure as a PNG with proper scaling
     fig.write_image(name, scale=3)  # Increase scale for higher resolution
 
+import plotly.graph_objects as go
 
-# Function to add edges for plotting the Huffman tree
+def plot_table_64(binary_data, float_values, name, bit_length=32):
+    """
+        Plots a table with binary data (32-bit, 64-bit, or other lengths), expanding it to cover the full page and removing extra white space.
+
+        Args:
+            binary_data: List of lists containing binary data (e.g., 0s and 1s).
+            name: The filename to save the image.
+        """
+    # Determine the bit length dynamically from the input data
+    bit_length = 64
+
+    # Column headers for the binary bits
+    columns = [f"Bit {i + 1}" for i in range(bit_length)]
+
+    # Prepare data for the table: Transpose binary data
+    binary_transposed = list(zip(*binary_data))  # Transpose binary data
+
+    # Create the table with no colors
+    fig = go.Figure(data=[go.Table(
+        columnwidth=[40] * bit_length,  # Adjust the column widths for binary bits
+        header=dict(values=columns,  # Header for binary bits
+                    fill_color='white',  # No color
+                    align='center'),
+        cells=dict(values=binary_transposed,  # Binary columns
+                   fill_color='white',  # No color
+                   align='center')
+    )])
+
+    # Update layout to remove white space and margins
+    fig.update_layout(
+        autosize=False,
+        width=1600,  # Adjust width based on table size
+        height=900,  # Adjust height based on table size
+        margin=dict(l=0, r=0, t=0, b=0),  # Remove extra margins
+        paper_bgcolor='rgba(0,0,0,0)',  # Make the background transparent (no white space)
+    )
+
+    # Save the figure as a PNG with proper scaling
+    fig.write_image(name, scale=3)  # Increase scale for higher resolution
 def add_edges(graph, node, pos=None, x=0, y=0, layer=1, label_pos=None):
     """
     Recursively adds edges from the Huffman tree to the NetworkX graph.
@@ -494,7 +545,6 @@ def add_edges(graph, node, pos=None, x=0, y=0, layer=1, label_pos=None):
             add_edges(graph, node.right, pos=pos, x=x + 1 / layer, y=y - 1, layer=layer + 1, label_pos=label_pos)
 
 
-# Function to plot the Huffman Tree
 def plot_huffman_tree(root,name):
     """
     Plots the Huffman tree using NetworkX and Matplotlib.
@@ -692,7 +742,7 @@ def run_and_collect_data(dataset_path):
     #datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
 
-    dataset_path = "/home/jamalids/Documents/2D/data1/TS/L/citytemp_f32.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/wave_f32.tsv"
     datasets = [dataset_path]
 
     for dataset_path in datasets:
@@ -705,8 +755,18 @@ def run_and_collect_data(dataset_path):
         #ts_data1 = ts_data1.iloc[0:10, 0:3]
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
         group = group.T
-        group = group.iloc[0:1,0:4000000]
+        group = group.iloc[0:1,1:5000]
         group = group.astype(np.float32).to_numpy().reshape(-1)
+
+        ##############################
+        bool_array = float_to_ieee754(group)
+
+        plot_table(bool_array, group, "table_with_binary_and_float22.png")
+
+        bool_array_64 =float_to_ieee754_64(group)
+        plot_table_64(bool_array_64, group, "table_with_binary_and_float64.png")
+
+        ##############################
 
         entropy_float = calculate_entropy_float(group)
         print("entropy_float=", entropy_float)

@@ -48,7 +48,7 @@ def replace_first_n_bits_with_first_value(binary_array, n, first_value_bits):
 
 
 # Define the dataset path
-dataset_path = "/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
+dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/wave_f32.tsv"
 
 # Load the dataset
 ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)

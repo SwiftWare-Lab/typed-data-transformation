@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 
 
 # Set dataset path and gather datasets
-dataset_path = "/home/jamalids/Documents/2D/data1/TS/"
-datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
+dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/wave_f32.tsv"
+#datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
+datasets = [dataset_path ]
 
 # Since you have 7 datasets
 datasets = datasets[:7]
@@ -51,7 +52,7 @@ df1.to_csv('dataframe1.csv', index=False)
 df2.to_csv('dataframe2.csv', index=False)
 
 # Create a figure with 7 subplots (arranged in 2 rows and 4 columns)
-fig, axes = plt.subplots(2, 4, figsize=(20, 10))
+fig, axes = plt.subplots(1, 2, figsize=(20, 10))
 
 # Flatten axes for easier iteration
 axes = axes.flatten()

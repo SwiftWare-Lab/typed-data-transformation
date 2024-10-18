@@ -4,7 +4,7 @@ import numpy as np
 
 # Load your CSV file (update the path as needed)
 #file_path = '/home/jamalids/Documents/compression-part3/results_V2_present/result2M/Decom+zstd+gzip.csv'  # Change this to your actual path
-file_path="/home/jamalids/Documents/compression-part3/big-data-compression/modeling/hst/Decom+zstd+gzip.csv"
+file_path="/home/jamalids/Documents/compression-part3/final/final/ALL_agg.csv"
 df = pd.read_csv(file_path)
 gmean_com_ratio_zstd = np.power(np.prod(df['comp_ratio_zstd_default']), 1/len(df['comp_ratio_zstd_default']))
 gmean_decom = np.power(np.prod(df['max_Decom+zstd_com_ratio']), 1/len(df['max_Decom+zstd_com_ratio']))
