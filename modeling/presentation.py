@@ -662,7 +662,7 @@ def plot_bitmap_standalone(bool_array,name):
     plt.show()  # Display the plot
 ##############################################################
 import plotly.graph_objects as go
-def plot_table_float(float_values, name):
+def plot_table_float1(float_values, name):
     """
     Plots a simple table with float values, removing extra white space and color.
 
@@ -698,6 +698,64 @@ def plot_table_float(float_values, name):
 
     # Save the figure as a PNG with proper scaling
     fig.write_image(name, scale=3)  # Increase scale for higher resolution
+import plotly.graph_objects as go
+
+import plotly.graph_objects as go
+
+import plotly.graph_objects as go
+
+import plotly.graph_objects as go
+import plotly.graph_objects as go
+
+import plotly.graph_objects as go
+
+
+def plot_table_float(float_values, name):
+    """
+    Plots a simple table with float values, removing extra white space and color.
+
+    Args:
+        float_values: List of float values or values convertible to float.
+        name: The filename to save the image.
+    """
+    # Round the float values to two decimal places and handle non-float cases
+    formatted_values = []
+    for value in float_values:
+        if isinstance(value, (int, float)):  # Check if the value is a number
+            formatted_values.append(f"{value:.2f}")
+        else:
+            formatted_values.append(str(value))  # Convert non-float values to strings
+
+    # Column headers for the float values
+    columns = ["Float Value"]
+
+    # Prepare the data for the table
+    table_data = [formatted_values]
+
+    # Create the table without any color formatting
+    fig = go.Figure(data=[go.Table(
+        columnwidth=[400],  # Adjust the column width for float values
+        header=dict(values=columns,  # Only "Float Value" header
+                    fill_color='white',  # No color
+                    align='center',
+                    font=dict(size=14, color='black', family="Arial", weight="bold")),  # Header bold
+        cells=dict(values=table_data,  # Only float values
+                   fill_color='white',  # No color
+                   align='center',
+                   font=dict(size=12, color='black', family="Arial", weight="bold"))  # Make values bold
+    )])
+
+    # Update layout to remove white space and margins
+    fig.update_layout(
+        autosize=False,
+        width=400,  # Adjust width based on table size
+        height=1200,  # Adjust height to fit 50 rows or more
+        margin=dict(l=0, r=0, t=0, b=0),  # Remove extra margins
+        paper_bgcolor='rgba(0,0,0,0)',  # Make the background transparent (no white space)
+    )
+
+    # Save the figure as a PNG with proper scaling
+    fig.write_image(name, scale=3)  # Increase scale for higher resolution
 
 ####################################################################
 def run_and_collect_data(dataset_path):
@@ -715,16 +773,18 @@ def run_and_collect_data(dataset_path):
         print("datasetname##################################",dataset_name)
 
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[1360:1405,:]
+        group=group.iloc[1361:1405,:]
         group = group.T
-       # group2= [0.5, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64]
 
-        #group= np.array(group2)
+        group= [0.98,0.85,0.97,0.86,0.79,1.23,7.01,5.87]
+       # group = np.round(group, 2)
+        group= np.array(group)
         verify_flag_final = False
         m, n = 5, 1
         ts_n = 32
 
-        group = group.astype(np.float32).to_numpy().reshape(-1)
+        #group = group.astype(np.float32).to_numpy().reshape(-1)
+
 
         entropy_float = calculate_entropy_float(group)
         print("entropy_float=", entropy_float)
@@ -743,10 +803,12 @@ def run_and_collect_data(dataset_path):
         bool_array_size_bits = bool_array.nbytes  # Size in bits
         filename = f"{dataset_name}_all.png"
         plot_bitmap_standalone(bool_array,filename)
-        plot_table_float(group, "all.png")
+        group_p = np.round(group, 2)
+        plot_table_float(group_p, "all.png")
         # Split array and apply RLE
         non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(group, threshold_percentage=1)
-        plot_table_float(non_consecutive_array, "non_consecutive_array.png")
+        non_consecutive_array1 = np.round(non_consecutive_array, 2)
+        plot_table_float(non_consecutive_array1, "non_consecutive_array.png")
         plot_table_float(metadata, "metadata.png")
         metadata1 = convert_RLE(metadata)
         metadata_array = float_to_ieee754(metadata1)
