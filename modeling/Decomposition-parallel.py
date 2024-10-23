@@ -1,17 +1,22 @@
 import bz2
 import math
+import multiprocessing
 import os
 import sys
 import zlib
-
 import zstandard as zstd
 import pandas as pd
 import numpy as np
+import concurrent.futures
+import time
 #from matplotlib import pyplot as plt
 import gzip
 import fpzip
 from utils import binary_to_int
 import argparse
+from joblib import Parallel, delayed
+
+import time
 #from huffman_code import create_huffman_tree, create_huffman_codes,decode,calculate_size_of_huffman_tree,create_huffman_tree_from_dict,encode_data,decode_decompose,concat_decompose
 ##################################
 #########################
@@ -97,8 +102,114 @@ def decompose_array_three(max_lead, min_tail, array):
     content_array = array[:, max_lead:min_tail]
     trailing_zero_array = array[:, min_tail:]
     return leading_zero_array, content_array, trailing_zero_array
+#################################################################################################
+def decomposition_based_compression22(image_ts, leading_zero_pos, tail_zero_pos, funct_name):
+    # Initial setup (unchanged)
+    min_lead, max_lead, avg_lead = int(np.min(leading_zero_pos)), int(np.max(leading_zero_pos)), int(
+        np.mean(leading_zero_pos))
+    min_tail, max_tail, avg_tail = int(np.min(tail_zero_pos)), int(np.max(tail_zero_pos)), int(np.mean(tail_zero_pos))
 
-def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, funct_name):
+    # Bounds and print statements (unchanged)
+    bnd1 = 8
+    bnd2 = 32 - 8
+    print("Bnd1: ", bnd1, "Bnd2:", bnd2)
+
+    # Decompose the array into three parts
+    leading_zero_array, content_array, trailing_mixed_array = decompose_array_three(bnd1, bnd2, image_ts)
+
+    # Parallel compression setup
+    def compress_data(array, component):
+        start_time = time.time()
+        if array.size == 0:
+            return 0, 0, 0, time.time() - start_time  # size, ratio, entropy, time taken
+
+        if funct_name == 'zstd' or funct_name == 'zstd_22':
+            level = 22 if funct_name == 'zstd_22' else 3
+            compressed, ratio = compress_with_zstd(bits_to_float32(array), level=level)
+        elif funct_name == 'gzip':
+            compressed, ratio = compress_with_gzip(bits_to_float32(array))
+        else:
+            compressed, ratio = (None, 0)  # Handle other cases or errors
+       # compressed_size=len(compressed)
+        entropy = calculate_entropy(array)
+        return compressed, ratio, entropy, time.time() - start_time
+
+    # Execute parallel compression
+    results = {}
+    with multiprocessing.Pool(processes=3) as executor:
+    #with concurrent.futures.ThreadPoolExecutor(max_workers=9) as executor:
+        futures = {
+            'leading': executor.submit(compress_data, leading_zero_array, 'leading'),
+            'content': executor.submit(compress_data, content_array, 'content'),
+            'trailing': executor.submit(compress_data, trailing_mixed_array, 'trailing'),
+        }
+        for key, future in futures.items():
+            results[key] = future.result()
+
+    # Unpacking results
+    leading_size, leading_ratio, leading_entropy, leading_time = results['leading']
+    content_size, content_ratio, content_entropy, content_time = results['content']
+    trailing_size, trailing_ratio, trailing_entropy, trailing_time = results['trailing']
+
+    # Output results and times
+    print(f"Leading compression time: {leading_time}s, Content compression time: {content_time}s, Trailing compression time: {trailing_time}s")
+
+    # Return formatted results (you may need to adjust this based on your needs)
+    return (leading_size, content_size, trailing_size, leading_ratio, content_ratio, trailing_ratio, leading_entropy, content_entropy, trailing_entropy, leading_time, content_time, trailing_time)
+
+
+
+def compress_data(args):
+    array, component, funct_name = args
+    start_time = time.time()
+    if array.size == 0:
+        return (0, 0, 0, time.time() - start_time)  # size, ratio, entropy, time taken
+
+    if funct_name == 'zstd' or funct_name == 'zstd_22':
+        level = 22 if 'zstd_22' == funct_name else 3
+        compressed, ratio = compress_with_zstd(bits_to_float32(array), level=level)
+    elif funct_name == 'gzip':
+        compressed, ratio = compress_with_gzip(bits_to_float32(array))
+    else:
+        compressed, ratio = (None, 0)  # Handle other cases or errors
+    entropy = calculate_entropy(array)
+    return (compressed, ratio, entropy, time.time() - start_time)
+
+def decomposition_based_compression1_1_1(image_ts, leading_zero_pos, tail_zero_pos, funct_name):
+    # Bounds setup and decomposition of array into three parts
+    bnd1 = 8
+    bnd2 = 32 - 8
+    leading_zero_array, content_array, trailing_mixed_array = decompose_array_three(bnd1, bnd2, image_ts)
+
+    args = [
+        (leading_zero_array, 'leading', funct_name),
+        (content_array, 'content', funct_name),
+        (trailing_mixed_array, 'trailing', funct_name)
+    ]
+
+    results = {}
+    with multiprocessing.Pool(processes=3) as pool:
+        result_objects = {name: pool.apply_async(compress_data, (arg,)) for arg, name in zip(args, ['leading', 'content', 'trailing'])}
+        pool.close()
+        pool.join()
+        for name, result in result_objects.items():
+            results[name] = result.get()  # Retrieve the result using get()
+
+    # Unpacking results and printing times
+    leading_size, leading_ratio, leading_entropy, leading_time = results['leading']
+    content_size, content_ratio, content_entropy, content_time = results['content']
+    trailing_size, trailing_ratio, trailing_entropy, trailing_time = results['trailing']
+
+    print(f"Leading compression time: {leading_time}s, Content compression time: {content_time}s, Trailing compression time: {trailing_time}s")
+
+    return (leading_size, content_size, trailing_size, leading_ratio, content_ratio, trailing_ratio, leading_entropy, content_entropy, trailing_entropy, leading_time, content_time, trailing_time)
+
+# Example usage call
+# results = decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, funct_name)
+
+
+
+def decomposition_based_compression1(image_ts, leading_zero_pos, tail_zero_pos, funct_name):
     # Calculate min, max, and avg for leading and tail zeros
     min_lead, max_lead, avg_lead = int(np.min(leading_zero_pos)), int(np.max(leading_zero_pos)), int(
         np.mean(leading_zero_pos))
@@ -115,7 +226,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
     print("Bnd1: ", bnd1, "Bnd2:",bnd2 )
 
     # Tune decomposition steps
-    tune_decomp = [0, 8]
+    tune_decomp = [0]
 
     # Initialize lists to store compressed sizes and dictionaries
 
@@ -141,6 +252,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
 
         # Compress leading zero array
         ts_m_l, ts_n_l = leading_zero_array_orig.shape
+        start_time = time.time()
         if ts_n_l != 0:
 
             leading_entropy = calculate_entropy(leading_zero_array_orig)
@@ -148,7 +260,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
             if(funct_name=='zstd'):
                 comp_leading, leading_ratio = compress_with_zstd(leadinf_float, level=3)
             elif(funct_name=='zstd_22'):
-                comp_leading, leading_ratio = compress_with_zstd(leadinf_float, level=3)
+                comp_leading, leading_ratio = compress_with_zstd(leadinf_float, level=22)
             elif (funct_name == 'gzip'):
                 comp_leading, leading_ratio=compress_with_gzip(leadinf_float)
 
@@ -156,9 +268,10 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
 
             leading_entropy = 0
             comp_leading, leading_ratio=0,0
-
+        leading_time = time.time() - start_time
         # Compress content array
         ts_m_c, ts_n_c = content_array_orig.shape
+
         if ts_n_c != 0:
 
             contents_entropy = calculate_entropy(content_array_orig)
@@ -166,11 +279,15 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
             content_float = bits_to_float32(content_array_orig)
 
             if (funct_name == 'zstd'):
+                start_time = time.time()
                 comp_content, content_ratio = compress_with_zstd(content_float, level=3)
+                content_time = time.time() - start_time
             elif (funct_name == 'zstd_22'):
-                comp_content, content_ratio = compress_with_zstd(content_float, level=3)
+                comp_content, content_ratio = compress_with_zstd(content_float, level=22)
             elif (funct_name == 'gzip'):
+                start_time = time.time()
                 comp_content, content_ratio = compress_with_gzip(content_float)
+                content_time = time.time() - start_time
 
 
         else:
@@ -180,6 +297,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
 
             # Compress trailing mixed array
         ts_m_t, ts_n_t = trailing_mixed_array_orig.shape
+        start_time=time.time()
         if ts_n_t != 0:
 
             trailing_entropy = calculate_entropy(trailing_mixed_array_orig)
@@ -188,7 +306,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
             if (funct_name == 'zstd'):
                 comp_trailing, trailing_ratio = compress_with_zstd(trailing_float, level=3)
             elif (funct_name == 'zstd_22'):
-                comp_trailing, trailing_ratio = compress_with_zstd(trailing_float, level=3)
+                comp_trailing, trailing_ratio = compress_with_zstd(trailing_float, level=22)
             elif (funct_name == 'gzip'):
                 comp_trailing, trailing_ratio = compress_with_gzip(trailing_float)
 
@@ -198,6 +316,8 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
 
             trailing_entropy = 0
             comp_trailing, trailing_ratio=0,0
+
+        trailing_time=time.time()-start_time
         # Store compressed sizes and dictionaries
 
         leading.append(comp_leading)
@@ -216,8 +336,42 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, f
         trailing_mixed_array_orig1.append(trailing_mixed_array_orig)
 
 
-    return (leading,content,tailing,leading_R,content_R,tailing_R,lead_entropy, tail_entropy, content_entropy)
+    return (leading,content,tailing,leading_R,content_R,tailing_R,lead_entropy, tail_entropy, content_entropy,leading_time,content_time,trailing_time)
+###############################################################################################
+# Assuming decomposition_based_compression1 is defined
+def run_component_compression(image_ts, leading_zero_pos, tail_zero_pos, funct_name):
+    try:
+        # Decompose and compress the components
+        result = decomposition_based_compression1(
+            image_ts, leading_zero_pos, tail_zero_pos, funct_name
+        )
 
+        # Ensure result has exactly 12 elements
+        if result is None or not isinstance(result, tuple) or len(result) != 12:
+            raise ValueError("Unexpected result structure from decomposition_based_compression1")
+
+        return result  # Return the 12 elements as they are
+    except Exception as e:
+        print(f"Error in run_component_compression with function '{funct_name}': {e}")
+        return (None,) * 12  # Return 12 Nones to maintain the expected structure
+
+def parallel_compression_by_components(image_ts, leading_zero_pos, tail_zero_pos, funct_name, backend='loky'):
+    try:
+        # Run parallel compression for leading, content, and trailing using the specified function
+        component_results = Parallel(n_jobs=3, backend=backend)(
+            delayed(run_component_compression)(image_ts, leading_zero_pos, tail_zero_pos, funct_name)
+            for _ in range(1)
+        )[0]  # Extract the single result
+
+        # Ensure it returns exactly 12 values
+        if len(component_results) != 12:
+            raise ValueError("The result from parallel compression does not have 12 elements.")
+
+        return component_results
+    except Exception as e:
+        print(f"Error during parallel compression: {e}")
+        return (None,) * 12
+###############################################################3
 def bits_to_float32(bit_array):
 
 
@@ -462,7 +616,170 @@ def run_and_collect_data(dataset_path):
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[:400,:]
+        group=group.iloc[:4000000,:]
+        group = group.T
+        #group = group.iloc[:, 0:4000000]
+        verify_flag_final = False
+        m, n = 8, 1
+        ts_n = 32
+
+        group = group.astype(np.float32).to_numpy().reshape(-1)
+
+        entropy_float = calculate_entropy_float(group)
+        print("entropy_float=", entropy_float)
+
+        # Calculate the total number of elements
+        total_elements = len(group)
+        positive_values = np.sum(group > 0)
+        negative_values = np.sum(group < 0)
+
+        # Zstd
+        zste_time=time.time()
+        zstd_compressed_ts, comp_ratio_zstd_default = compress_with_zstd(group)
+        zstd_T=time.time()-zste_time
+        zstd_compressed_ts_l22, comp_ratio_l22 = compress_with_zstd(group, 22)
+        #gzip
+        gzip_time = time.time()
+        gzip_compressed_ts_l22, comp_ratio_gzip=compress_with_gzip(group)
+        gzip_T = time.time()-gzip_time
+        #fpzip
+        fpzip_compressed_ts_l22, comp_ratio_fpzip = compress_with_bz2(group)
+        bool_array = float_to_ieee754(group)
+        bool_array_size_bits = bool_array.nbytes  # Size in bits
+
+        # Split array and apply RLE
+        non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(group, threshold_percentage=1)
+        metadata1 = convert_RLE(metadata)
+        metadata_array = float_to_ieee754(metadata1)
+        group2 = group
+        #size_metadata = len(metadata) * 96  # Example size calculation
+        size_metadata = calculate_exact_metadata_size(metadata)
+        group3 = non_consecutive_array
+
+
+        new_array_size = group3.shape[0] - group3.shape[0] % m
+        group3 = group3[:new_array_size]
+        ts_m1 = group3.shape[0]
+        m1 = 1
+        n1 = 32
+        bool_array3 = float_to_ieee754(group3)
+
+
+
+        compress_list = ['zstd','gzip']
+
+        for func_name  in compress_list:
+            group = non_consecutive_array
+
+            bool_array = float_to_ieee754(group)
+            entropy_all = calculate_entropy(bool_array)
+            print("entropy_all", entropy_all)
+
+            ######################################################
+            backends = ['loky', 'threading', 'multiprocessing']
+
+            # Dictionary to store results for each backend
+            backend_results = {}
+
+            # Run the compression for each backend
+            for backend in backends:
+                print(f"\nRunning decomposition-based compression with backend: {backend}")
+                # Decomposition-based compression
+                l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
+                (leading, content, tailing, leading_R, content_R, tailing_R, lead_entropy, tail_entropy,
+                 content_entropy, leading_time, content_time, trailing_time) = parallel_compression_by_components(
+                    bool_array, l_z_array, t_z_array, func_name, backend='loky')
+
+                result_row = {"Original Size (bits)": bool_array_size_bits, "func_name": func_name}
+                zstd_encoded_b = {}
+                zstd_encoded_b_R = {}
+
+                for idx, leading_zstd1 in enumerate(leading, start=1):
+                    if leading_zstd1 == 0:
+                        result_row[f"b{idx}_eading_size"] = 0
+                    else:
+                        result_row[f"b{idx}_leading_size"] = leading_zstd1 * 8
+                        zstd_encoded_b[idx] = zstd_encoded_b.get(idx, 0) + leading_zstd1 * 8
+
+                for idx, content_zstd1 in enumerate(content, start=1):
+                    if content_zstd1 == 0:
+                        result_row[f"b{idx}_content_size"] = 0
+                    else:
+                        result_row[f"b{idx}_content_size"] = content_zstd1 * 8
+                        zstd_encoded_b[idx] = zstd_encoded_b.get(idx, 0) + content_zstd1 * 8
+
+                for idx, tailing_zstd1 in enumerate(tailing, start=1):
+                    if tailing_zstd1 == 0:
+                        result_row[f"b{idx}_tailing_size"] = 0
+                    else:
+                        result_row[f"b{idx}_tailing_size"] = tailing_zstd1 * 8
+                        zstd_encoded_b[idx] = zstd_encoded_b.get(idx, 0) + tailing_zstd1 * 8
+
+                ############################################################
+                for idx, leading_zstd1 in enumerate(leading_R, start=1):
+                    result_row[f"b{idx}_leading_comp_ratio"] = leading_zstd1
+                    zstd_encoded_b_R[idx] = zstd_encoded_b_R.get(idx, 0) + leading_zstd1
+
+                for idx, content_zstd1 in enumerate(content_R, start=1):
+                    result_row[f"b{idx}_content_comp_ratio"] = content_zstd1
+                    zstd_encoded_b_R[idx] = zstd_encoded_b_R.get(idx, 0) + content_zstd1
+
+                for idx, tailing_zstd1 in enumerate(tailing_R, start=1):
+                    result_row[f"b{idx}_tailing_comp_ratio"] = tailing_zstd1
+                    zstd_encoded_b_R[idx] = zstd_encoded_b_R.get(idx, 0) + tailing_zstd1
+
+                #######################################################################
+
+                for idx in zstd_encoded_b:
+                    result_row[f"com_ratio_b{idx}"] = bool_array_size_bits / (
+                            zstd_encoded_b[idx] + size_metadata) if \
+                        zstd_encoded_b[idx] > 0 else None
+
+                # Store Zstd and Huffman results
+                result_row["comp_ratio_zstd_default"] = comp_ratio_zstd_default
+                result_row["comp_ratio_l22"] = comp_ratio_l22
+                result_row["comp_ratio_zlib"] = comp_ratio_gzip
+                result_row["comp_ratio_bz2"] = comp_ratio_fpzip
+                result_row["backend"] = backend
+
+                result_row["bool_array_size_bits"] = bool_array_size_bits
+                result_row["entropy_remainig"] = entropy_all
+                result_row["entropy_float"] = entropy_float
+                result_row["verify_flag_final"] = verify_flag_final
+                result_row["len(metadata)"] = len(metadata)
+                result_row["len(non_consecutive_array)"] = len(non_consecutive_array)
+                result_row["dataset_name"] = dataset_name
+                result_row["leading_time"] = leading_time
+                result_row["content_time"] = content_time
+                result_row["trailing_time"] = trailing_time
+                result_row[" zstd_T"] =  zstd_T
+                result_row["gzip_T"] = gzip_T
+
+
+
+                results.append(result_row)
+        df_results1=pd.DataFrame(results)
+        df_results1.to_csv("Decom+back.csv")
+        #save_results(pd.DataFrame(results), dataset_name, func_name)
+
+    return pd.DataFrame(results)
+
+
+def run_and_collect_data1(dataset_path):
+    #dataset_path = "/home/jamalids/Documents/2D/data1/other/"
+    dataset_path ="/home/jamalids/Documents/2D/data1/Fcbench/TS/L/citytemp_f32.tsv"
+    datasets = [dataset_path]
+    #datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
+               # f.endswith('.tsv')]
+    results = []
+    for dataset_path in datasets:
+        result_row = {}
+
+        ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
+        dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
+        print("datasetname##################################",dataset_name)
+        group = ts_data1.drop(ts_data1.columns[0], axis=1)
+        group=group.iloc[:4000000,:]
         group = group.T
         #group = group.iloc[:, 0:4000000]
         verify_flag_final = False
@@ -521,7 +838,7 @@ def run_and_collect_data(dataset_path):
             # Decomposition-based compression
             l_z_array, t_z_array = compute_leading_tailing_zeros(bool_array)
             (leading, content, tailing, leading_R, content_R, tailing_R, lead_entropy, tail_entropy,
-             content_entropy) = decomposition_based_compression(bool_array, l_z_array, t_z_array, func_name)
+             content_entropy,leading_time,content_time,trailing_time) = decomposition_based_compression1(bool_array, l_z_array, t_z_array, func_name)
 
             result_row = {"Original Size (bits)": bool_array_size_bits,"func_name": func_name}
             zstd_encoded_b = {}
@@ -581,6 +898,9 @@ def run_and_collect_data(dataset_path):
             result_row["len(metadata)"] = len(metadata)
             result_row["len(non_consecutive_array)"] = len(non_consecutive_array)
             result_row["dataset_name"] = dataset_name
+            result_row["leading_time"] = leading_time
+            result_row["content_time"] = content_time
+            result_row["trailing_time"] = trailing_time
 
             results.append(result_row)
 
@@ -602,7 +922,7 @@ def save_results(df_results, name_dataset,func_name):
        entropy_full_data = df_results[entropy_cols].max().max()
    else:
        entropy_full_data = 0  # Fallback value if no columns exist
-   df_results.to_csv("Decom+zstd+gzip.csv")
+   df_results.to_csv("Decom+zstd+gzip_N.csv")
    return df_results
 
 def arg_parser():
@@ -626,4 +946,6 @@ if __name__ == "__main__":
     log_file = args.log_file
     num_threads = args.num_threads
     mode = args.mode
+
+    df_results1 = run_and_collect_data1(dataset_path)
     df_results = run_and_collect_data(dataset_path)
