@@ -1,0 +1,14 @@
+# Target labels
+ googletest
+# Source files and their labels
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest-complete.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-build.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-configure.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-download.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-install.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-mkdir.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-patch.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-test.rule
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-update.rule

@@ -1,0 +1,3 @@
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/CMakeFiles/zstd-populate.dir
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/CMakeFiles/edit_cache.dir
+/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/CMakeFiles/rebuild_cache.dir

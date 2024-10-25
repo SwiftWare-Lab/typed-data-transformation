@@ -1,0 +1,300 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "_deps/zstd-build/programs/zstd"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"install",
+			"target_link_libraries",
+			"add_definitions",
+			"set_property",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"cmake-build-debug/_deps/zstd-src/build/cmake/programs/CMakeLists.txt",
+			"cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 40,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 45,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 41,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 61,
+				"parent" : 4
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 79,
+				"parent" : 4
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 93,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 17,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 21,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 -Wa,--noexecstack -g -fdiagnostics-color=always"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 5,
+					"define" : "XXH_NAMESPACE=ZSTD_"
+				},
+				{
+					"backtrace" : 6,
+					"define" : "ZSTD_LEGACY_SUPPORT=5"
+				},
+				{
+					"backtrace" : 7,
+					"define" : "ZSTD_MULTITHREAD"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-build/programs"
+				},
+				{
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/programs"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../programs"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib/common"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib/compress"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib/dictBuilder"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../programs/legacy"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib/legacy"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "libzstd_static::@ce257b546cf505c1d048"
+		}
+	],
+	"id" : "zstd::@18563dce6c7680baa1af",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "bin"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "/usr/local"
+		}
+	},
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 -Wa,--noexecstack -g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-z noexecstack",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "_deps/zstd-build/lib/libzstd.a",
+				"role" : "libraries"
+			}
+		],
+		"language" : "C"
+	},
+	"name" : "zstd",
+	"nameOnDisk" : "zstd",
+	"paths" : 
+	{
+		"build" : "_deps/zstd-build/programs",
+		"source" : "cmake-build-debug/_deps/zstd-src/build/cmake/programs"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/benchfn.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/benchzstd.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/datagen.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/dibio.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/fileio.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/fileio_asyncio.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/lorem.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/timefn.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/util.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/zstdcli.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-debug/_deps/zstd-src/programs/zstdcli_trace.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

@@ -12,27 +12,6 @@
 #include "zstd.h"
 
 
-static void compress_orDie_random(const size_t fSize, const char* oname){
-  // Create a random array of floats
-  float* const fBuff = (float*)malloc(fSize * sizeof(float));
-  for (size_t i = 0; i < fSize; i++) fBuff[i] = (float)i;
-  size_t const cBuffSize = ZSTD_compressBound(fSize * sizeof(float));
-  void* const cBuff = malloc_orDie(cBuffSize);
-
-  // Compress
-  size_t const cSize = ZSTD_compress(cBuff, cBuffSize, fBuff, fSize * sizeof(float), 1);
-  CHECK_ZSTD(cSize);
-
-  // Save the compressed data
-  saveFile_orDie(oname, cBuff, cSize);
-
-  // Success
-  printf("Random data compressed to %s\n", oname);
-
-  // Clean up
-  free(fBuff);
-  free(cBuff);
-}
 
 
 static void compress_orDie(const char* fname, const char* oname)
@@ -92,41 +71,6 @@ static void decompress(const char* fname)
 }
 
 
-//static char* createOutFilename_orDie(const char* filename)
-//{
-//  size_t const inL = strlen(filename);
-//  size_t const outL = inL + 5;
-//  void* const outSpace = malloc_orDie(outL);
-//  memset(outSpace, 0, outL);
-//  strcat(outSpace, filename);
-//  strcat(outSpace, ".zst");
-//  return (char*)outSpace;
-//}
-
-//int main(int argc, const char** argv)
-//{
-//  const char* const exeName = argv[0];
-//
-//  if (argc!=3) {
-//    printf("wrong arguments\n");
-//    printf("usage:\n");
-//    printf("%s FILE\n", exeName);
-//    return 1;
-//  }
-//
-//  const char* const inFilename = argv[1];
-//  const size_t fSize = atoi(argv[2]);
-//
-//  //char* const outFilename = createOutFilename_orDie(inFilename);
-////  char *outFilename = (char *)malloc(strlen(inFilename)+5);
-////  compress_orDie(inFilename, outFilename);
-////  free(outFilename);
-//  compress_orDie_random(fSize, inFilename);
-//  decompress(inFilename);
-//
-//  return 0;
-//}
-
 void *compImp(int a) {
   compress_orDie("test_file", "test_file.zst");
   return NULL;
@@ -164,10 +108,12 @@ static void ZSTD_BENCH(benchmark::State &state, void (* compImp1)(int)) {
 }
 
 // Register the function as a benchmark
-int main() {
+int main1() {
   benchmark::RegisterBenchmark("ZSTD_BENCH", ZSTD_BENCH, reinterpret_cast<void (*)(int)>(compImp))
-  ->Args({1000000, 22, 1})->Args({2000000, 22, 1})->Args({1000000, 3, 1})->Args({2000000, 3, 1})->Args({1000000, 22, 1})->Args({2000000, 1, 1})
+  ->Args({1000, 22, 1})->Args({2000000, 22, 1})->Args({1000000, 3, 1})->Args({2000000, 3, 1})->Args({1000000, 22, 1})->Args({2000000, 1, 1})
   ->Args({1000000, 22, 4})->Args({2000000, 22, 4})->Args({1000000, 3, 4})->Args({2000000, 3, 4})->Args({1000000, 22, 4})->Args({2000000, 1, 4});
+
   benchmark::RunSpecifiedBenchmarks();
+
 }
 //BENCHMARK_CAPTURE(ZSTD_BENCH, test_case, reinterpret_cast<void (*)(int)>(compImp))->Args({1000000});
