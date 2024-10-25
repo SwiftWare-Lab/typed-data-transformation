@@ -9,7 +9,7 @@
 #include <cstring>    // strlen, strcat, memset
 #include <zstd.h>      // presumes zstd library is installed
 #include "common.h"    // Helper functions, CHECK(), and CHECK_ZSTD()
-
+#include "zstd.h"
 
 
 static void compress_orDie_random(const size_t fSize, const char* oname){
@@ -145,10 +145,14 @@ static void ZSTD_BENCH(benchmark::State &state, void (* compImp1)(int)) {
 
   size_t cSize;
 
-
+// set number of threads
+  //ZSTD_setParameter(ZSTD_c_compressionLevel, zstdLevel);
+  ZSTD_CCtx* cctx = ZSTD_createCCtx();
+  ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, numThreads);
   for (auto _: state) {
     // Compress
-    cSize = ZSTD_compress(cBuff, cBuffSize, fBuff, fSize * sizeof(float), zstdLevel);
+    //cSize = ZSTD_compress(cBuff, cBuffSize, fBuff, fSize * sizeof(float), zstdLevel);
+    cSize = ZSTD_compressCCtx(cctx, cBuff, cBuffSize, fBuff, fSize * sizeof(float), zstdLevel);
     CHECK_ZSTD(cSize);
   }
 
@@ -161,8 +165,9 @@ static void ZSTD_BENCH(benchmark::State &state, void (* compImp1)(int)) {
 
 // Register the function as a benchmark
 int main() {
-  benchmark::RegisterBenchmark("ZSTD_BENCH", ZSTD_BENCH, reinterpret_cast<void (*)(int)>(compImp))->Args({1000000, 22, 1})
-  ->Args({2000000, 22, 1})->Args({1000000, 3, 1})->Args({2000000, 3, 1})->Args({1000000, 22, 1})->Args({2000000, 1, 1});
+  benchmark::RegisterBenchmark("ZSTD_BENCH", ZSTD_BENCH, reinterpret_cast<void (*)(int)>(compImp))
+  ->Args({1000000, 22, 1})->Args({2000000, 22, 1})->Args({1000000, 3, 1})->Args({2000000, 3, 1})->Args({1000000, 22, 1})->Args({2000000, 1, 1})
+  ->Args({1000000, 22, 4})->Args({2000000, 22, 4})->Args({1000000, 3, 4})->Args({2000000, 3, 4})->Args({1000000, 22, 4})->Args({2000000, 1, 4});
   benchmark::RunSpecifiedBenchmarks();
 }
 //BENCHMARK_CAPTURE(ZSTD_BENCH, test_case, reinterpret_cast<void (*)(int)>(compImp))->Args({1000000});
