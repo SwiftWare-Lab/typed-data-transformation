@@ -3168,9 +3168,25 @@ build external_tools/CMakeFiles/zstd-test.dir/zstd_example.cpp.o: CXX_COMPILER__
   OBJECT_DIR = external_tools/CMakeFiles/zstd-test.dir
   OBJECT_FILE_DIR = external_tools/CMakeFiles/zstd-test.dir
 
-build external_tools/CMakeFiles/zstd-test.dir/zstd_1.cpp.o: CXX_COMPILER__zstd-test_unscanned_Debug /home/jamalids/Documents/compression-part4/big-data-compression/external_tools/zstd_1.cpp || cmake_object_order_depends_target_zstd-test
+build external_tools/CMakeFiles/zstd-test.dir/zstd_test_com_decom.cpp.o: CXX_COMPILER__zstd-test_unscanned_Debug /home/jamalids/Documents/compression-part4/big-data-compression/external_tools/zstd_test_com_decom.cpp || cmake_object_order_depends_target_zstd-test
   DEFINES = -DBENCHMARK_STATIC_DEFINE
-  DEP_FILE = external_tools/CMakeFiles/zstd-test.dir/zstd_1.cpp.o.d
+  DEP_FILE = external_tools/CMakeFiles/zstd-test.dir/zstd_test_com_decom.cpp.o.d
+  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/lib -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/include
+  OBJECT_DIR = external_tools/CMakeFiles/zstd-test.dir
+  OBJECT_FILE_DIR = external_tools/CMakeFiles/zstd-test.dir
+
+build external_tools/CMakeFiles/zstd-test.dir/zstd_decompress.cpp.o: CXX_COMPILER__zstd-test_unscanned_Debug /home/jamalids/Documents/compression-part4/big-data-compression/external_tools/zstd_decompress.cpp || cmake_object_order_depends_target_zstd-test
+  DEFINES = -DBENCHMARK_STATIC_DEFINE
+  DEP_FILE = external_tools/CMakeFiles/zstd-test.dir/zstd_decompress.cpp.o.d
+  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/lib -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/include
+  OBJECT_DIR = external_tools/CMakeFiles/zstd-test.dir
+  OBJECT_FILE_DIR = external_tools/CMakeFiles/zstd-test.dir
+
+build external_tools/CMakeFiles/zstd-test.dir/utils.cpp.o: CXX_COMPILER__zstd-test_unscanned_Debug /home/jamalids/Documents/compression-part4/big-data-compression/external_tools/utils.cpp || cmake_object_order_depends_target_zstd-test
+  DEFINES = -DBENCHMARK_STATIC_DEFINE
+  DEP_FILE = external_tools/CMakeFiles/zstd-test.dir/utils.cpp.o.d
   FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
   INCLUDES = -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/lib -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/../../lib -I/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/include
   OBJECT_DIR = external_tools/CMakeFiles/zstd-test.dir
@@ -3184,7 +3200,7 @@ build external_tools/CMakeFiles/zstd-test.dir/zstd_1.cpp.o: CXX_COMPILER__zstd-t
 #############################################
 # Link the executable external_tools/zstd-test
 
-build external_tools/zstd-test: CXX_EXECUTABLE_LINKER__zstd-test_Debug external_tools/CMakeFiles/zstd-test.dir/zstd_example.cpp.o external_tools/CMakeFiles/zstd-test.dir/zstd_1.cpp.o | _deps/zstd-build/lib/libzstd.a _deps/googlebenchmark-build/src/libbenchmark.a || _deps/googlebenchmark-build/src/libbenchmark.a _deps/zstd-build/lib/libzstd.a
+build external_tools/zstd-test: CXX_EXECUTABLE_LINKER__zstd-test_Debug external_tools/CMakeFiles/zstd-test.dir/zstd_example.cpp.o external_tools/CMakeFiles/zstd-test.dir/zstd_test_com_decom.cpp.o external_tools/CMakeFiles/zstd-test.dir/zstd_decompress.cpp.o external_tools/CMakeFiles/zstd-test.dir/utils.cpp.o | _deps/zstd-build/lib/libzstd.a _deps/googlebenchmark-build/src/libbenchmark.a || _deps/googlebenchmark-build/src/libbenchmark.a _deps/zstd-build/lib/libzstd.a
   FLAGS = -g
   LINK_LIBRARIES = _deps/zstd-build/lib/libzstd.a  _deps/googlebenchmark-build/src/libbenchmark.a  -lrt
   OBJECT_DIR = external_tools/CMakeFiles/zstd-test.dir

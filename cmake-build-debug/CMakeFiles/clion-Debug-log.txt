@@ -59,6 +59,6 @@ CMake Deprecation Warning at cmake-build-debug/_deps/googlebenchmark-build/third
   CMake that the project does not need compatibility with older versions.
 
 
--- Configuring done (0.3s)
+-- Configuring done (0.2s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug

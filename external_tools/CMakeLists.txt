@@ -3,7 +3,10 @@ project(zstd-test-project CXX C)
 
 add_executable(zstd-test
         zstd_example.cpp
-        zstd_1.cpp
+        zstd_test_com_decom.cpp
+        zstd_decompress.cpp
+        utils.cpp
+
 )
 
 target_link_libraries( zstd-test
