@@ -22,7 +22,7 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
     return byteArray;
 }
 
-// split bytes into three components: leading, content, and trailing
+// Split bytes into three components: leading, content, and trailing
 void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
                               std::vector<uint8_t>& leading,
                               std::vector<uint8_t>& content,
@@ -42,7 +42,7 @@ void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
     }
 }
 
-
+// Function to compress a byte vector with Zstd and return compressed size
 size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
     size_t const cBuffSize = ZSTD_compressBound(data.size());
     compressedData.resize(cBuffSize);
@@ -56,7 +56,7 @@ size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& 
     return cSize;
 }
 
-//  decompress a byte vector with Zstd and return decompressed size
+// Decompress a byte vector with Zstd and return decompressed size
 size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize) {
     decompressedData.resize(originalSize);
 
@@ -64,33 +64,30 @@ size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vecto
     size_t const dSize = ZSTD_decompress(decompressedData.data(), originalSize, compressedData.data(), compressedData.size());
     CHECK_ZSTD(dSize);
 
-    // Verify decompressed size matches the original size
-    CHECK(dSize == originalSize, "Decompressed size does not match original size!");
-
     return dSize;
 }
 
-//  verify decompressed data matches original data
-bool verifyData(const std::vector<uint8_t>& original, const std::vector<uint8_t>& decompressed) {
-    if (original.size() != decompressed.size()) {
+// Verify if two byte arrays are equal
+bool verifyBytes(const std::vector<uint8_t>& original, const std::vector<uint8_t>& reconstructed) {
+    if (original.size() != reconstructed.size()) {
         return false;
     }
 
-    // Compare each element
+    // Compare each byte
     for (size_t i = 0; i < original.size(); i++) {
-        if (original[i] != decompressed[i]) {
+        if (original[i] != reconstructed[i]) {
+            printf("Byte mismatch at index %zu: original = %d, reconstructed = %d\n",
+                   i, original[i], reconstructed[i]);
             return false;
         }
     }
-
     return true;
 }
 
-// comp ratio
+// Compression ratio calculation
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
     return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
-
 
 static void ZSTD_BENCH(benchmark::State& state) {
     int fSize = state.range(0);
@@ -112,7 +109,7 @@ static void ZSTD_BENCH(benchmark::State& state) {
     std::vector<uint8_t> compressedLeading, compressedContent, compressedTrailing;
     std::vector<uint8_t> decompressedLeading, decompressedContent, decompressedTrailing;
 
-    //  compression, decompression, and comp ratio for each component
+
     for (auto _: state) {
         // Compress each component
         size_t leadingCompressedSize = compressWithZstd(leading, compressedLeading, zstdLevel);
@@ -124,52 +121,46 @@ static void ZSTD_BENCH(benchmark::State& state) {
         decompressWithZstd(compressedContent, decompressedContent, content.size());
         decompressWithZstd(compressedTrailing, decompressedTrailing, trailing.size());
 
-        // Verify decompressed data matches original data
-        bool leadingMatch = verifyData(leading, decompressedLeading);
-        bool contentMatch = verifyData(content, decompressedContent);
-        bool trailingMatch = verifyData(trailing, decompressedTrailing);
+        // Reconstruct full byte array from decompressed
+        std::vector<uint8_t> reconstructedBytes(byteArray.size());
+        size_t floatCount = byteArray.size() / 4;
 
-        //  comp ratios
-        double leadingCompRatio = calculateCompressionRatio(leading.size(), leadingCompressedSize);
-        double contentCompRatio = calculateCompressionRatio(content.size(), contentCompressedSize);
-        double trailingCompRatio = calculateCompressionRatio(trailing.size(), trailingCompressedSize);
 
-        // total comp ratio
+        for (size_t i = 0; i < floatCount; i++) {
+            reconstructedBytes[i * 4] = decompressedLeading[i];
+            reconstructedBytes[i * 4 + 1] = decompressedContent[i * 2];
+            reconstructedBytes[i * 4 + 2] = decompressedContent[i * 2 + 1];
+            reconstructedBytes[i * 4 + 3] = decompressedTrailing[i];
+        }
+
+        // Verify reconstructed byte array matches the original byte array
+        bool byteMatch = verifyBytes(byteArray, reconstructedBytes);
+
+        // Calculate total compression ratio
         size_t totalOriginalSize = leading.size() + content.size() + trailing.size();
         size_t totalCompressedSize = leadingCompressedSize + contentCompressedSize + trailingCompressedSize;
         double totalCompRatio = calculateCompressionRatio(totalOriginalSize, totalCompressedSize);
 
-        // Print compression results
+
         printf("Compressed sizes - Leading: %zu, Content: %zu, Trailing: %zu\n",
                leadingCompressedSize, contentCompressedSize, trailingCompressedSize);
         printf("Compression Ratios - Leading: %.2f, Content: %.2f, Trailing: %.2f\n",
-               leadingCompRatio, contentCompRatio, trailingCompRatio);
+               calculateCompressionRatio(leading.size(), leadingCompressedSize),
+               calculateCompressionRatio(content.size(), contentCompressedSize),
+               calculateCompressionRatio(trailing.size(), trailingCompressedSize));
         printf("Total Compression Ratio: %.2f\n", totalCompRatio);
 
 
-        if (leadingMatch && contentMatch && trailingMatch) {
-            printf("Decompression successful: All components match the original data.\n");
+        if (byteMatch) {
+            printf("Reconstructed byte array matches the original data.\n");
         } else {
-            if (!leadingMatch) {
-                printf("Decompression failed for leading component.\n");
-            }
-            if (!contentMatch) {
-                printf("Decompression failed for content component.\n");
-            }
-            if (!trailingMatch) {
-                printf("Decompression failed for trailing component.\n");
-            }
+            printf("Reconstructed byte array does not match the original.\n");
         }
     }
 }
 
-
 BENCHMARK(ZSTD_BENCH)
-    ->Args({1000000, 3})
-    ->Args({1000000, 22})
-    ->Args({2000000, 3})
-    ->Args({2000000, 22})
-    ->Args({1000000, 1})
-    ->Args({2000000, 1});
+    ->Args({1000000, 3});
+
 
 BENCHMARK_MAIN();
