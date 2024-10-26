@@ -1,0 +1,3 @@
+/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-subbuild/CMakeFiles/googlebenchmark-populate.dir
+/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-subbuild/CMakeFiles/edit_cache.dir
+/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-subbuild/CMakeFiles/rebuild_cache.dir

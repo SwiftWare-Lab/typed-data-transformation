@@ -164,7 +164,7 @@ static void ZSTD_BENCH(benchmark::State &state, void (* compImp1)(int)) {
 }
 
 // Register the function as a benchmark
-int main() {
+int main1() {
   benchmark::RegisterBenchmark("ZSTD_BENCH", ZSTD_BENCH, reinterpret_cast<void (*)(int)>(compImp))
   ->Args({1000000, 22, 1})->Args({2000000, 22, 1})->Args({1000000, 3, 1})->Args({2000000, 3, 1})->Args({1000000, 22, 1})->Args({2000000, 1, 1})
   ->Args({1000000, 22, 4})->Args({2000000, 22, 4})->Args({1000000, 3, 4})->Args({2000000, 3, 4})->Args({1000000, 22, 4})->Args({2000000, 1, 4});
