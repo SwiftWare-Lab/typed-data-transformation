@@ -447,6 +447,9 @@ ZSTD_LEGACY_LEVEL:STRING=5
 //LEGACY SUPPORT
 ZSTD_LEGACY_SUPPORT:BOOL=ON
 
+//Path to a library.
+ZSTD_LIB:FILEPATH=/usr/local/lib/libzstd.so
+
 //LZ4 SUPPORT
 ZSTD_LZ4_SUPPORT:BOOL=OFF
 
@@ -459,8 +462,14 @@ ZSTD_PROGRAMS_LINK_SHARED:BOOL=OFF
 //ZLIB SUPPORT
 ZSTD_ZLIB_SUPPORT:BOOL=OFF
 
+//The directory containing a CMake configuration file for Zstd.
+Zstd_DIR:PATH=Zstd_DIR-NOTFOUND
+
 //Value Computed by CMake
 benchmark_BINARY_DIR:STATIC=/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build
+
+//The directory containing a CMake configuration file for benchmark.
+benchmark_DIR:PATH=benchmark_DIR-NOTFOUND
 
 //Value Computed by CMake
 benchmark_IS_TOP_LEVEL:STATIC=OFF
@@ -549,6 +558,15 @@ programs_IS_TOP_LEVEL:STATIC=OFF
 
 //Value Computed by CMake
 programs_SOURCE_DIR:STATIC=/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/programs
+
+//Value Computed by CMake
+zstd-benchmark_BINARY_DIR:STATIC=/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/external_tools
+
+//Value Computed by CMake
+zstd-benchmark_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+zstd-benchmark_SOURCE_DIR:STATIC=/home/jamalids/Documents/compression-part4/new/big-data-compression/external_tools
 
 //Value Computed by CMake
 zstd-test-project_BINARY_DIR:STATIC=/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/external_tools

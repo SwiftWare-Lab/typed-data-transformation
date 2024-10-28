@@ -2,9 +2,9 @@ set(CMAKE_CXX_STANDARD 17)
 project(zstd-test-project CXX C)
 
 add_executable(zstd-test
-        zstd_example.cpp
+      #  zstd_example.cpp
         Zstd.cpp
-      #  other.cpp
+        #  other.cpp
 )
 
 target_link_libraries( zstd-test
