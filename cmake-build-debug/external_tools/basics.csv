@@ -1,0 +1,13 @@
+2024-10-28T17:55:48-04:00
+Running /home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/external_tools/zstd-test
+Run on (24 X 5100 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x12)
+  L1 Instruction 32 KiB (x12)
+  L2 Unified 2048 KiB (x12)
+  L3 Unified 30720 KiB (x1)
+Load Average: 0.79, 0.68, 0.52
+***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
+***WARNING*** Library was built as DEBUG. Timings may be affected.
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message,"CompRatio_BeforeDecomp","CompTime_BeforeDecomp","DecompTime_BeforeDecomp","ReconstructionTime","Total_CompRatio_AfterDecomp","Trailing_CompTime","Trailing_DecompTime","content_CompTime","content_DecompTime","leading_CompTime","leading_DecompTime"
+"ZSTD_BENCH/1000000/3/iterations:10/real_time",10,1.12954e+08,1.12951e+08,ns,,,,,,1.15999,0.184954,0.0104927,0.0246426,1.34457,0.00219491,0.00106684,0.0776274,0.00319813,0.00163918,0.000343582
