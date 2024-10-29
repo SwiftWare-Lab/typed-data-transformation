@@ -54,7 +54,8 @@ endif()
 
 FetchContent_MakeAvailable(googlebenchmark)
 
-
+# find openmp
+find_package(OpenMP REQUIRED)
 
 
 add_subdirectory(external_tools)
