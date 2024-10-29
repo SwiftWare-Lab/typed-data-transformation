@@ -2,37 +2,37 @@
 	"sources" : 
 	[
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest-complete.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/CMakeFiles/googletest-complete.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-build.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-build.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-configure.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-configure.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-download.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-download.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-install.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-install.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-mkdir.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-mkdir.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-patch.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-patch.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-test.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-test.rule"
 		},
 		{
-			"file" : "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-update.rule"
+			"file" : "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-update.rule"
 		}
 	],
 	"target" : 

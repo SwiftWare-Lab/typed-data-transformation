@@ -4,19 +4,19 @@
 cmake_minimum_required(VERSION 3.5)
 
 file(MAKE_DIRECTORY
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/build"
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest"
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/tmp"
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp"
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/download"
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/build"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/tmp"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/download"
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/${subDir}")
+    file(MAKE_DIRECTORY "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp${cfgdir}") # cfgdir has leading slash
 endif()

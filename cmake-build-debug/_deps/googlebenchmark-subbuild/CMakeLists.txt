@@ -28,8 +28,8 @@ set_property(GLOBAL PROPERTY _CMAKE_FindGit_GIT_EXECUTABLE_VERSION
 include(ExternalProject)
 ExternalProject_Add(googlebenchmark-populate
                      "UPDATE_DISCONNECTED" "False" "GIT_REPOSITORY" "https://github.com/google/benchmark.git" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "GIT_TAG" "v1.9.0"
-                    SOURCE_DIR          "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src"
-                    BINARY_DIR          "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build"
+                    SOURCE_DIR          "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src"
+                    BINARY_DIR          "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

@@ -23,7 +23,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild -B/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild
+  command = /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild -B/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild
   description = Re-running CMake...
   generator = 1
 

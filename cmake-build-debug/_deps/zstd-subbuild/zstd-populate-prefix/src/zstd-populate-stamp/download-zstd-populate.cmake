@@ -22,14 +22,14 @@ function(check_file_hash has_hash hash_is_good)
   set("${has_hash}" TRUE PARENT_SCOPE)
 
   message(STATUS "verifying file...
-       file='/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'")
+       file='/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'")
 
-  file("" "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz" actual_value)
+  file("" "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz" actual_value)
 
   if(NOT "${actual_value}" STREQUAL "")
     set("${hash_is_good}" FALSE PARENT_SCOPE)
     message(STATUS " hash of
-    /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz
+    /home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz
   does not match expected value
     expected: ''
       actual: '${actual_value}'")
@@ -71,32 +71,32 @@ function(sleep_before_download attempt)
   execute_process(COMMAND "${CMAKE_COMMAND}" -E sleep "${sleep_seconds}")
 endfunction()
 
-if(EXISTS "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
+if(EXISTS "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
   check_file_hash(has_hash hash_is_good)
   if(has_hash)
     if(hash_is_good)
       message(STATUS "File already exists and hash match (skip download):
-  file='/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'
+  file='/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'
   =''"
       )
       return()
     else()
       message(STATUS "File already exists but hash mismatch. Removing...")
-      file(REMOVE "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
+      file(REMOVE "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
     endif()
   else()
     message(STATUS "File already exists but no hash specified (use URL_HASH):
-  file='/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'
+  file='/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'
 Old file will be removed and new file downloaded from URL."
     )
-    file(REMOVE "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
+    file(REMOVE "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
   endif()
 endif()
 
 set(retry_number 5)
 
 message(STATUS "Downloading...
-   dst='/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'
+   dst='/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz'
    timeout='none'
    inactivity timeout='none'"
 )
@@ -118,7 +118,7 @@ foreach(i RANGE ${retry_number})
 
       file(
         DOWNLOAD
-        "${url}" "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz"
+        "${url}" "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz"
         SHOW_PROGRESS
         # no TIMEOUT
         # no INACTIVITY_TIMEOUT
@@ -135,7 +135,7 @@ foreach(i RANGE ${retry_number})
         check_file_hash(has_hash hash_is_good)
         if(has_hash AND NOT hash_is_good)
           message(STATUS "Hash mismatch, removing...")
-          file(REMOVE "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
+          file(REMOVE "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz")
         else()
           message(STATUS "Downloading... done")
           return()

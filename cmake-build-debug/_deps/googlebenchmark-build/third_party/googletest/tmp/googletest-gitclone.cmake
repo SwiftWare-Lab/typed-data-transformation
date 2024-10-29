@@ -3,21 +3,21 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-if(EXISTS "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt" AND EXISTS "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitinfo.txt" AND
-  "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt" IS_NEWER_THAN "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitinfo.txt")
+if(EXISTS "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt" AND EXISTS "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitinfo.txt" AND
+  "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt" IS_NEWER_THAN "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitinfo.txt")
   message(STATUS
     "Avoiding repeated git clone, stamp file is up to date: "
-    "'/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt'"
+    "'/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt'"
   )
   return()
 endif()
 
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E rm -rf "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
+  COMMAND ${CMAKE_COMMAND} -E rm -rf "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
   RESULT_VARIABLE error_code
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to remove directory: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src'")
+  message(FATAL_ERROR "Failed to remove directory: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src'")
 endif()
 
 # try the clone 3 times in case there is an odd git clone issue
@@ -27,7 +27,7 @@ while(error_code AND number_of_tries LESS 3)
   execute_process(
     COMMAND "/usr/bin/git"
             clone --no-checkout --config "advice.detachedHead=false" "https://github.com/google/googletest.git" "src"
-    WORKING_DIRECTORY "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest"
+    WORKING_DIRECTORY "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest"
     RESULT_VARIABLE error_code
   )
   math(EXPR number_of_tries "${number_of_tries} + 1")
@@ -42,7 +42,7 @@ endif()
 execute_process(
   COMMAND "/usr/bin/git"
           checkout "release-1.11.0" --
-  WORKING_DIRECTORY "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
+  WORKING_DIRECTORY "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
   RESULT_VARIABLE error_code
 )
 if(error_code)
@@ -54,20 +54,20 @@ if(init_submodules)
   execute_process(
     COMMAND "/usr/bin/git" 
             submodule update --recursive --init 
-    WORKING_DIRECTORY "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
+    WORKING_DIRECTORY "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src"
     RESULT_VARIABLE error_code
   )
 endif()
 if(error_code)
-  message(FATAL_ERROR "Failed to update submodules in: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src'")
+  message(FATAL_ERROR "Failed to update submodules in: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src'")
 endif()
 
 # Complete success, update the script-last-run stamp file:
 #
 execute_process(
-  COMMAND ${CMAKE_COMMAND} -E copy "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitinfo.txt" "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt"
+  COMMAND ${CMAKE_COMMAND} -E copy "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitinfo.txt" "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt"
   RESULT_VARIABLE error_code
 )
 if(error_code)
-  message(FATAL_ERROR "Failed to copy script-last-run stamp file: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt'")
+  message(FATAL_ERROR "Failed to copy script-last-run stamp file: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/stamp/googletest-gitclone-lastrun.txt'")
 endif()

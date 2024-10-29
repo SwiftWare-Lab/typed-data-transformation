@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.5)
 
 # Make file names absolute:
 #
-get_filename_component(filename "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz" ABSOLUTE)
-get_filename_component(directory "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src" ABSOLUTE)
+get_filename_component(filename "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-1.5.6.tar.gz" ABSOLUTE)
+get_filename_component(directory "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-src" ABSOLUTE)
 
 message(STATUS "extracting...
      src='${filename}'
