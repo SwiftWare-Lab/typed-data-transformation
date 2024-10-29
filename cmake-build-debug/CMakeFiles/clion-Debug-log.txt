@@ -1,64 +1,25 @@
-/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -G Ninja -S /home/jamalids/Documents/compression-part4/big-data-compression -B /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug
--- ZSTD VERSION: 1.5.6
--- CMAKE_INSTALL_PREFIX: /usr/local
--- CMAKE_INSTALL_LIBDIR: lib
--- ZSTD_LEGACY_SUPPORT defined!
--- ZSTD_MULTITHREAD_SUPPORT is enabled
--- Failed to find LLVM FileCheck
--- Google Benchmark version: v1.9.0, normalized to 1.9.0
--- Performing Test HAVE_STD_REGEX -- success
--- Performing Test HAVE_GNU_POSIX_REGEX -- failed to compile
--- Performing Test HAVE_POSIX_REGEX -- success
--- Performing Test HAVE_STEADY_CLOCK -- success
--- Performing Test HAVE_PTHREAD_AFFINITY -- success
-CMake Deprecation Warning at CMakeLists.txt:1 (cmake_minimum_required):
-  Compatibility with CMake < 3.5 will be removed from a future version of
-  CMake.
+/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -G Ninja -S /home/jamalids/Documents/compression-part4/new/big-data-compression -B /home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug
+-- The CXX compiler identification is GNU 11.4.0
+-- The C compiler identification is GNU 11.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+CMake Error: The current CMakeCache.txt directory /home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-subbuild/CMakeCache.txt is different than the directory /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-subbuild where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt
 
-  Update the VERSION argument <min> value or use a ...<max> suffix to tell
-  CMake that the project does not need compatibility with older versions.
-
-
--- Looking for Google Test sources
--- Looking for Google Test sources in /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/googletest
-CMake Warning at CMakeLists.txt:37 (message):
-  Did not find Google Test sources! Fetching from web...
+CMake Error at /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/FetchContent.cmake:1702 (message):
+  CMake step for zstd failed: 1
+Call Stack (most recent call first):
+  /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/FetchContent.cmake:1854:EVAL:2 (__FetchContent_directPopulate)
+  /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/FetchContent.cmake:1854 (cmake_language)
+  /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/FetchContent.cmake:2081 (FetchContent_Populate)
+  CMakeLists.txt:22 (FetchContent_MakeAvailable)
 
 
--- Configuring done (0.0s)
--- Generating done (0.0s)
--- Build files have been written to: /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest
-[1/7] Performing update step for 'googletest'
-[2/7] No patch step for 'googletest'
-[3/7] No configure step for 'googletest'
-[4/7] No build step for 'googletest'
-[5/7] No install step for 'googletest'
-[6/7] No test step for 'googletest'
-[7/7] Completed 'googletest'
-CMake Deprecation Warning at cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src/CMakeLists.txt:4 (cmake_minimum_required):
-  Compatibility with CMake < 3.5 will be removed from a future version of
-  CMake.
-
-  Update the VERSION argument <min> value or use a ...<max> suffix to tell
-  CMake that the project does not need compatibility with older versions.
-
-
-CMake Deprecation Warning at cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src/googlemock/CMakeLists.txt:45 (cmake_minimum_required):
-  Compatibility with CMake < 3.5 will be removed from a future version of
-  CMake.
-
-  Update the VERSION argument <min> value or use a ...<max> suffix to tell
-  CMake that the project does not need compatibility with older versions.
-
-
-CMake Deprecation Warning at cmake-build-debug/_deps/googlebenchmark-build/third_party/googletest/src/googletest/CMakeLists.txt:56 (cmake_minimum_required):
-  Compatibility with CMake < 3.5 will be removed from a future version of
-  CMake.
-
-  Update the VERSION argument <min> value or use a ...<max> suffix to tell
-  CMake that the project does not need compatibility with older versions.
-
-
--- Configuring done (0.2s)
--- Generating done (0.0s)
--- Build files have been written to: /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug
+-- Configuring incomplete, errors occurred!

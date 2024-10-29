@@ -20,8 +20,8 @@ project(zstd-populate NONE)
 include(ExternalProject)
 ExternalProject_Add(zstd-populate
                      "UPDATE_DISCONNECTED" "False" "DOWNLOAD_EXTRACT_TIMESTAMP" "TRUE" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "URL" "https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz" "SOURCE_SUBDIR" "build/cmake"
-                    SOURCE_DIR          "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src"
-                    BINARY_DIR          "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-build"
+                    SOURCE_DIR          "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-src"
+                    BINARY_DIR          "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/_deps/zstd-build"
                     CONFIGURE_COMMAND   ""
                     BUILD_COMMAND       ""
                     INSTALL_COMMAND     ""

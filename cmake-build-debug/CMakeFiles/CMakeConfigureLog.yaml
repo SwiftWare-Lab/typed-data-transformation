@@ -28,7 +28,7 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
       
       The CXX compiler identification is GNU, found in:
-        /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/3.29.6/CompilerIdCXX/a.out
+        /home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/3.29.6/CompilerIdCXX/a.out
       
   -
     kind: "message-v1"
@@ -50,7 +50,7 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
       
       The C compiler identification is GNU, found in:
-        /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/3.29.6/CompilerIdC/a.out
+        /home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/3.29.6/CompilerIdC/a.out
       
   -
     kind: "try_compile-v1"
@@ -61,8 +61,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-6HHznt"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-6HHznt"
+      source: "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-buGAta"
+      binary: "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-buGAta"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -72,10 +72,10 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-6HHznt'
+        Change Dir: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-buGAta'
         
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_d9759
-        [1/2] /usr/bin/c++   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_ebaca
+        [1/2] /usr/bin/c++   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp
         Using built-in specs.
         COLLECT_GCC=/usr/bin/c++
         OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
@@ -85,8 +85,8 @@ events:
         Thread model: posix
         Supported LTO compression algorithms: zlib zstd
         gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) 
-        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d9759.dir/'
-         /usr/lib/gcc/x86_64-linux-gnu/11/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_d9759.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccWGPqb9.s
+        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ebaca.dir/'
+         /usr/lib/gcc/x86_64-linux-gnu/11/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_ebaca.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccLNkO17.s
         GNU C++17 (Ubuntu 11.4.0-1ubuntu1~22.04) version 11.4.0 (x86_64-linux-gnu)
         	compiled by GNU C version 11.4.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.24-GMP
         
@@ -110,13 +110,13 @@ events:
         
         GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
         Compiler executable checksum: d591828bb4d392ae8b7b160e5bb0b95f
-        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d9759.dir/'
-         as -v --64 -o CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccWGPqb9.s
+        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ebaca.dir/'
+         as -v --64 -o CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccLNkO17.s
         GNU assembler version 2.38 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.38
         COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.'
-        [2/2] : && /usr/bin/c++  -v -Wl,-v CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_d9759   && :
+        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.'
+        [2/2] : && /usr/bin/c++  -v -Wl,-v CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_ebaca   && :
         Using built-in specs.
         COLLECT_GCC=/usr/bin/c++
         COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper
@@ -129,12 +129,12 @@ events:
         gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) 
         COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d9759' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d9759.'
-         /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cceLptwQ.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d9759 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ebaca' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ebaca.'
+         /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cciEJh48.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_ebaca /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
         collect2 version 11.4.0
-        /usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cceLptwQ.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d9759 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
+        /usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cciEJh48.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_ebaca /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Ubuntu) 2.38
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d9759' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d9759.'
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ebaca' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ebaca.'
         
       exitCode: 0
   -
@@ -175,10 +175,10 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-6HHznt']
+        ignore line: [Change Dir: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-buGAta']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_d9759]
-        ignore line: [[1/2] /usr/bin/c++   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_ebaca]
+        ignore line: [[1/2] /usr/bin/c++   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/c++]
         ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
@@ -188,8 +188,8 @@ events:
         ignore line: [Thread model: posix]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d9759.dir/']
-        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/11/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_d9759.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccWGPqb9.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ebaca.dir/']
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/11/cc1plus -quiet -v -imultiarch x86_64-linux-gnu -D_GNU_SOURCE /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_ebaca.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccLNkO17.s]
         ignore line: [GNU C++17 (Ubuntu 11.4.0-1ubuntu1~22.04) version 11.4.0 (x86_64-linux-gnu)]
         ignore line: [	compiled by GNU C version 11.4.0  GMP version 6.2.1  MPFR version 4.1.0  MPC version 1.2.1  isl version isl-0.24-GMP]
         ignore line: []
@@ -213,13 +213,13 @@ events:
         ignore line: []
         ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
         ignore line: [Compiler executable checksum: d591828bb4d392ae8b7b160e5bb0b95f]
-        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d9759.dir/']
-        ignore line: [ as -v --64 -o CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccWGPqb9.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ebaca.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o /tmp/ccLNkO17.s]
         ignore line: [GNU assembler version 2.38 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.38]
         ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.']
-        ignore line: [[2/2] : && /usr/bin/c++  -v -Wl -v CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_d9759   && :]
+        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.']
+        ignore line: [[2/2] : && /usr/bin/c++  -v -Wl -v CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_ebaca   && :]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/c++]
         ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper]
@@ -232,13 +232,13 @@ events:
         ignore line: [gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) ]
         ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d9759' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d9759.']
-        link line: [ /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cceLptwQ.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d9759 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ebaca' '-shared-libgcc' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ebaca.']
+        link line: [ /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cciEJh48.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_ebaca /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/collect2] ==> ignore
           arg [-plugin] ==> ignore
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so] ==> ignore
           arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper] ==> ignore
-          arg [-plugin-opt=-fresolution=/tmp/cceLptwQ.res] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/cciEJh48.res] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
           arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -256,7 +256,7 @@ events:
           arg [-znow] ==> ignore
           arg [-zrelro] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_d9759] ==> ignore
+          arg [cmTC_ebaca] ==> ignore
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o]
@@ -269,7 +269,7 @@ events:
           arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
           arg [-L/usr/lib/gcc/x86_64-linux-gnu/11/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/11/../../..]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lstdc++] ==> lib [stdc++]
           arg [-lm] ==> lib [m]
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -280,7 +280,7 @@ events:
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
         ignore line: [collect2 version 11.4.0]
-        ignore line: [/usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cceLptwQ.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_d9759 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_d9759.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [/usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cciEJh48.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_ebaca /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_ebaca.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
         linker tool for 'CXX': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o] ==> [/usr/lib/x86_64-linux-gnu/Scrt1.o]
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o] ==> [/usr/lib/x86_64-linux-gnu/crti.o]
@@ -318,8 +318,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Aeymdn"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Aeymdn"
+      source: "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jZuUzd"
+      binary: "/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jZuUzd"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_C_FLAGS_DEBUG: "-g"
@@ -328,10 +328,10 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Aeymdn'
+        Change Dir: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jZuUzd'
         
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_fcb79
-        [1/2] /usr/bin/cc   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_767ee
+        [1/2] /usr/bin/cc   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c
         Using built-in specs.
         COLLECT_GCC=/usr/bin/cc
         OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa
@@ -341,8 +341,8 @@ events:
         Thread model: posix
         Supported LTO compression algorithms: zlib zstd
         gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) 
-        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_fcb79.dir/'
-         /usr/lib/gcc/x86_64-linux-gnu/11/cc1 -quiet -v -imultiarch x86_64-linux-gnu /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_fcb79.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccBkK5QC.s
+        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_767ee.dir/'
+         /usr/lib/gcc/x86_64-linux-gnu/11/cc1 -quiet -v -imultiarch x86_64-linux-gnu /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_767ee.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccnGUy4W.s
         GNU C17 (Ubuntu 11.4.0-1ubuntu1~22.04) version 11.4.0 (x86_64-linux-gnu)
         	compiled by GNU C version 11.4.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.24-GMP
         
@@ -362,13 +362,13 @@ events:
         
         GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
         Compiler executable checksum: 50eaa2331df977b8016186198deb2d18
-        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_fcb79.dir/'
-         as -v --64 -o CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o /tmp/ccBkK5QC.s
+        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_767ee.dir/'
+         as -v --64 -o CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o /tmp/ccnGUy4W.s
         GNU assembler version 2.38 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.38
         COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.'
-        [2/2] : && /usr/bin/cc  -v -Wl,-v CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -o cmTC_fcb79   && :
+        COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.'
+        [2/2] : && /usr/bin/cc  -v -Wl,-v CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -o cmTC_767ee   && :
         Using built-in specs.
         COLLECT_GCC=/usr/bin/cc
         COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper
@@ -381,12 +381,12 @@ events:
         gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) 
         COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/
         LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_fcb79' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_fcb79.'
-         /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbNyrjP.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_fcb79 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_767ee' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_767ee.'
+         /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cc1cUP3r.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_767ee /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
         collect2 version 11.4.0
-        /usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbNyrjP.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_fcb79 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
+        /usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cc1cUP3r.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_767ee /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Ubuntu) 2.38
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_fcb79' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_fcb79.'
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_767ee' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_767ee.'
         
       exitCode: 0
   -
@@ -421,10 +421,10 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Aeymdn']
+        ignore line: [Change Dir: '/home/jamalids/Documents/compression-part4/new/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jZuUzd']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_fcb79]
-        ignore line: [[1/2] /usr/bin/cc   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_767ee]
+        ignore line: [[1/2] /usr/bin/cc   -fdiagnostics-color=always   -v -o CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -c /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/cc]
         ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none:amdgcn-amdhsa]
@@ -434,8 +434,8 @@ events:
         ignore line: [Thread model: posix]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_fcb79.dir/']
-        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/11/cc1 -quiet -v -imultiarch x86_64-linux-gnu /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_fcb79.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccBkK5QC.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_767ee.dir/']
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/11/cc1 -quiet -v -imultiarch x86_64-linux-gnu /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_767ee.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -fdiagnostics-color=always -fasynchronous-unwind-tables -fstack-protector-strong -Wformat -Wformat-security -fstack-clash-protection -fcf-protection -o /tmp/ccnGUy4W.s]
         ignore line: [GNU C17 (Ubuntu 11.4.0-1ubuntu1~22.04) version 11.4.0 (x86_64-linux-gnu)]
         ignore line: [	compiled by GNU C version 11.4.0  GMP version 6.2.1  MPFR version 4.1.0  MPC version 1.2.1  isl version isl-0.24-GMP]
         ignore line: []
@@ -455,13 +455,13 @@ events:
         ignore line: []
         ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
         ignore line: [Compiler executable checksum: 50eaa2331df977b8016186198deb2d18]
-        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_fcb79.dir/']
-        ignore line: [ as -v --64 -o CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o /tmp/ccBkK5QC.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_767ee.dir/']
+        ignore line: [ as -v --64 -o CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o /tmp/ccnGUy4W.s]
         ignore line: [GNU assembler version 2.38 (x86_64-linux-gnu) using BFD version (GNU Binutils for Ubuntu) 2.38]
         ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.']
-        ignore line: [[2/2] : && /usr/bin/cc  -v -Wl -v CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -o cmTC_fcb79   && :]
+        ignore line: [COLLECT_GCC_OPTIONS='-fdiagnostics-color=always' '-v' '-o' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.']
+        ignore line: [[2/2] : && /usr/bin/cc  -v -Wl -v CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -o cmTC_767ee   && :]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/usr/bin/cc]
         ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper]
@@ -474,13 +474,13 @@ events:
         ignore line: [gcc version 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) ]
         ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/]
         ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/11/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/11/../../../:/lib/:/usr/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_fcb79' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_fcb79.']
-        link line: [ /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbNyrjP.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_fcb79 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_767ee' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_767ee.']
+        link line: [ /usr/lib/gcc/x86_64-linux-gnu/11/collect2 -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cc1cUP3r.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_767ee /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/collect2] ==> ignore
           arg [-plugin] ==> ignore
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so] ==> ignore
           arg [-plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper] ==> ignore
-          arg [-plugin-opt=-fresolution=/tmp/ccbNyrjP.res] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/cc1cUP3r.res] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
           arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -498,7 +498,7 @@ events:
           arg [-znow] ==> ignore
           arg [-zrelro] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_fcb79] ==> ignore
+          arg [cmTC_767ee] ==> ignore
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o]
@@ -511,7 +511,7 @@ events:
           arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
           arg [-L/usr/lib/gcc/x86_64-linux-gnu/11/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/11/../../..]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [-lgcc] ==> lib [gcc]
           arg [--push-state] ==> ignore
           arg [--as-needed] ==> ignore
@@ -526,7 +526,7 @@ events:
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
         ignore line: [collect2 version 11.4.0]
-        ignore line: [/usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbNyrjP.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_fcb79 /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_fcb79.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
+        ignore line: [/usr/bin/ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/cc1cUP3r.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -dynamic-linker /lib64/ld-linux-x86-64.so.2 -pie -z now -z relro -o cmTC_767ee /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/11 -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/11/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/11/../../.. -v CMakeFiles/cmTC_767ee.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o]
         linker tool for 'C': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o] ==> [/usr/lib/x86_64-linux-gnu/Scrt1.o]
         collapse obj [/usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o] ==> [/usr/lib/x86_64-linux-gnu/crti.o]
@@ -555,1474 +555,4 @@ events:
     message: |
       Running the C compiler's linker: "/usr/bin/ld" "-v"
       GNU ld (GNU Binutils for Ubuntu) 2.38
-  -
-    kind: "message-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:1165 (message)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CMakeDetermineASMCompiler.cmake:135 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:33 (project)"
-    message: |
-      Checking whether the ASM compiler is GNU using "--version" matched "(GNU assembler)|(GCC)|(Free Software Foundation)":
-      cc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
-      Copyright (C) 2021 Free Software Foundation, Inc.
-      This is free software; see the source for copying conditions.  There is NO
-      warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-      
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:65 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WALL"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eNNVDl"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eNNVDl"
-    cmakeVariables:
-      CMAKE_C_FLAGS: ""
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WALL"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eNNVDl'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_37630
-        [1/2] /usr/bin/cc -DC_FLAG_WALL  -fdiagnostics-color=always   -Wall -o CMakeFiles/cmTC_37630.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eNNVDl/src.c
-        [2/2] : && /usr/bin/cc   CMakeFiles/cmTC_37630.dir/src.c.o -o cmTC_37630   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:65 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WALL"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mttyDf"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mttyDf"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: ""
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WALL"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mttyDf'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_7713f
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WALL  -fdiagnostics-color=always   -Wall -o CMakeFiles/cmTC_7713f.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mttyDf/src.cxx
-        [2/2] : && /usr/bin/c++   CMakeFiles/cmTC_7713f.dir/src.cxx.o -o cmTC_7713f   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:67 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WEXTRA"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mt9DsV"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mt9DsV"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WEXTRA"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mt9DsV'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_9ab49
-        [1/2] /usr/bin/cc -DC_FLAG_WEXTRA  -Wall  -fdiagnostics-color=always   -Wextra -o CMakeFiles/cmTC_9ab49.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mt9DsV/src.c
-        [2/2] : && /usr/bin/cc -Wall  CMakeFiles/cmTC_9ab49.dir/src.c.o -o cmTC_9ab49   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:67 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WEXTRA"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xN73Rc"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xN73Rc"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WEXTRA"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xN73Rc'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_e40cb
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WEXTRA  -Wall  -fdiagnostics-color=always   -Wextra -o CMakeFiles/cmTC_e40cb.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xN73Rc/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  CMakeFiles/cmTC_e40cb.dir/src.cxx.o -o cmTC_e40cb   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:68 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WUNDEF"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3HmoOp"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3HmoOp"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WUNDEF"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3HmoOp'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_e5b75
-        [1/2] /usr/bin/cc -DC_FLAG_WUNDEF  -Wall -Wextra  -fdiagnostics-color=always   -Wundef -o CMakeFiles/cmTC_e5b75.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3HmoOp/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra  CMakeFiles/cmTC_e5b75.dir/src.c.o -o cmTC_e5b75   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:68 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WUNDEF"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mdgchv"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mdgchv"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WUNDEF"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mdgchv'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_4b016
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WUNDEF  -Wall -Wextra  -fdiagnostics-color=always   -Wundef -o CMakeFiles/cmTC_4b016.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mdgchv/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall -Wextra  CMakeFiles/cmTC_4b016.dir/src.cxx.o -o cmTC_4b016   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:69 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WSHADOW"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YD0Yga"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YD0Yga"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WSHADOW"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YD0Yga'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_0777d
-        [1/2] /usr/bin/cc -DC_FLAG_WSHADOW  -Wall -Wextra -Wundef  -fdiagnostics-color=always   -Wshadow -o CMakeFiles/cmTC_0777d.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YD0Yga/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef  CMakeFiles/cmTC_0777d.dir/src.c.o -o cmTC_0777d   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:69 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WSHADOW"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-j5mEqJ"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-j5mEqJ"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra -Wundef"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WSHADOW"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-j5mEqJ'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_757c3
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WSHADOW  -Wall -Wextra -Wundef  -fdiagnostics-color=always   -Wshadow -o CMakeFiles/cmTC_757c3.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-j5mEqJ/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall -Wextra -Wundef  CMakeFiles/cmTC_757c3.dir/src.cxx.o -o cmTC_757c3   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:70 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WCAST_ALIGN"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DYU7ZK"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DYU7ZK"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WCAST_ALIGN"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DYU7ZK'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_0d8b5
-        [1/2] /usr/bin/cc -DC_FLAG_WCAST_ALIGN  -Wall -Wextra -Wundef -Wshadow  -fdiagnostics-color=always   -Wcast-align -o CMakeFiles/cmTC_0d8b5.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DYU7ZK/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow  CMakeFiles/cmTC_0d8b5.dir/src.c.o -o cmTC_0d8b5   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:70 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WCAST_ALIGN"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mnKnfw"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mnKnfw"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra -Wundef -Wshadow"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WCAST_ALIGN"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mnKnfw'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_bcb93
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WCAST_ALIGN  -Wall -Wextra -Wundef -Wshadow  -fdiagnostics-color=always   -Wcast-align -o CMakeFiles/cmTC_bcb93.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-mnKnfw/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall -Wextra -Wundef -Wshadow  CMakeFiles/cmTC_bcb93.dir/src.cxx.o -o cmTC_bcb93   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:71 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WCAST_QUAL"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8fE4bm"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8fE4bm"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WCAST_QUAL"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8fE4bm'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_e7338
-        [1/2] /usr/bin/cc -DC_FLAG_WCAST_QUAL  -Wall -Wextra -Wundef -Wshadow -Wcast-align  -fdiagnostics-color=always   -Wcast-qual -o CMakeFiles/cmTC_e7338.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8fE4bm/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow -Wcast-align  CMakeFiles/cmTC_e7338.dir/src.c.o -o cmTC_e7338   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:71 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WCAST_QUAL"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-ZFHyVC"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-ZFHyVC"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WCAST_QUAL"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-ZFHyVC'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_966b1
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WCAST_QUAL  -Wall -Wextra -Wundef -Wshadow -Wcast-align  -fdiagnostics-color=always   -Wcast-qual -o CMakeFiles/cmTC_966b1.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-ZFHyVC/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall -Wextra -Wundef -Wshadow -Wcast-align  CMakeFiles/cmTC_966b1.dir/src.cxx.o -o cmTC_966b1   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:72 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WSTRICT_PROTOTYPES"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-b2ySPT"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-b2ySPT"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WSTRICT_PROTOTYPES"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-b2ySPT'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_208ca
-        [1/2] /usr/bin/cc -DC_FLAG_WSTRICT_PROTOTYPES  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual  -fdiagnostics-color=always   -Wstrict-prototypes -o CMakeFiles/cmTC_208ca.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-b2ySPT/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual  CMakeFiles/cmTC_208ca.dir/src.c.o -o cmTC_208ca   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:75 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_DDEBUGLEVEL_1"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gSXcSK"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gSXcSK"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_DDEBUGLEVEL_1"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gSXcSK'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_f01ef
-        [1/2] /usr/bin/cc -DC_FLAG_DDEBUGLEVEL_1 -DDEBUGLEVEL=1  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes  -fdiagnostics-color=always -o CMakeFiles/cmTC_f01ef.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gSXcSK/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes  CMakeFiles/cmTC_f01ef.dir/src.c.o -o cmTC_f01ef   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:75 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_DDEBUGLEVEL_1"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mv3Y00"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mv3Y00"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_DDEBUGLEVEL_1"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mv3Y00'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_4533d
-        [1/2] /usr/bin/c++ -DCXX_FLAG_DDEBUGLEVEL_1 -DDEBUGLEVEL=1  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual  -fdiagnostics-color=always -o CMakeFiles/cmTC_4533d.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Mv3Y00/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual  CMakeFiles/cmTC_4533d.dir/src.cxx.o -o cmTC_4533d   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckLinkerFlag.cmake:37 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckLinkerFlag.cmake:44 (cmake_check_linker_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:42 (CHECK_LINKER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:79 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test LD_FLAG_Z_NOEXECSTACK"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-1eHR6y"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-1eHR6y"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "LD_FLAG_Z_NOEXECSTACK"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-1eHR6y'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_e3151
-        [1/2] /usr/bin/cc -DLD_FLAG_Z_NOEXECSTACK  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1  -fdiagnostics-color=always -o CMakeFiles/cmTC_e3151.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-1eHR6y/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 "-z noexecstack" CMakeFiles/cmTC_e3151.dir/src.c.o -o cmTC_e3151   && :
-        /usr/bin/ld: warning: -z  noexecstack ignored
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:81 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_QUNUSED_ARGUMENTS"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YmXVov"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YmXVov"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: " -z noexecstack"
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_QUNUSED_ARGUMENTS"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YmXVov'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_a71da
-        [1/2] /usr/bin/cc -DC_FLAG_QUNUSED_ARGUMENTS  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1  -fdiagnostics-color=always   -Qunused-arguments -o CMakeFiles/cmTC_a71da.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YmXVov/src.c
-        FAILED: CMakeFiles/cmTC_a71da.dir/src.c.o 
-        /usr/bin/cc -DC_FLAG_QUNUSED_ARGUMENTS  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1  -fdiagnostics-color=always   -Qunused-arguments -o CMakeFiles/cmTC_a71da.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-YmXVov/src.c
-        cc: error: unrecognized command-line option '-Qunused-arguments'
-        ninja: build stopped: subcommand failed.
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:81 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_QUNUSED_ARGUMENTS"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0EeF62"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0EeF62"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -DDEBUGLEVEL=1"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: " -z noexecstack"
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_QUNUSED_ARGUMENTS"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0EeF62'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_c0cbf
-        [1/2] /usr/bin/c++ -DCXX_FLAG_QUNUSED_ARGUMENTS  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -DDEBUGLEVEL=1  -fdiagnostics-color=always   -Qunused-arguments -o CMakeFiles/cmTC_c0cbf.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0EeF62/src.cxx
-        FAILED: CMakeFiles/cmTC_c0cbf.dir/src.cxx.o 
-        /usr/bin/c++ -DCXX_FLAG_QUNUSED_ARGUMENTS  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -DDEBUGLEVEL=1  -fdiagnostics-color=always   -Qunused-arguments -o CMakeFiles/cmTC_c0cbf.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0EeF62/src.cxx
-        c++: error: unrecognized command-line option '-Qunused-arguments'
-        ninja: build stopped: subcommand failed.
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCCompilerFlag.cmake:51 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:20 (CHECK_C_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:82 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test C_FLAG_WA_NOEXECSTACK"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pcfStJ"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pcfStJ"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: " -z noexecstack"
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "C_FLAG_WA_NOEXECSTACK"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pcfStJ'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_d8394
-        [1/2] /usr/bin/cc -DC_FLAG_WA_NOEXECSTACK  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1  -fdiagnostics-color=always   -Wa,--noexecstack -o CMakeFiles/cmTC_d8394.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pcfStJ/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 -z noexecstack CMakeFiles/cmTC_d8394.dir/src.c.o -o cmTC_d8394   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:26 (CHECK_CXX_COMPILER_FLAG)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake:82 (EnableCompilerFlag)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:58 (ADD_ZSTD_COMPILATION_FLAGS)"
-    checks:
-      - "Performing Test CXX_FLAG_WA_NOEXECSTACK"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PoqhhE"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PoqhhE"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -DDEBUGLEVEL=1"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: " -z noexecstack"
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CXX_FLAG_WA_NOEXECSTACK"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PoqhhE'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_ba291
-        [1/2] /usr/bin/c++ -DCXX_FLAG_WA_NOEXECSTACK  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -DDEBUGLEVEL=1  -fdiagnostics-color=always   -Wa,--noexecstack -o CMakeFiles/cmTC_ba291.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PoqhhE/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -DDEBUGLEVEL=1 -z noexecstack CMakeFiles/cmTC_ba291.dir/src.cxx.o -o cmTC_ba291   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/FindThreads.cmake:97 (CHECK_C_SOURCE_COMPILES)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/FindThreads.cmake:163 (_threads_check_libc)"
-      - "cmake-build-debug/_deps/zstd-src/build/cmake/CMakeLists.txt:134 (find_package)"
-    checks:
-      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-31CLYS"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-31CLYS"
-    cmakeVariables:
-      CMAKE_C_FLAGS: " -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 -Wa,--noexecstack"
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: " -z noexecstack"
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/zstd-src/build/cmake/CMakeModules"
-    buildResult:
-      variable: "CMAKE_HAVE_LIBC_PTHREAD"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-31CLYS'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_7eabb
-        [1/2] /usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 -Wa,--noexecstack  -fdiagnostics-color=always -o CMakeFiles/cmTC_7eabb.dir/src.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-31CLYS/src.c
-        [2/2] : && /usr/bin/cc -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wcast-qual -Wstrict-prototypes -DDEBUGLEVEL=1 -Wa,--noexecstack -z noexecstack CMakeFiles/cmTC_7eabb.dir/src.c.o -o cmTC_7eabb   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckLibraryExists.cmake:69 (try_compile)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:135 (check_library_exists)"
-    checks:
-      - "Looking for shm_open in rt"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-KcVyDu"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-KcVyDu"
-    cmakeVariables:
-      CMAKE_C_FLAGS: ""
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_LIB_RT"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-KcVyDu'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_5c516
-        [1/2] /usr/bin/cc   -DCHECK_FUNCTION_EXISTS=shm_open -fdiagnostics-color=always -o CMakeFiles/cmTC_5c516.dir/CheckFunctionExists.c.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-KcVyDu/CheckFunctionExists.c
-        [2/2] : && /usr/bin/cc -DCHECK_FUNCTION_EXISTS=shm_open  CMakeFiles/cmTC_5c516.dir/CheckFunctionExists.c.o -o cmTC_5c516  -lrt && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:184 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WALL"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-iEogkb"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-iEogkb"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: ""
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WALL"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-iEogkb'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_5c35a
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WALL  -Wall -std=c++14 -fdiagnostics-color=always   -Wall -o CMakeFiles/cmTC_5c35a.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-iEogkb/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  CMakeFiles/cmTC_5c35a.dir/src.cxx.o -o cmTC_5c35a   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:185 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WEXTRA"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-LF8nT6"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-LF8nT6"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WEXTRA"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-LF8nT6'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_4e8e9
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WEXTRA  -Wall  -Wextra -std=c++14 -fdiagnostics-color=always   -Wextra -o CMakeFiles/cmTC_4e8e9.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-LF8nT6/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  CMakeFiles/cmTC_4e8e9.dir/src.cxx.o -o cmTC_4e8e9   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:186 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WSHADOW"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-HiwawN"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-HiwawN"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WSHADOW"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-HiwawN'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_04a5e
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WSHADOW  -Wall  -Wextra  -Wshadow -std=c++14 -fdiagnostics-color=always   -Wshadow -o CMakeFiles/cmTC_04a5e.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-HiwawN/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  CMakeFiles/cmTC_04a5e.dir/src.cxx.o -o cmTC_04a5e   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:187 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Gn2tHA"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Gn2tHA"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WFLOAT_EQUAL"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Gn2tHA'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_6dfa5
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WFLOAT_EQUAL  -Wall  -Wextra  -Wshadow  -Wfloat-equal -std=c++14 -fdiagnostics-color=always   -Wfloat-equal -o CMakeFiles/cmTC_6dfa5.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Gn2tHA/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  CMakeFiles/cmTC_6dfa5.dir/src.cxx.o -o cmTC_6dfa5   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:188 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WOLD_STYLE_CAST"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DRl37l"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DRl37l"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WOLD_STYLE_CAST"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DRl37l'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_15eb0
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WOLD_STYLE_CAST  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast -std=c++14 -fdiagnostics-color=always   -Wold-style-cast -o CMakeFiles/cmTC_15eb0.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DRl37l/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  CMakeFiles/cmTC_15eb0.dir/src.cxx.o -o cmTC_15eb0   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:189 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WCONVERSION"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-04qVOf"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-04qVOf"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WCONVERSION"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-04qVOf'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_d7ef4
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WCONVERSION  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion -std=c++14 -fdiagnostics-color=always   -Wconversion -o CMakeFiles/cmTC_d7ef4.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-04qVOf/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  CMakeFiles/cmTC_d7ef4.dir/src.cxx.o -o cmTC_d7ef4   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:191 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WERROR"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-GgXfYQ"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-GgXfYQ"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WERROR"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-GgXfYQ'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_f761e
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WERROR  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror -std=c++14 -fdiagnostics-color=always   -Werror -o CMakeFiles/cmTC_f761e.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-GgXfYQ/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  CMakeFiles/cmTC_f761e.dir/src.cxx.o -o cmTC_f761e   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:197 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_PEDANTIC"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-qL54aF"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-qL54aF"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_PEDANTIC"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-qL54aF'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_02de2
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_PEDANTIC  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic -std=c++14 -fdiagnostics-color=always   -pedantic -o CMakeFiles/cmTC_02de2.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-qL54aF/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  CMakeFiles/cmTC_02de2.dir/src.cxx.o -o cmTC_02de2   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:198 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-EJDsi9"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-EJDsi9"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_PEDANTIC_ERRORS"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-EJDsi9'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_5e89e
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_PEDANTIC_ERRORS  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors -std=c++14 -fdiagnostics-color=always   -pedantic-errors -o CMakeFiles/cmTC_5e89e.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-EJDsi9/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  CMakeFiles/cmTC_5e89e.dir/src.cxx.o -o cmTC_5e89e   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:199 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8JTMoB"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8JTMoB"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WSHORTEN_64_TO_32"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8JTMoB'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_865f0
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WSHORTEN_64_TO_32  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -Wshorten-64-to-32 -std=c++14 -fdiagnostics-color=always   -Wshorten-64-to-32 -o CMakeFiles/cmTC_865f0.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8JTMoB/src.cxx
-        FAILED: CMakeFiles/cmTC_865f0.dir/src.cxx.o 
-        /usr/bin/c++ -DHAVE_CXX_FLAG_WSHORTEN_64_TO_32  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -Wshorten-64-to-32 -std=c++14 -fdiagnostics-color=always   -Wshorten-64-to-32 -o CMakeFiles/cmTC_865f0.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-8JTMoB/src.cxx
-        c++: error: unrecognized command-line option '-Wshorten-64-to-32'
-        c++: error: unrecognized command-line option '-Wshorten-64-to-32'
-        ninja: build stopped: subcommand failed.
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:200 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-kj30Il"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-kj30Il"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_FSTRICT_ALIASING"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-kj30Il'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_ccaaf
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_FSTRICT_ALIASING  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing -std=c++14 -fdiagnostics-color=always   -fstrict-aliasing -o CMakeFiles/cmTC_ccaaf.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-kj30Il/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  CMakeFiles/cmTC_ccaaf.dir/src.cxx.o -o cmTC_ccaaf   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:203 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2E0wSI"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2E0wSI"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2E0wSI'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_c21ed
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations -std=c++14 -fdiagnostics-color=always   -Wno-deprecated-declarations -o CMakeFiles/cmTC_c21ed.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2E0wSI/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  CMakeFiles/cmTC_c21ed.dir/src.cxx.o -o cmTC_c21ed   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:213 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-k5zsmz"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-k5zsmz"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WNO_DEPRECATED"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-k5zsmz'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_20e4e
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WNO_DEPRECATED  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated -std=c++14 -fdiagnostics-color=always   -Wno-deprecated -o CMakeFiles/cmTC_20e4e.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-k5zsmz/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  CMakeFiles/cmTC_20e4e.dir/src.cxx.o -o cmTC_20e4e   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:221 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WSTRICT_ALIASING"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CRv7eE"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CRv7eE"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WSTRICT_ALIASING"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CRv7eE'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_c913a
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WSTRICT_ALIASING  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing -std=c++14 -fdiagnostics-color=always   -Wstrict-aliasing -o CMakeFiles/cmTC_c913a.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CRv7eE/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  CMakeFiles/cmTC_c913a.dir/src.cxx.o -o cmTC_c913a   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:226 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WD654"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PTaPP5"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PTaPP5"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WD654"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PTaPP5'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_d08f0
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WD654  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -wd654 -std=c++14 -fdiagnostics-color=always   -wd654 -o CMakeFiles/cmTC_d08f0.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PTaPP5/src.cxx
-        FAILED: CMakeFiles/cmTC_d08f0.dir/src.cxx.o 
-        /usr/bin/c++ -DHAVE_CXX_FLAG_WD654  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -wd654 -std=c++14 -fdiagnostics-color=always   -wd654 -o CMakeFiles/cmTC_d08f0.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PTaPP5/src.cxx
-        c++: error: unrecognized command-line option '-wd654'
-        c++: error: unrecognized command-line option '-wd654'
-        ninja: build stopped: subcommand failed.
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:227 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eZRdut"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eZRdut"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WTHREAD_SAFETY"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eZRdut'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_39471
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WTHREAD_SAFETY  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wthread-safety -std=c++14 -fdiagnostics-color=always   -Wthread-safety -o CMakeFiles/cmTC_39471.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eZRdut/src.cxx
-        FAILED: CMakeFiles/cmTC_39471.dir/src.cxx.o 
-        /usr/bin/c++ -DHAVE_CXX_FLAG_WTHREAD_SAFETY  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wthread-safety -std=c++14 -fdiagnostics-color=always   -Wthread-safety -o CMakeFiles/cmTC_39471.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-eZRdut/src.cxx
-        c++: error: unrecognized command-line option '-Wthread-safety'
-        c++: error: unrecognized command-line option '-Wthread-safety'
-        ninja: build stopped: subcommand failed.
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:278 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_COVERAGE"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-FPXRdb"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-FPXRdb"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_COVERAGE"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-FPXRdb'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_38d35
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_COVERAGE  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  --coverage -std=c++14 -fdiagnostics-color=always   --coverage -o CMakeFiles/cmTC_38d35.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-FPXRdb/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  --coverage  CMakeFiles/cmTC_38d35.dir/src.cxx.o -o cmTC_38d35   && :
-        
-      exitCode: 0
-  -
-    kind: "try_run-v1"
-    backtrace:
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/CXXFeatureCheck.cmake:57 (try_run)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:308 (cxx_feature_check)"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "COMPILE_HAVE_STD_REGEX"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_478ea
-        [1/2] /usr/bin/c++   -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -std=c++11 -fdiagnostics-color=always -o CMakeFiles/cmTC_478ea.dir/std_regex.cpp.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/std_regex.cpp
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  CMakeFiles/cmTC_478ea.dir/std_regex.cpp.o -o cmTC_478ea   && :
-        
-      exitCode: 0
-    runResult:
-      variable: "RUN_HAVE_STD_REGEX"
-      cached: true
-      stdout: |
-      exitCode: 0
-  -
-    kind: "try_run-v1"
-    backtrace:
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/CXXFeatureCheck.cmake:57 (try_run)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:309 (cxx_feature_check)"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "COMPILE_HAVE_GNU_POSIX_REGEX"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_cc865
-        [1/2] /usr/bin/c++   -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -std=c++11 -fdiagnostics-color=always -o CMakeFiles/cmTC_cc865.dir/gnu_posix_regex.cpp.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/gnu_posix_regex.cpp
-        FAILED: CMakeFiles/cmTC_cc865.dir/gnu_posix_regex.cpp.o 
-        /usr/bin/c++   -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -std=c++11 -fdiagnostics-color=always -o CMakeFiles/cmTC_cc865.dir/gnu_posix_regex.cpp.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/gnu_posix_regex.cpp
-        /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/gnu_posix_regex.cpp:1:10: fatal error: gnuregex.h: No such file or directory
-            1 | #include <gnuregex.h>
-              |          ^~~~~~~~~~~~
-        compilation terminated.
-        ninja: build stopped: subcommand failed.
-        
-      exitCode: 1
-    runResult:
-      variable: "RUN_HAVE_GNU_POSIX_REGEX"
-      cached: true
-  -
-    kind: "try_run-v1"
-    backtrace:
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/CXXFeatureCheck.cmake:57 (try_run)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:310 (cxx_feature_check)"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "COMPILE_HAVE_POSIX_REGEX"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_c3aeb
-        [1/2] /usr/bin/c++   -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -std=c++11 -fdiagnostics-color=always -o CMakeFiles/cmTC_c3aeb.dir/posix_regex.cpp.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/posix_regex.cpp
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  CMakeFiles/cmTC_c3aeb.dir/posix_regex.cpp.o -o cmTC_c3aeb   && :
-        
-      exitCode: 0
-    runResult:
-      variable: "RUN_HAVE_POSIX_REGEX"
-      cached: true
-      stdout: |
-      exitCode: 0
-  -
-    kind: "try_run-v1"
-    backtrace:
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/CXXFeatureCheck.cmake:57 (try_run)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:319 (cxx_feature_check)"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "COMPILE_HAVE_STEADY_CLOCK"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_faddd
-        [1/2] /usr/bin/c++   -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -std=c++11 -fdiagnostics-color=always -o CMakeFiles/cmTC_faddd.dir/steady_clock.cpp.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/steady_clock.cpp
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  CMakeFiles/cmTC_faddd.dir/steady_clock.cpp.o -o cmTC_faddd   && :
-        
-      exitCode: 0
-    runResult:
-      variable: "RUN_HAVE_STEADY_CLOCK"
-      cached: true
-      stdout: |
-      exitCode: 0
-  -
-    kind: "try_run-v1"
-    backtrace:
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/CXXFeatureCheck.cmake:57 (try_run)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/CMakeLists.txt:323 (cxx_feature_check)"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "COMPILE_HAVE_PTHREAD_AFFINITY"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeTmp'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_f44ca
-        [1/2] /usr/bin/c++   -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -std=c++11 -fdiagnostics-color=always -o CMakeFiles/cmTC_f44ca.dir/pthread_affinity.cpp.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/pthread_affinity.cpp
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  CMakeFiles/cmTC_f44ca.dir/pthread_affinity.cpp.o -o cmTC_f44ca   && :
-        
-      exitCode: 0
-    runResult:
-      variable: "RUN_HAVE_PTHREAD_AFFINITY"
-      cached: true
-      stdout: |
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/cmake/AddCXXCompilerFlag.cmake:34 (check_cxx_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/test/CMakeLists.txt:8 (add_cxx_compiler_flag)"
-    checks:
-      - "Performing Test HAVE_CXX_FLAG_WNO_UNUSED_VARIABLE"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PiURpR"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PiURpR"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "HAVE_CXX_FLAG_WNO_UNUSED_VARIABLE"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PiURpR'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_9ba96
-        [1/2] /usr/bin/c++ -DHAVE_CXX_FLAG_WNO_UNUSED_VARIABLE  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable -std=c++14 -fdiagnostics-color=always   -Wno-unused-variable -o CMakeFiles/cmTC_9ba96.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PiURpR/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  CMakeFiles/cmTC_9ba96.dir/src.cxx.o -o cmTC_9ba96   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/test/CMakeLists.txt:33 (check_cxx_compiler_flag)"
-    checks:
-      - "Performing Test BENCHMARK_HAS_O3_FLAG"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CeSIYv"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CeSIYv"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "BENCHMARK_HAS_O3_FLAG"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CeSIYv'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_b096f
-        [1/2] /usr/bin/c++ -DBENCHMARK_HAS_O3_FLAG  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  -std=c++14 -fdiagnostics-color=always   -O3 -o CMakeFiles/cmTC_b096f.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-CeSIYv/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  CMakeFiles/cmTC_b096f.dir/src.cxx.o -o cmTC_b096f   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/test/CMakeLists.txt:136 (check_cxx_compiler_flag)"
-    checks:
-      - "Performing Test BENCHMARK_HAS_DEPRECATED_DECLARATIONS_FLAG"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-5szXNd"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-5szXNd"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "BENCHMARK_HAS_DEPRECATED_DECLARATIONS_FLAG"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-5szXNd'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_d22f0
-        [1/2] /usr/bin/c++ -DBENCHMARK_HAS_DEPRECATED_DECLARATIONS_FLAG  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  -std=c++14 -fdiagnostics-color=always   -Werror=deprecated-declarations -o CMakeFiles/cmTC_d22f0.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-5szXNd/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  CMakeFiles/cmTC_d22f0.dir/src.cxx.o -o cmTC_d22f0   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/test/CMakeLists.txt:209 (check_cxx_compiler_flag)"
-    checks:
-      - "Performing Test BENCHMARK_HAS_WNO_ODR"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0CwCgj"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0CwCgj"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "BENCHMARK_HAS_WNO_ODR"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0CwCgj'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_e7f7d
-        [1/2] /usr/bin/c++ -DBENCHMARK_HAS_WNO_ODR  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  -std=c++14 -fdiagnostics-color=always   -Wno-odr -o CMakeFiles/cmTC_e7f7d.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-0CwCgj/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  CMakeFiles/cmTC_e7f7d.dir/src.cxx.o -o cmTC_e7f7d   && :
-        
-      exitCode: 0
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "/home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.29/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
-      - "cmake-build-debug/_deps/googlebenchmark-src/test/CMakeLists.txt:210 (check_cxx_compiler_flag)"
-    checks:
-      - "Performing Test BENCHMARK_HAS_WNO_LTO_TYPE_MISMATCH"
-    directories:
-      source: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-nMW3Bb"
-      binary: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-nMW3Bb"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable"
-      CMAKE_CXX_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_MODULE_PATH: "/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake/Modules;/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/_deps/googlebenchmark-src/cmake"
-    buildResult:
-      variable: "BENCHMARK_HAS_WNO_LTO_TYPE_MISMATCH"
-      cached: true
-      stdout: |
-        Change Dir: '/home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-nMW3Bb'
-        
-        Run Build Command(s): /home/jamalids/.local/share/JetBrains/Toolbox/apps/clion/bin/ninja/linux/x64/ninja -v cmTC_a2828
-        [1/2] /usr/bin/c++ -DBENCHMARK_HAS_WNO_LTO_TYPE_MISMATCH  -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  -std=c++14 -fdiagnostics-color=always   -Wno-lto-type-mismatch -o CMakeFiles/cmTC_a2828.dir/src.cxx.o -c /home/jamalids/Documents/compression-part4/big-data-compression/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-nMW3Bb/src.cxx
-        [2/2] : && /usr/bin/c++ -Wall  -Wextra  -Wshadow  -Wfloat-equal  -Wold-style-cast  -Wconversion  -Werror  -pedantic  -pedantic-errors  -fstrict-aliasing  -Wno-deprecated-declarations  -Wno-deprecated  -Wstrict-aliasing  -Wno-unused-variable  CMakeFiles/cmTC_a2828.dir/src.cxx.o -o cmTC_a2828   && :
-        
-      exitCode: 0
 ...
