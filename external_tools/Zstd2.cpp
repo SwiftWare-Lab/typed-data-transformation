@@ -1,4 +1,3 @@
-#include <benchmark/benchmark.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -7,21 +6,37 @@
 #include <zstd.h>
 #include <chrono>
 #include <cstdint>
-#include "common.h"
 
-// Global variable to hold the dataset
+
 std::vector<uint8_t> globalByteArray;
 
-// Function declarations
-std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 4000000);
-std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray);
-void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray, std::vector<uint8_t>& leading,
-                              std::vector<uint8_t>& content, std::vector<uint8_t>& trailing);
-size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel);
-size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize);
-double calculateCompressionRatio(size_t originalSize, size_t compressedSize);
+std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 8000000);
 
-// Function to load a TSV dataset into a float vector
+//  verify the original data matches the reconstructed data
+bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uint8_t>& reconstructed) {
+    // Check if sizes are the same
+    if (original.size() != reconstructed.size()) {
+        std::cerr << "Size mismatch: Original size = " << original.size()
+                  << ", Reconstructed size = " << reconstructed.size() << std::endl;
+        return false;
+    }
+
+    // Compare each byte of the original and reconstructed data
+    for (size_t i = 0; i < original.size(); ++i) {
+        if (original[i] != reconstructed[i]) {
+            std::cerr << "Data mismatch at index " << i << ": Original = "
+                      << static_cast<int>(original[i]) << ", Reconstructed = "
+                      << static_cast<int>(reconstructed[i]) << std::endl;
+            return false;
+        }
+    }
+
+
+    return true;
+}
+
+
+//  load a TSV dataset into a float vector
 std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows) {
     std::vector<float> floatArray;
     std::ifstream file(filePath);
@@ -76,7 +91,7 @@ void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
     }
 }
 
-// Compress a byte vector with Zstd and return compressed size
+// Compress  Zstd
 size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
     size_t const cBuffSize = ZSTD_compressBound(data.size());
     compressedData.resize(cBuffSize);
@@ -91,7 +106,7 @@ size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& 
     return cSize;
 }
 
-// Decompress a byte vector with Zstd and return decompressed size
+// Decompress  with Zstd
 size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize) {
     decompressedData.resize(originalSize);
 
@@ -104,10 +119,11 @@ size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vecto
     return dSize;
 }
 
-// Compression ratio calculation
+//  compression ratio
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
     return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
+
 
 // Reconstruct data from components
 void reconstructFromComponents(const std::vector<uint8_t>& leading, const std::vector<uint8_t>& content,
@@ -122,19 +138,49 @@ void reconstructFromComponents(const std::vector<uint8_t>& leading, const std::v
         reconstructedData[i * 4 + 3] = trailing[i];
     }
 }
+//  save results to a CSV file
+void saveResultsToCSV(const std::string& filename, const std::vector<std::vector<std::string>>& results) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
 
-// Benchmark function for compression, decompression, and reconstruction
-static void ZSTD_BENCH(benchmark::State& state) {
-    int zstdLevel = state.range(1);
-    // Variables for time measurements
-    std::chrono::duration<double> leadingCompTime, contentCompTime, trailingCompTime;
-    std::chrono::duration<double> leadingDecompTime, contentDecompTime, trailingDecompTime;
-    std::chrono::duration<double> reconstructionTime;
-    std::chrono::duration<double> decompositionTime;
+
+    file << "Iteration,CompRatio,CompressedTime,"
+         << "DecompressedTime,CompRatio_Decomposition,decompositionTime,"
+         << "Leading_CompressedTime,Leading_DecompressedTime,Content_CompressedTime,Content_DecompressedTime,"
+         << "Trailing_CompressedTime,Trailing_DecompressedTime,ReconstructionTime,Decomposition_CompressedTime,Decomposition_DecompressedTime\n";
+
+
+    for (const auto& row : results) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            file << row[i];
+            if (i < row.size() - 1) file << ",";
+        }
+        file << "\n";
+    }
+
+    file.close();
+    std::cout << "Results saved to " << filename << std::endl;
+}
+
+int main() {
+
+    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
+    std::vector<float> floatArray = loadTSVDataset(datasetPath);
+
+    if (floatArray.empty()) {
+        std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
+        return 1;
+    }
+
+    // Convert float array to byte array
+    globalByteArray = convertFloatToBytes(floatArray);
 
     // Split global byte array into components
     std::vector<uint8_t> leading, content, trailing;
-    // Decomposition step with time measurement
+    std::chrono::duration<double> decompositionTime;
     auto start = std::chrono::high_resolution_clock::now();
     splitBytesIntoComponents(globalByteArray, leading, content, trailing);
     auto end = std::chrono::high_resolution_clock::now();
@@ -144,40 +190,51 @@ static void ZSTD_BENCH(benchmark::State& state) {
     std::vector<uint8_t> decompressedLeading(leading.size()), decompressedContent(content.size()), decompressedTrailing(trailing.size());
     std::vector<uint8_t> reconstructedData;
 
+    double compRatioBeforeDecomp = 0.0, totalCompRatioAfterDecomp = 0.0; ;
+    std::chrono::duration<double> compressionTimeBeforeDecomp, decompressionTimeBeforeDecomp;
+    std::chrono::duration<double> leadingCompTime, contentCompTime, trailingCompTime;
+    std::chrono::duration<double> leadingDecompTime, contentDecompTime, trailingDecompTime;
+    std::chrono::duration<double> reconstructionTime;
+    std::chrono::duration<double>totalCompressedTime;
+    std::chrono::duration<double>totalDecompressedTime;
+
+    // Variables to track max decomposition compression and decompression times
+    std::chrono::duration<double> maxDecompositionCompTime = std::chrono::seconds(0);
+    std::chrono::duration<double> maxDecompositionDecompTime = std::chrono::seconds(0);
 
 
+    std::vector<std::vector<std::string>> results;
 
-    // Measure compression ratio and time before decomposition
-    std::vector<uint8_t> compressedData;
-    start = std::chrono::high_resolution_clock::now();
-    size_t compressedSize = compressWithZstd(globalByteArray, compressedData, zstdLevel);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> compressionTimeBeforeDecomp = end - start;
 
-    double compRatioBeforeDecomp = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+    for (int i = 0; i < 10; ++i) {
+        // Compress the global byte array
+        auto start = std::chrono::high_resolution_clock::now();
+        std::vector<uint8_t> compressedData;
+        size_t compressedSize = compressWithZstd(globalByteArray, compressedData, 3);
+        auto end = std::chrono::high_resolution_clock::now();
+        compressionTimeBeforeDecomp = end - start;
+        compRatioBeforeDecomp = calculateCompressionRatio(globalByteArray.size(), compressedSize);
 
-    // Decompression before decomposition
-    std::vector<uint8_t> decompressedData(globalByteArray.size());
-    start = std::chrono::high_resolution_clock::now();
-    decompressWithZstd(compressedData, decompressedData, globalByteArray.size());
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> decompressionTimeBeforeDecomp = end - start;
-    double totalCompRatioAfterDecomp = 0.0; // Declare outside the loop
-    // Measure compression and decompression for components
-    for (auto _ : state) {
+        // Decompress full data
+        std::vector<uint8_t> decompressedData(globalByteArray.size());
+        start = std::chrono::high_resolution_clock::now();
+        decompressWithZstd(compressedData, decompressedData, globalByteArray.size());
+        end = std::chrono::high_resolution_clock::now();
+        decompressionTimeBeforeDecomp = end - start;
+
         // Compression for each component
         start = std::chrono::high_resolution_clock::now();
-        size_t leadingCompressedSize = compressWithZstd(leading, compressedLeading, zstdLevel);
+        size_t leadingCompressedSize = compressWithZstd(leading, compressedLeading, 3);
         end = std::chrono::high_resolution_clock::now();
         leadingCompTime = end - start;
 
         start = std::chrono::high_resolution_clock::now();
-        size_t contentCompressedSize = compressWithZstd(content, compressedContent, zstdLevel);
+        size_t contentCompressedSize = compressWithZstd(content, compressedContent, 3);
         end = std::chrono::high_resolution_clock::now();
         contentCompTime = end - start;
 
         start = std::chrono::high_resolution_clock::now();
-        size_t trailingCompressedSize = compressWithZstd(trailing, compressedTrailing, zstdLevel);
+        size_t trailingCompressedSize = compressWithZstd(trailing, compressedTrailing, 3);
         end = std::chrono::high_resolution_clock::now();
         trailingCompTime = end - start;
 
@@ -203,62 +260,52 @@ static void ZSTD_BENCH(benchmark::State& state) {
         end = std::chrono::high_resolution_clock::now();
         reconstructionTime = end - start;
 
-        // Verify if the reconstructed data matches the original data
-        if (reconstructedData != globalByteArray) {
-            state.SkipWithError("Reconstructed data doesn't match the original.");
+        // Verify the reconstructed data matches the original data
+        if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+            std::cerr << "Error: Reconstructed data doesn't match the original." << std::endl;
+            return 1;
+        }
+        else {
+            std::cerr << " Reconstructed data matchs the original." << std::endl;
+
         }
 
-        // Calculate total compression ratio after decomposition
+
         size_t totalOriginalSize = leading.size() + content.size() + trailing.size();
         size_t totalCompressedSize = leadingCompressedSize + contentCompressedSize + trailingCompressedSize;
         totalCompRatioAfterDecomp = calculateCompressionRatio(totalOriginalSize, totalCompressedSize);
+        totalCompressedTime = leadingCompTime+contentCompTime +trailingCompTime +decompositionTime;
+        totalDecompressedTime=leadingDecompTime+contentDecompTime+trailingDecompTime +reconstructionTime;
+
+        // Update max decomposition compression and decompression times
+        maxDecompositionCompTime = std::max(maxDecompositionCompTime, totalCompressedTime);
+        maxDecompositionDecompTime = std::max(maxDecompositionDecompTime, totalDecompressedTime);
+
+        // Store results for CSV
+        results.push_back({
+            std::to_string(i + 1),
+            std::to_string(compRatioBeforeDecomp),
+            std::to_string(compressionTimeBeforeDecomp.count()),
+            std::to_string(decompressionTimeBeforeDecomp.count()),
+            std::to_string(totalCompRatioAfterDecomp),
+            std::to_string(decompositionTime.count()),
+            std::to_string(leadingCompTime.count()),
+            std::to_string(leadingDecompTime.count()),
+            std::to_string(contentCompTime.count()),
+            std::to_string(contentDecompTime.count()),
+            std::to_string(trailingCompTime.count()),
+            std::to_string(trailingDecompTime.count()),
+            std::to_string(reconstructionTime.count()),
+            std::to_string(totalCompressedTime.count()),
+            std::to_string(totalDecompressedTime.count()),
 
 
-
-
-    }
-    // Set benchmark counters
-    state.counters["CompRatio_BeforeDecomposion"] = compRatioBeforeDecomp;
-    state.counters["CompressedTime_BeforeDecomposion"] = compressionTimeBeforeDecomp.count();
-    state.counters["DecompressedTime_BeforeDecomposion"] = decompressionTimeBeforeDecomp.count();
-    state.counters["Total_CompRatio_AfterDecomposion"] = totalCompRatioAfterDecomp;
-    state.counters["Trailing_CompressedTime"] = trailingCompTime.count();
-    state.counters["Trailing_DecompressedTime"] = trailingDecompTime.count();
-    state.counters["leading_CompressedTime"] = leadingCompTime.count();
-    state.counters["leading_DecompressedTime"] = leadingDecompTime.count();
-    state.counters["content_CompressedTime"] = contentCompTime.count();
-    state.counters["content_DecompressedTime"] = contentDecompTime.count();
-    // Add reconstruction time counter
-    state.counters["ReconstructionTime"] = reconstructionTime.count();
-    state.counters["decompositionTime"] = decompositionTime.count();
-
-
-}
-
-int main(int argc, char** argv) {
-    // Load the dataset before running benchmarks
-    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
-    std::vector<float> floatArray = loadTSVDataset(datasetPath);
-
-    if (floatArray.empty()) {
-        std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
-        return 1;
+        });
     }
 
-    // Convert float array to byte array
-    globalByteArray = convertFloatToBytes(floatArray);
 
-    // Register the benchmark
-    benchmark::RegisterBenchmark("ZSTD_BENCH", ZSTD_BENCH)
-        ->Args({1000000, 3})
-        ->UseRealTime()
-        ->Iterations(1000);
+    saveResultsToCSV("/home/jamalids/Documents/compression-part4/new/compression_results.csv", results);
 
-    // Initialize Google Benchmark
-    benchmark::Initialize(&argc, argv);
-
-    // Run the benchmarks
-    benchmark::RunSpecifiedBenchmarks();
 
     return 0;
 }

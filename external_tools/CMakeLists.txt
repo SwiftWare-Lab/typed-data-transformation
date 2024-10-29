@@ -3,7 +3,9 @@ project(zstd-test-project CXX C)
 
 add_executable(zstd-test
         #  zstd_example.cpp
-        Zstd.cpp
+        #Zstd.cpp
+        Zstd2.cpp
+        #parallel.cpp
         #  other.cpp
 )
 

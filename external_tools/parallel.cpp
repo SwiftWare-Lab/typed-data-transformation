@@ -1,3 +1,5 @@
+//
+// Created by jamalids on 29/10/24.
 #include <benchmark/benchmark.h>
 #include <fstream>
 #include <iostream>
@@ -7,8 +9,7 @@
 #include <zstd.h>
 #include <chrono>
 #include <cstdint>
-#include "common.h"
-
+#include <omp.h>
 // Global variable to hold the dataset
 std::vector<uint8_t> globalByteArray;
 
@@ -20,6 +21,8 @@ void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray, std::vector
 size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel);
 size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize);
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize);
+void reconstructFromComponents(const std::vector<uint8_t>& leading, const std::vector<uint8_t>& content,
+                               const std::vector<uint8_t>& trailing, std::vector<uint8_t>& reconstructedData);
 
 // Function to load a TSV dataset into a float vector
 std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows) {
@@ -126,115 +129,57 @@ void reconstructFromComponents(const std::vector<uint8_t>& leading, const std::v
 // Benchmark function for compression, decompression, and reconstruction
 static void ZSTD_BENCH(benchmark::State& state) {
     int zstdLevel = state.range(1);
-    // Variables for time measurements
-    std::chrono::duration<double> leadingCompTime, contentCompTime, trailingCompTime;
-    std::chrono::duration<double> leadingDecompTime, contentDecompTime, trailingDecompTime;
-    std::chrono::duration<double> reconstructionTime;
-    std::chrono::duration<double> decompositionTime;
 
     // Split global byte array into components
     std::vector<uint8_t> leading, content, trailing;
-    // Decomposition step with time measurement
-    auto start = std::chrono::high_resolution_clock::now();
     splitBytesIntoComponents(globalByteArray, leading, content, trailing);
-    auto end = std::chrono::high_resolution_clock::now();
-    decompositionTime = end - start;
 
     std::vector<uint8_t> compressedLeading, compressedContent, compressedTrailing;
     std::vector<uint8_t> decompressedLeading(leading.size()), decompressedContent(content.size()), decompressedTrailing(trailing.size());
     std::vector<uint8_t> reconstructedData;
 
+    // Set the number of threads
+    int numThreads = omp_get_max_threads();
 
-
-
-    // Measure compression ratio and time before decomposition
-    std::vector<uint8_t> compressedData;
-    start = std::chrono::high_resolution_clock::now();
-    size_t compressedSize = compressWithZstd(globalByteArray, compressedData, zstdLevel);
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> compressionTimeBeforeDecomp = end - start;
-
-    double compRatioBeforeDecomp = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-
-    // Decompression before decomposition
-    std::vector<uint8_t> decompressedData(globalByteArray.size());
-    start = std::chrono::high_resolution_clock::now();
-    decompressWithZstd(compressedData, decompressedData, globalByteArray.size());
-    end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> decompressionTimeBeforeDecomp = end - start;
-    double totalCompRatioAfterDecomp = 0.0; // Declare outside the loop
     // Measure compression and decompression for components
     for (auto _ : state) {
-        // Compression for each component
-        start = std::chrono::high_resolution_clock::now();
-        size_t leadingCompressedSize = compressWithZstd(leading, compressedLeading, zstdLevel);
-        end = std::chrono::high_resolution_clock::now();
-        leadingCompTime = end - start;
+        // Parallel compression for each component
+        #pragma omp parallel sections num_threads(numThreads)
+        {
+            #pragma omp section
+            compressWithZstd(leading, compressedLeading, zstdLevel);
 
-        start = std::chrono::high_resolution_clock::now();
-        size_t contentCompressedSize = compressWithZstd(content, compressedContent, zstdLevel);
-        end = std::chrono::high_resolution_clock::now();
-        contentCompTime = end - start;
+            #pragma omp section
+            compressWithZstd(content, compressedContent, zstdLevel);
 
-        start = std::chrono::high_resolution_clock::now();
-        size_t trailingCompressedSize = compressWithZstd(trailing, compressedTrailing, zstdLevel);
-        end = std::chrono::high_resolution_clock::now();
-        trailingCompTime = end - start;
+            #pragma omp section
+            compressWithZstd(trailing, compressedTrailing, zstdLevel);
+        }
 
-        // Decompression for each component
-        start = std::chrono::high_resolution_clock::now();
-        decompressWithZstd(compressedLeading, decompressedLeading, leading.size());
-        end = std::chrono::high_resolution_clock::now();
-        leadingDecompTime = end - start;
+        // Parallel decompression for each component
+        #pragma omp parallel sections num_threads(numThreads)
+        {
+            #pragma omp section
+            decompressWithZstd(compressedLeading, decompressedLeading, leading.size());
 
-        start = std::chrono::high_resolution_clock::now();
-        decompressWithZstd(compressedContent, decompressedContent, content.size());
-        end = std::chrono::high_resolution_clock::now();
-        contentDecompTime = end - start;
+            #pragma omp section
+            decompressWithZstd(compressedContent, decompressedContent, content.size());
 
-        start = std::chrono::high_resolution_clock::now();
-        decompressWithZstd(compressedTrailing, decompressedTrailing, trailing.size());
-        end = std::chrono::high_resolution_clock::now();
-        trailingDecompTime = end - start;
+            #pragma omp section
+            decompressWithZstd(compressedTrailing, decompressedTrailing, trailing.size());
+        }
 
         // Reconstruction
-        start = std::chrono::high_resolution_clock::now();
         reconstructFromComponents(decompressedLeading, decompressedContent, decompressedTrailing, reconstructedData);
-        end = std::chrono::high_resolution_clock::now();
-        reconstructionTime = end - start;
 
         // Verify if the reconstructed data matches the original data
         if (reconstructedData != globalByteArray) {
             state.SkipWithError("Reconstructed data doesn't match the original.");
         }
-
-        // Calculate total compression ratio after decomposition
-        size_t totalOriginalSize = leading.size() + content.size() + trailing.size();
-        size_t totalCompressedSize = leadingCompressedSize + contentCompressedSize + trailingCompressedSize;
-        totalCompRatioAfterDecomp = calculateCompressionRatio(totalOriginalSize, totalCompressedSize);
-
-
-
-
     }
-    // Set benchmark counters
-    state.counters["CompRatio_BeforeDecomposion"] = compRatioBeforeDecomp;
-    state.counters["CompressedTime_BeforeDecomposion"] = compressionTimeBeforeDecomp.count();
-    state.counters["DecompressedTime_BeforeDecomposion"] = decompressionTimeBeforeDecomp.count();
-    state.counters["Total_CompRatio_AfterDecomposion"] = totalCompRatioAfterDecomp;
-    state.counters["Trailing_CompressedTime"] = trailingCompTime.count();
-    state.counters["Trailing_DecompressedTime"] = trailingDecompTime.count();
-    state.counters["leading_CompressedTime"] = leadingCompTime.count();
-    state.counters["leading_DecompressedTime"] = leadingDecompTime.count();
-    state.counters["content_CompressedTime"] = contentCompTime.count();
-    state.counters["content_DecompressedTime"] = contentDecompTime.count();
-    // Add reconstruction time counter
-    state.counters["ReconstructionTime"] = reconstructionTime.count();
-    state.counters["decompositionTime"] = decompositionTime.count();
-
-
 }
 
+// Main function to load the dataset and run the benchmark
 int main(int argc, char** argv) {
     // Load the dataset before running benchmarks
     std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
