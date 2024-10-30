@@ -35,3 +35,22 @@ target_include_directories( zstd-test
         PRIVATE
         ${zstd_SOURCE_DIR}/lib
 )
+
+
+add_executable(parallel-test
+        parallel.cpp
+        parallel.cpp
+        # add other cpp files here if needed
+)
+target_link_libraries( parallel-test
+        PRIVATE
+        libzstd_static
+        benchmark::benchmark
+        OpenMP::OpenMP_CXX
+)
+
+# On windows and macos this is needed
+target_include_directories( parallel-test
+        PRIVATE
+        ${zstd_SOURCE_DIR}/lib
+)
