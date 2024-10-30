@@ -10,17 +10,19 @@
 
 // Struct for profiling information
 struct ProfilingInfo {
+    double com_ratio=0;
     double total_time_compressed;
     double total_time_decompressed;
     std::string type;
-    double leading_time;
-    double content_time;
-    double trailing_time;
+    double leading_time=0.0;
+    double content_time=0.0;
+    double trailing_time=0.0;
 
     // Print results to CSV format
     void printCSV(std::ofstream &file, int iteration) {
         file << iteration << ","
              << type << ","
+             << com_ratio << ","
              << total_time_compressed << ","
              << total_time_decompressed << ","
              << leading_time << ","
@@ -142,49 +144,50 @@ bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uin
 }
 
 // Full compression without decomposition
-void zstdCompression(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedData) {
-    auto start = std::chrono::high_resolution_clock::now();
-    compressWithZstd(data, compressedData, 3);
-    auto end = std::chrono::high_resolution_clock::now();
-   // pi.total_time_compressed = std::chrono::duration<double>(end - start).count();
+size_t zstdCompression(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedData) {
+
+    size_t compressedSize =compressWithZstd(data, compressedData, 3);
+
     pi.type = "Full Compression";
+  return compressedSize;
 }
 
 // Full decompression without decomposition
 void zstdDecompression(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, ProfilingInfo &pi) {
-    auto start = std::chrono::high_resolution_clock::now();
+
     decompressWithZstd(compressedData, decompressedData, globalByteArray.size());
-    auto end = std::chrono::high_resolution_clock::now();
+
 
 
     // Verify decompressed data
-   // if (!verifyDataMatch(globalByteArray, decompressedData)) {
-    //    std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-  //  }
+    if (!verifyDataMatch(globalByteArray, decompressedData)) {
+        std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+   }
 }
 
 // Sequential compression with decomposition
-void zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedLeading, std::vector<uint8_t>& compressedContent, std::vector<uint8_t>& compressedTrailing) {
+size_t zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedLeading, std::vector<uint8_t>& compressedContent, std::vector<uint8_t>& compressedTrailing) {
     std::vector<uint8_t> leading, content, trailing;
     splitBytesIntoComponents(data, leading, content, trailing);
 
     auto start = std::chrono::high_resolution_clock::now();
-    compressWithZstd(leading, compressedLeading, 3);
+    size_t compressedSize_l=compressWithZstd(leading, compressedLeading, 3);
     auto end = std::chrono::high_resolution_clock::now();
     pi.leading_time = std::chrono::duration<double>(end - start).count();
 
     start = std::chrono::high_resolution_clock::now();
-    compressWithZstd(content, compressedContent, 3);
+    size_t compressedSize_c=compressWithZstd(content, compressedContent, 3);
     end = std::chrono::high_resolution_clock::now();
     pi.content_time = std::chrono::duration<double>(end - start).count();
 
     start = std::chrono::high_resolution_clock::now();
-    compressWithZstd(trailing, compressedTrailing, 3);
+    size_t compressedSize_t=compressWithZstd(trailing, compressedTrailing, 3);
     end = std::chrono::high_resolution_clock::now();
     pi.trailing_time = std::chrono::duration<double>(end - start).count();
 
    // pi.total_time_compressed = pi.leading_time + pi.content_time + pi.trailing_time;
     pi.type = "Sequential Decomposition";
+  return(compressedSize_l+compressedSize_c+compressedSize_t);
 }
 
 // Sequential decompression with decomposition
@@ -214,22 +217,23 @@ void zstdDecomposedSequentialDecompression(const std::vector<uint8_t>& compresse
     // Reconstruct decompressed data
      reconstructFromComponents(decompressedLeading, decompressedContent, decompressedTrailing, reconstructedData);
     // Verify decompressed data
-    //if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-     //   std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-   // }
+    if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+        std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+    }
 }
 
 // Parallel compression with decomposition
-void zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedLeading, std::vector<uint8_t>& compressedContent, std::vector<uint8_t>& compressedTrailing) {
+size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedLeading, std::vector<uint8_t>& compressedContent, std::vector<uint8_t>& compressedTrailing) {
     std::vector<uint8_t> leading, content, trailing;
     splitBytesIntoComponents(data, leading, content, trailing);
+    double compressedSize_l=0, compressedSize_c=0,compressedSize_t=0;
 
     #pragma omp parallel sections
     {
         #pragma omp section
         {
             auto start = std::chrono::high_resolution_clock::now();
-            compressWithZstd(leading, compressedLeading, 3);
+            size_t compressedSize_l=compressWithZstd(leading, compressedLeading, 3);
             auto end = std::chrono::high_resolution_clock::now();
             pi.leading_time = std::chrono::duration<double>(end - start).count();
         }
@@ -237,7 +241,7 @@ void zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
         #pragma omp section
         {
             auto start = std::chrono::high_resolution_clock::now();
-            compressWithZstd(content, compressedContent, 3);
+            size_t compressedSize_c=compressWithZstd(content, compressedContent, 3);
             auto end = std::chrono::high_resolution_clock::now();
             pi.content_time = std::chrono::duration<double>(end - start).count();
         }
@@ -245,7 +249,7 @@ void zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
         #pragma omp section
         {
             auto start = std::chrono::high_resolution_clock::now();
-            compressWithZstd(trailing, compressedTrailing, 3);
+            size_t compressedSize_t=compressWithZstd(trailing, compressedTrailing, 3);
             auto end = std::chrono::high_resolution_clock::now();
             pi.trailing_time = std::chrono::duration<double>(end - start).count();
         }
@@ -253,6 +257,7 @@ void zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
 
 
     pi.type = "Parallel Decomposition";
+  return( compressedLeading.size() + compressedContent.size() + compressedTrailing.size());
 }
 
 // Parallel decompression with decomposition
@@ -294,12 +299,15 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
 
   // Reconstruct decompressed data
   reconstructFromComponents(decompressedLeading, decompressedContent, decompressedTrailing, reconstructedData);
-  // Verify decompressed data
-  //if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-   // std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
- // }
-}
+  //Verify decompressed data
+  if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+    std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+  }
 
+}
+double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
+  return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
+}
 // Main function
 int main() {
     std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
@@ -315,54 +323,60 @@ int main() {
     // Profiling for multiple iterations
     int num_iter = 10;
     std::vector<ProfilingInfo> pi_array;
+    double com_ratio;
+    double compressedSize;
 
     for (int i = 0; i < num_iter; i++) {
         // Full compression and decompression without decomposition
         ProfilingInfo pi_full;
         std::vector<uint8_t> compressedData, decompressedData;
         auto start = std::chrono::high_resolution_clock::now();
-        zstdCompression(globalByteArray, pi_full, compressedData);
+        compressedSize=zstdCompression(globalByteArray, pi_full, compressedData);
         auto end = std::chrono::high_resolution_clock::now();
         pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
         start = std::chrono::high_resolution_clock::now();
         zstdDecompression(compressedData, decompressedData, pi_full);
         end = std::chrono::high_resolution_clock::now();
-       pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+        pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+
+        pi_full.com_ratio=calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_array.push_back(pi_full);
 
         // Sequential compression and decompression with decomposition
         ProfilingInfo pi_seq;
         std::vector<uint8_t> compressedLeading, compressedContent, compressedTrailing;
         start = std::chrono::high_resolution_clock::now();
-        zstdDecomposedSequential(globalByteArray, pi_seq, compressedLeading, compressedContent, compressedTrailing);
+        compressedSize=zstdDecomposedSequential(globalByteArray, pi_seq, compressedLeading, compressedContent, compressedTrailing);
         end = std::chrono::high_resolution_clock::now();
         pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
        start = std::chrono::high_resolution_clock::now();
         zstdDecomposedSequentialDecompression(compressedLeading, compressedContent, compressedTrailing, pi_seq);
        end = std::chrono::high_resolution_clock::now();
       pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+      pi_seq.com_ratio=calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_array.push_back(pi_seq);
 
         // Parallel compression and decompression with decomposition
         ProfilingInfo pi_parallel;
       start = std::chrono::high_resolution_clock::now();
-        zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing);
+        compressedSize=zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing);
       end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
       start = std::chrono::high_resolution_clock::now();
         zstdDecomposedParallelDecompression(compressedLeading, compressedContent, compressedTrailing, pi_parallel);
        end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+      pi_parallel.com_ratio=calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_array.push_back(pi_parallel);
     }
 
     // Save results to CSV
     std::ofstream file("/home/jamalids/Documents/compression-part4/new1/pp.csv");
-    file << "Iteration,Type,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime\n";
-    for (size_t i = 0; i < pi_array.size(); ++i) {
-        pi_array[i].printCSV(file, (i / 3) + 1); // Adjust iteration numbering
-    }
-    file.close();
+  file << "Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime\n";
+  for (size_t i = 0; i < pi_array.size(); ++i) {
+    pi_array[i].printCSV(file, (i / 2) + 1); // Adjust iteration numbering
+  }
+  file.close();
 
     std::cout << "Profiling completed and results saved." << std::endl;
     return 0;
