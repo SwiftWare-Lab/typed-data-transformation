@@ -54,6 +54,15 @@ endif()
 
 FetchContent_MakeAvailable(googlebenchmark)
 
+## Argparse
+include(FetchContent)
+FetchContent_Declare(
+        argparse
+        GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)
+
+
 # find openmp
 find_package(OpenMP REQUIRED)
 

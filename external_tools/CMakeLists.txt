@@ -10,6 +10,7 @@ target_link_libraries( zstd2-test
         libzstd_static
         benchmark::benchmark
         OpenMP::OpenMP_CXX
+        argparse
 )
 
 # On windows and macos this is needed
@@ -28,6 +29,7 @@ target_link_libraries( zstd-test
         libzstd_static
         benchmark::benchmark
         OpenMP::OpenMP_CXX
+        argparse
 )
 
 # On windows and macos this is needed
@@ -47,6 +49,7 @@ target_link_libraries( parallel-test
         libzstd_static
         benchmark::benchmark
         OpenMP::OpenMP_CXX
+        argparse
 )
 
 # On windows and macos this is needed
