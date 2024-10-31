@@ -1,6 +1,3 @@
-//
-// Created by jamalids on 29/10/24.
-#include <benchmark/benchmark.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -10,181 +7,29 @@
 #include <chrono>
 #include <cstdint>
 #include <omp.h>
-// Global variable to hold the dataset
-std::vector<uint8_t> globalByteArray;
+#include "parallel.h"
+#include "utils.h"
 
-// Function declarations
-std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 4000000);
-std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray);
-void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray, std::vector<uint8_t>& leading,
-                              std::vector<uint8_t>& content, std::vector<uint8_t>& trailing);
-size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel);
-size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize);
-double calculateCompressionRatio(size_t originalSize, size_t compressedSize);
-void reconstructFromComponents(const std::vector<uint8_t>& leading, const std::vector<uint8_t>& content,
-                               const std::vector<uint8_t>& trailing, std::vector<uint8_t>& reconstructedData);
 
-// Function to load a TSV dataset into a float vector
-std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows) {
-    std::vector<float> floatArray;
-    std::ifstream file(filePath);
-    std::string line;
 
-    if (file.is_open()) {
-        size_t rowCount = 0;
-        while (std::getline(file, line) && rowCount < maxRows) {
-            std::stringstream ss(line);
-            std::string value;
-            std::getline(ss, value, '\t'); // Skip the first column
+///////////////////////////////
 
-            while (std::getline(ss, value, '\t')) {
-                floatArray.push_back(std::stof(value));
-            }
-            rowCount++;
-        }
-        file.close();
-    } else {
-        std::cerr << "Unable to open file: " << filePath << std::endl;
-    }
-
-    return floatArray;
-}
-
-// Function to convert a float array to a uint8_t vector
-std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
-    std::vector<uint8_t> byteArray(floatArray.size() * 4);
-
-    for (size_t i = 0; i < floatArray.size(); i++) {
-        uint8_t* floatBytes = reinterpret_cast<uint8_t*>(const_cast<float*>(&floatArray[i]));
-        for (size_t j = 0; j < 4; j++) {
-            byteArray[i * 4 + j] = floatBytes[j];
-        }
-    }
-
-    return byteArray;
-}
-
-// Split bytes into three components: leading, content, and trailing
-void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
-                              std::vector<uint8_t>& leading,
-                              std::vector<uint8_t>& content,
-                              std::vector<uint8_t>& trailing) {
-    size_t floatCount = byteArray.size() / 4;
-
-    for (size_t i = 0; i < floatCount; i++) {
-        leading.push_back(byteArray[i * 4]);
-        content.push_back(byteArray[i * 4 + 1]);
-        content.push_back(byteArray[i * 4 + 2]);
-        trailing.push_back(byteArray[i * 4 + 3]);
-    }
-}
-
-// Compress a byte vector with Zstd and return compressed size
-size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
-    size_t const cBuffSize = ZSTD_compressBound(data.size());
-    compressedData.resize(cBuffSize);
-
-    size_t const cSize = ZSTD_compress(compressedData.data(), cBuffSize, data.data(), data.size(), compressionLevel);
-    if (ZSTD_isError(cSize)) {
-        std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
-        return 0;
-    }
-
-    compressedData.resize(cSize);
-    return cSize;
-}
-
-// Decompress a byte vector with Zstd and return decompressed size
-size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize) {
-    decompressedData.resize(originalSize);
-
-    size_t const dSize = ZSTD_decompress(decompressedData.data(), originalSize, compressedData.data(), compressedData.size());
-    if (ZSTD_isError(dSize)) {
-        std::cerr << "Zstd decompression error: " << ZSTD_getErrorName(dSize) << std::endl;
-        return 0;
-    }
-
-    return dSize;
-}
-
-// Compression ratio calculation
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
-    return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
+  return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
 
-// Reconstruct data from components
-void reconstructFromComponents(const std::vector<uint8_t>& leading, const std::vector<uint8_t>& content,
-                               const std::vector<uint8_t>& trailing, std::vector<uint8_t>& reconstructedData) {
-    size_t floatCount = leading.size();
-    reconstructedData.resize(floatCount * 4);
-
-    for (size_t i = 0; i < floatCount; i++) {
-        reconstructedData[i * 4] = leading[i];
-        reconstructedData[i * 4 + 1] = content[i * 2];
-        reconstructedData[i * 4 + 2] = content[i * 2 + 1];
-        reconstructedData[i * 4 + 3] = trailing[i];
-    }
-}
-
-// Benchmark function for compression, decompression, and reconstruction
-static void ZSTD_BENCH(benchmark::State& state) {
-    int zstdLevel = state.range(1);
-
-    // Split global byte array into components
-    std::vector<uint8_t> leading, content, trailing;
-    splitBytesIntoComponents(globalByteArray, leading, content, trailing);
-
-    std::vector<uint8_t> compressedLeading, compressedContent, compressedTrailing;
-    std::vector<uint8_t> decompressedLeading(leading.size()), decompressedContent(content.size()), decompressedTrailing(trailing.size());
-    std::vector<uint8_t> reconstructedData;
-
-    // Set the number of threads
-    int numThreads = omp_get_max_threads();
-
-    // Measure compression and decompression for components
-    for (auto _ : state) {
-        // Parallel compression for each component
-        #pragma omp parallel sections num_threads(numThreads)
-        {
-            #pragma omp section
-            compressWithZstd(leading, compressedLeading, zstdLevel);
-
-            #pragma omp section
-            compressWithZstd(content, compressedContent, zstdLevel);
-
-            #pragma omp section
-            compressWithZstd(trailing, compressedTrailing, zstdLevel);
-        }
-
-        // Parallel decompression for each component
-        #pragma omp parallel sections num_threads(numThreads)
-        {
-            #pragma omp section
-            decompressWithZstd(compressedLeading, decompressedLeading, leading.size());
-
-            #pragma omp section
-            decompressWithZstd(compressedContent, decompressedContent, content.size());
-
-            #pragma omp section
-            decompressWithZstd(compressedTrailing, decompressedTrailing, trailing.size());
-        }
-
-        // Reconstruction
-        reconstructFromComponents(decompressedLeading, decompressedContent, decompressedTrailing, reconstructedData);
-
-        // Verify if the reconstructed data matches the original data
-        if (reconstructedData != globalByteArray) {
-            state.SkipWithError("Reconstructed data doesn't match the original.");
-        }
-    }
-}
-
-// Main function to load the dataset and run the benchmark
-int main(int argc, char** argv) {
-    // Load the dataset before running benchmarks
-    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
+int main(int argc, char *argv[]) {
+//    auto a = argv[1];
+//    auto b = argv[2];
+//    std::cout << a << std::endl;
+//    std::cout << b << std::endl;
+// use argparse to get the file path
+    // Load dataset
+    argparse::ArgumentParser parser("Big Data");
+    auto args = swiftware::bigdata::get_args(argc, argv, &parser);
+    std::string datasetPath = args->input_file;
+    //std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
     std::vector<float> floatArray = loadTSVDataset(datasetPath);
-
     if (floatArray.empty()) {
         std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
         return 1;
@@ -193,17 +38,64 @@ int main(int argc, char** argv) {
     // Convert float array to byte array
     globalByteArray = convertFloatToBytes(floatArray);
 
-    // Register the benchmark
-    benchmark::RegisterBenchmark("ZSTD_BENCH", ZSTD_BENCH)
-        ->Args({1000000, 3})
-        ->UseRealTime()
-        ->Iterations(1000);
+    // Profiling
+    int num_iter = 5;
+    std::vector<ProfilingInfo> pi_array;
+    double com_ratio;
+    double compressedSize;
 
-    // Initialize Google Benchmark
-    benchmark::Initialize(&argc, argv);
+    for (int i = 0; i < num_iter; i++) {
+        // Full compression and decompression without decomposition
+        ProfilingInfo pi_full;
+        std::vector<uint8_t> compressedData, decompressedData;
+        auto start = std::chrono::high_resolution_clock::now();
+        compressedSize=zstdCompression(globalByteArray, pi_full, compressedData);
+        auto end = std::chrono::high_resolution_clock::now();
+        pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+        zstdDecompression(compressedData, decompressedData, pi_full);
+        end = std::chrono::high_resolution_clock::now();
+        pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
-    // Run the benchmarks
-    benchmark::RunSpecifiedBenchmarks();
+        pi_full.com_ratio=calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        pi_array.push_back(pi_full);
 
+        // Sequential compression and decompression with decomposition
+        ProfilingInfo pi_seq;
+        std::vector<uint8_t> compressedLeading, compressedContent, compressedTrailing;
+        start = std::chrono::high_resolution_clock::now();
+        compressedSize=zstdDecomposedSequential(globalByteArray, pi_seq, compressedLeading, compressedContent, compressedTrailing);
+        end = std::chrono::high_resolution_clock::now();
+        pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
+       start = std::chrono::high_resolution_clock::now();
+        zstdDecomposedSequentialDecompression(compressedLeading, compressedContent, compressedTrailing, pi_seq);
+       end = std::chrono::high_resolution_clock::now();
+      pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+      pi_seq.com_ratio=calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        pi_array.push_back(pi_seq);
+
+        // Parallel compression and decompression with decomposition
+        ProfilingInfo pi_parallel;
+      start = std::chrono::high_resolution_clock::now();
+        compressedSize=zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing);
+      end = std::chrono::high_resolution_clock::now();
+      pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
+      start = std::chrono::high_resolution_clock::now();
+        zstdDecomposedParallelDecompression(compressedLeading, compressedContent, compressedTrailing, pi_parallel);
+       end = std::chrono::high_resolution_clock::now();
+      pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+      pi_parallel.com_ratio=calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        pi_array.push_back(pi_parallel);
+    }
+
+
+    std::ofstream file("/home/jamalids/Documents/compression-part4/new1/num_brain_f64.csv");
+  file << "Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime\n";
+  for (size_t i = 0; i < pi_array.size(); ++i) {
+    pi_array[i].printCSV(file, (i / 2) + 1); // Adjust iteration numbering
+  }
+  file.close();
+
+    std::cout << "Profiling completed and results saved." << std::endl;
     return 0;
 }
