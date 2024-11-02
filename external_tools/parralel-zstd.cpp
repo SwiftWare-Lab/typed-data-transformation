@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <omp.h>
 #include <cstring>
+#include <vector>
 
 struct ProfilingInfo {
     double com_ratio = 0.0;
@@ -91,21 +92,9 @@ bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uin
     return true;
 }
 
-void splitBytesIntoComponents1(const std::vector<uint8_t>& byteArray, std::vector<uint8_t>& leading, std::vector<uint8_t>& content, std::vector<uint8_t>& trailing, size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
-    size_t numElements = byteArray.size() / (leadingBytes + contentBytes + trailingBytes);
-    leading.clear();
-    content.clear();
-    trailing.clear();
 
-    for (size_t i = 0; i < numElements; ++i) {
-        size_t base = i * (leadingBytes + contentBytes + trailingBytes);
-        leading.insert(leading.end(), byteArray.begin() + base, byteArray.begin() + base + leadingBytes);
-        content.insert(content.end(), byteArray.begin() + base + leadingBytes, byteArray.begin() + base + leadingBytes + contentBytes);
-        trailing.insert(trailing.end(), byteArray.begin() + base + leadingBytes + contentBytes, byteArray.begin() + base + leadingBytes + contentBytes + trailingBytes);
-    }
-}
 
-void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
+void splitBytesIntoComponents1(const std::vector<uint8_t>& byteArray,
                               std::vector<uint8_t>& leading,
                               std::vector<uint8_t>& content,
                               std::vector<uint8_t>& trailing,
@@ -128,6 +117,37 @@ void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
         memcpy(&trailing[i * trailingBytes], &byteArray[base + leadingBytes + contentBytes], trailingBytes);
     }
 }
+
+void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
+                              std::vector<uint8_t>& leading,
+                              std::vector<uint8_t>& content,
+                              std::vector<uint8_t>& trailing,
+                              size_t leadingBytes,
+                              size_t contentBytes,
+                              size_t trailingBytes) {
+    size_t numElements = byteArray.size() / (leadingBytes + contentBytes + trailingBytes);
+
+    // Resize the vectors to accommodate the exact number of bytes
+    leading.resize(numElements * leadingBytes);
+    content.resize(numElements * contentBytes);
+    trailing.resize(numElements * trailingBytes);
+
+    // Using OpenMP SIMD to optimize vector operations
+#pragma omp simd
+    for (size_t i = 0; i < numElements; ++i) {
+        size_t base = i * (leadingBytes + contentBytes + trailingBytes);
+        for (size_t j = 0; j < leadingBytes; ++j) {
+            leading[i * leadingBytes + j] = byteArray[base + j];
+        }
+        for (size_t k = 0; k < contentBytes; ++k) {
+            content[i * contentBytes + k] = byteArray[base + leadingBytes + k];
+        }
+        for (size_t l = 0; l < trailingBytes; ++l) {
+            trailing[i * trailingBytes + l] = byteArray[base + leadingBytes + contentBytes + l];
+        }
+    }
+}
+
 // Compress with Zstd
 size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
     size_t const cBuffSize = ZSTD_compressBound(data.size());
@@ -290,7 +310,7 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
 }
 
 // Parallel decompression with decomposition that  takes dynamic byte sizes as parameters
-void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedLeading,
+void zstdDecomposedParallelDecompression3(const std::vector<uint8_t>& compressedLeading,
                                          const std::vector<uint8_t>& compressedContent,
                                          const std::vector<uint8_t>& compressedTrailing,
                                          ProfilingInfo &pi,
@@ -301,7 +321,8 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
 
     #pragma omp parallel sections
     {
-        #pragma omp section
+       #pragma omp section
+
         {
             auto start = std::chrono::high_resolution_clock::now();
             std::vector<uint8_t> tempLeading(floatCount * leadingBytes);
@@ -313,7 +334,8 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
             pi.leading_time = std::chrono::duration<double>(end - start).count();
         }
 
-        #pragma omp section
+       #pragma omp section
+
         {
             auto start = std::chrono::high_resolution_clock::now();
             std::vector<uint8_t> tempContent(floatCount * contentBytes);
@@ -326,6 +348,7 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
         }
 
         #pragma omp section
+
         {
             auto start = std::chrono::high_resolution_clock::now();
             std::vector<uint8_t> tempTrailing(floatCount * trailingBytes);
@@ -343,6 +366,70 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
         std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
     }
 }
+
+
+// Decompression function with dynamic byte segmentation and OpenMP parallelization
+void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedLeading,
+                                         const std::vector<uint8_t>& compressedContent,
+                                         const std::vector<uint8_t>& compressedTrailing,
+                                         ProfilingInfo &pi,
+                                         size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
+    size_t totalSize = globalByteArray.size();
+    size_t floatCount = totalSize / (leadingBytes + contentBytes + trailingBytes);
+    std::vector<uint8_t> reconstructedData(totalSize);
+
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            std::vector<uint8_t> tempLeading(floatCount * leadingBytes);
+            decompressWithZstd(compressedLeading, tempLeading, floatCount * leadingBytes);
+            for (size_t i = 0; i < floatCount; ++i) {
+                for (size_t j = 0; j < leadingBytes; ++j) {
+                    reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + j] = tempLeading[i * leadingBytes + j];
+                }
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+            pi.leading_time = std::chrono::duration<double>(end - start).count();
+        }
+
+        #pragma omp section
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            std::vector<uint8_t> tempContent(floatCount * contentBytes);
+            decompressWithZstd(compressedContent, tempContent, floatCount * contentBytes);
+            for (size_t i = 0; i < floatCount; ++i) {
+                for (size_t j = 0; j < contentBytes; ++j) {
+                    reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + j] = tempContent[i * contentBytes + j];
+                }
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+            pi.content_time = std::chrono::duration<double>(end - start).count();
+        }
+
+        #pragma omp section
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            std::vector<uint8_t> tempTrailing(floatCount * trailingBytes);
+            decompressWithZstd(compressedTrailing, tempTrailing, floatCount * trailingBytes);
+            for (size_t i = 0; i < floatCount; ++i) {
+                for (size_t j = 0; j < trailingBytes; ++j) {
+                    reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + contentBytes + j] = tempTrailing[i * trailingBytes + j];
+                }
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+            pi.trailing_time = std::chrono::duration<double>(end - start).count();
+        }
+    }
+
+    // Verify decompressed data
+    if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+       std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+   }
+}
+
+
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
     return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
