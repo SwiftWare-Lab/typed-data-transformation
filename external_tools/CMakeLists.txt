@@ -38,8 +38,9 @@ target_include_directories( zstd-test
 
 
 add_executable(parallel-test
-        parallel.cpp
-        parallel.cpp
+       # parallel.cpp
+        #parallel.cpp
+        parralel-zstd.cpp
         # add other cpp files here if needed
 )
 target_link_libraries( parallel-test

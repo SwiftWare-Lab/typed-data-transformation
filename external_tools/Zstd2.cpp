@@ -167,7 +167,7 @@ void saveResultsToCSV(const std::string& filename, const std::vector<std::vector
 
 int main() {
 
-    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
+    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/wave_f32.tsv";
     std::vector<float> floatArray = loadTSVDataset(datasetPath);
 
     if (floatArray.empty()) {

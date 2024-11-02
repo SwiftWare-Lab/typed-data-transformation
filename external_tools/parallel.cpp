@@ -358,7 +358,7 @@ double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
 }
 
 int main() {
-    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/num_brain_f64.tsv";
+    std::string datasetPath = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/wave_f32.tsv";
     std::vector<float> floatArray = loadTSVDataset(datasetPath);
     if (floatArray.empty()) {
         std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
@@ -369,7 +369,7 @@ int main() {
     globalByteArray = convertFloatToBytes(floatArray);
 
     // Profiling
-    int num_iter = 5;
+    int num_iter = 10;
     std::vector<ProfilingInfo> pi_array;
     double com_ratio;
     double compressedSize;
