@@ -18,7 +18,7 @@
 #include "zstd_parallel.h"
 std::vector<uint8_t> globalByteArray;
 
-std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 2000000) {
+std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 8000000) {
   std::vector<float> floatArray;
   std::ifstream file(filePath);
   std::string line;
@@ -57,12 +57,11 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
 int main(int argc, char* argv[])
   {
     cxxopts::Options options("DataCompressor", "Compress datasets and profile the compression");
-    options.add_options()
-        ("d,dataset", "Path to the UCR dataset tsv/csv", cxxopts::value<std::string>())
-        ("o,outcsv", "Output CSV file path", cxxopts::value<std::string>()->default_value("./log_out.csv"))
-        ("t,nthreads", "Number of threads to use", cxxopts::value<int>()->default_value("1"));
-    // ("m,mode", "Run mode", cxxopts::value<std::string>()->default_value("signal"))
-    //  ("h,help", "Print help");
+  options.add_options()
+    ("d,dataset", "Path to the dataset file", cxxopts::value<std::string>())
+    ("o,outcsv", "Output CSV file path", cxxopts::value<std::string>())
+    ("t,threads", "Number of threads to use", cxxopts::value<int>()->default_value("10"))
+    ("h,help", "Print help");
 
     auto result = options.parse(argc, argv);
 
@@ -73,7 +72,7 @@ int main(int argc, char* argv[])
 
     std::string datasetPath = result["dataset"].as<std::string>();
     std::string outputCSV = result["outcsv"].as<std::string>();
-    //int numThreads = result["nthreads"].as<int>();
+    int numThreads = result["threads"].as<int>();
     //std::string mode = result["mode"].as<std::string>();
 
     std::vector<float> floatArray = loadTSVDataset(datasetPath);
@@ -131,11 +130,11 @@ int main(int argc, char* argv[])
 
       // Parallel operations
       start = std::chrono::high_resolution_clock::now();
-      compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing, leadingBytes, contentBytes, trailingBytes);
+      compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing, leadingBytes, contentBytes, trailingBytes,numThreads);
       end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
       start = std::chrono::high_resolution_clock::now();
-      zstdDecomposedParallelDecompression(compressedLeading, compressedContent, compressedTrailing, pi_parallel, leadingBytes, contentBytes, trailingBytes);
+      zstdDecomposedParallelDecompression(compressedLeading, compressedContent, compressedTrailing, pi_parallel, leadingBytes, contentBytes, trailingBytes, numThreads);
       end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
       pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);

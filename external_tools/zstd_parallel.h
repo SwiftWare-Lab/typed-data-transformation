@@ -45,29 +45,7 @@ bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uin
 
 
 
-void splitBytesIntoComponents1(const std::vector<uint8_t>& byteArray,
-                              std::vector<uint8_t>& leading,
-                              std::vector<uint8_t>& content,
-                              std::vector<uint8_t>& trailing,
-                              size_t leadingBytes,
-                              size_t contentBytes,
-                              size_t trailingBytes) {
-    size_t numElements = byteArray.size() / (leadingBytes + contentBytes + trailingBytes);
 
-    // Resize the vectors to accommodate the exact number of bytes
-    leading.resize(numElements * leadingBytes);
-    content.resize(numElements * contentBytes);
-    trailing.resize(numElements * trailingBytes);
-
-    // Parallel loop to split the byteArray into components
-#pragma omp parallel for
-    for (size_t i = 0; i < numElements; ++i) {
-        size_t base = i * (leadingBytes + contentBytes + trailingBytes);
-        memcpy(&leading[i * leadingBytes], &byteArray[base], leadingBytes);
-        memcpy(&content[i * contentBytes], &byteArray[base + leadingBytes], contentBytes);
-        memcpy(&trailing[i * trailingBytes], &byteArray[base + leadingBytes + contentBytes], trailingBytes);
-    }
-}
 
 void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
                               std::vector<uint8_t>& leading,
@@ -223,11 +201,12 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
                               std::vector<uint8_t>& compressedLeading,
                               std::vector<uint8_t>& compressedContent,
                               std::vector<uint8_t>& compressedTrailing,
-                              size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
+                              size_t leadingBytes, size_t contentBytes, size_t trailingBytes,int numThreads) {
     std::vector<uint8_t> leading, content, trailing;
     splitBytesIntoComponents(data, leading, content, trailing, leadingBytes, contentBytes, trailingBytes);
 
     double compressedSize_l = 0, compressedSize_c = 0, compressedSize_t = 0;
+    omp_set_num_threads(numThreads);
 
     #pragma omp parallel sections
     {
@@ -260,63 +239,6 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
     return (compressedLeading.size() + compressedContent.size() + compressedTrailing.size());
 }
 
-// Parallel decompression with decomposition that  takes dynamic byte sizes as parameters
-void zstdDecomposedParallelDecompression3(const std::vector<uint8_t>& compressedLeading,
-                                         const std::vector<uint8_t>& compressedContent,
-                                         const std::vector<uint8_t>& compressedTrailing,
-                                         ProfilingInfo &pi,
-                                         size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
-    size_t totalSize = globalByteArray.size();
-    size_t floatCount = totalSize / (leadingBytes + contentBytes + trailingBytes);
-    std::vector<uint8_t> reconstructedData(totalSize);
-
-    #pragma omp parallel sections
-    {
-       #pragma omp section
-
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::vector<uint8_t> tempLeading(floatCount * leadingBytes);
-            decompressWithZstd(compressedLeading, tempLeading, floatCount * leadingBytes);
-            for (size_t i = 0; i < floatCount; ++i) {
-                memcpy(&reconstructedData[i * (leadingBytes + contentBytes + trailingBytes)], &tempLeading[i * leadingBytes], leadingBytes);
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.leading_time = std::chrono::duration<double>(end - start).count();
-        }
-
-       #pragma omp section
-
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::vector<uint8_t> tempContent(floatCount * contentBytes);
-            decompressWithZstd(compressedContent, tempContent, floatCount * contentBytes);
-            for (size_t i = 0; i < floatCount; ++i) {
-                memcpy(&reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes], &tempContent[i * contentBytes], contentBytes);
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.content_time = std::chrono::duration<double>(end - start).count();
-        }
-
-        #pragma omp section
-
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::vector<uint8_t> tempTrailing(floatCount * trailingBytes);
-            decompressWithZstd(compressedTrailing, tempTrailing, floatCount * trailingBytes);
-            for (size_t i = 0; i < floatCount; ++i) {
-                memcpy(&reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + contentBytes], &tempTrailing[i * trailingBytes], trailingBytes);
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.trailing_time = std::chrono::duration<double>(end - start).count();
-        }
-    }
-
-    // Verify decompressed data
-    if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-        std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-    }
-}
 
 
 // Decompression function with dynamic byte segmentation and OpenMP parallelization
@@ -324,10 +246,11 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
                                          const std::vector<uint8_t>& compressedContent,
                                          const std::vector<uint8_t>& compressedTrailing,
                                          ProfilingInfo &pi,
-                                         size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
+                                         size_t leadingBytes, size_t contentBytes, size_t trailingBytes, int numThreads) {
     size_t totalSize = globalByteArray.size();
     size_t floatCount = totalSize / (leadingBytes + contentBytes + trailingBytes);
     std::vector<uint8_t> reconstructedData(totalSize);
+    omp_set_num_threads(numThreads);
 
     #pragma omp parallel sections
     {
