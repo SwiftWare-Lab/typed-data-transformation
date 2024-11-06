@@ -15,6 +15,9 @@
 
 module load StdEnv/2023
 module load gcc/13.3
+module load cmake/3.27.7
+
+
 
 # build the program
 mkdir build
@@ -22,8 +25,10 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 
+
 # run the program
 ./parallel-test
+
 
 
 
