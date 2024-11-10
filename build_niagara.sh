@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#SBATCH --cpus-per-task=64
+
+#BATCH --cpus-per-task=40
 #SBATCH --export=ALL
 #SBATCH --job-name="compression"
 #SBATCH --mail-type=begin  # email me when the job starts
@@ -8,9 +9,8 @@
 #SBATCH --mail-user=jamalids@mcmaster.ca
 #SBATCH --nodes=1
 #SBATCH --output="compression.%j.%N.out"
-#SBATCH --constraint=rome
-#SBATCH --mem=254000M
-#SBATCH -t 47:59:00
+#SBATCH --constraint=cascade
+#SBATCH -t 7:59:00
 
 #module load StdEnv/2023
 #module load gcc/13.3
