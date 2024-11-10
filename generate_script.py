@@ -1,9 +1,17 @@
 import os
+import argparse
 
-# Define directories and parameters
-DATASET_DIR = "/home/jamalids/Documents/2D/data1/Fcbench/HPC/H"
-OUTPUT_DIR = "/home/jamalids/Documents/compression-part4/new1/new/resultba1"
-NUM_THREADS = 10
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Generate SBATCH job scripts for each dataset.")
+parser.add_argument("--dataset", required=True, help="Path to the dataset directory containing .tsv files.")
+parser.add_argument("--outcsv", required=True, help="Directory where output CSV files and job scripts will be stored.")
+parser.add_argument("--threads", type=int, default=10, help="Number of threads to use for processing each dataset.")
+
+# Parse arguments
+args = parser.parse_args()
+DATASET_DIR = args.dataset
+OUTPUT_DIR = args.outcsv
+NUM_THREADS = args.threads
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
