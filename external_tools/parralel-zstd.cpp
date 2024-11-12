@@ -18,18 +18,22 @@
 #include "zstd_parallel.h"
 std::vector<uint8_t> globalByteArray;
 
-std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 8000000) {
+
+std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath) {
   std::vector<float> floatArray;
   std::ifstream file(filePath);
   std::string line;
+  size_t rowCount = 0;
 
   if (file.is_open()) {
-    size_t rowCount = 0;
-    while (std::getline(file, line) && rowCount < maxRows) {
+    while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string value;
-      std::getline(ss, value, '\t'); // Assume first column is not needed
 
+      // Skip the first column value
+      std::getline(ss, value, '\t');
+
+      // Read the rest of the line and convert to floats
       while (std::getline(ss, value, '\t')) {
         floatArray.push_back(std::stof(value));
       }
@@ -40,9 +44,8 @@ std::vector<float> loadTSVDataset(const std::string& filePath, size_t maxRows = 
     std::cerr << "Unable to open file: " << filePath << std::endl;
   }
 
-  return floatArray;
+  return {floatArray, rowCount};
 }
-
 std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   std::vector<uint8_t> byteArray(floatArray.size() * 4);
   for (size_t i = 0; i < floatArray.size(); i++) {
@@ -53,7 +56,16 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   }
   return byteArray;
 }
+std::pair<double, double> calculateCompDecomThroughput(size_t originalSize, double compressedTime, double decompressedTime) {
+  // Convert originalSize from bytes to gigabytes
+  double originalSizeGB = static_cast<double>(originalSize) / 1e9;
 
+  // Calculate throughput in GB/s
+  double compressionThroughput = originalSizeGB / static_cast<double>(compressedTime);
+  double decompressionThroughput = originalSizeGB / static_cast<double>(decompressedTime);
+
+  return {compressionThroughput, decompressionThroughput};
+}
 int main(int argc, char* argv[])
   {
     cxxopts::Options options("DataCompressor", "Compress datasets and profile the compression");
@@ -75,7 +87,8 @@ int main(int argc, char* argv[])
     int numThreads = result["threads"].as<int>();
     //std::string mode = result["mode"].as<std::string>();
 
-    std::vector<float> floatArray = loadTSVDataset(datasetPath);
+    auto [floatArray, rowCount] = loadTSVDataset(datasetPath);
+    std::cout << "Loaded " << rowCount << " rows with " << floatArray.size() << " total values." << std::endl;
     if (floatArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
       return 1;
@@ -109,6 +122,18 @@ int main(int argc, char* argv[])
       end = std::chrono::high_resolution_clock::now();
       pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
       pi_full.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+      // Calculate compression and decompression throughput
+      auto [CT, DT] = calculateCompDecomThroughput(
+          globalByteArray.size(),
+          pi_full.total_time_compressed,
+          pi_full.total_time_decompressed
+      );
+
+      // Optionally store CT and DT in ProfilingInfo, if needed
+      pi_full.compression_throughput = CT;
+      pi_full.decompression_throughput = DT;
+      pi_full.total_values=rowCount;
+
       pi_array.push_back(pi_full);
 
       // Sequential and Parallel
@@ -126,6 +151,20 @@ int main(int argc, char* argv[])
       end = std::chrono::high_resolution_clock::now();
       pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
       pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+
+      pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+      // Calculate compression and decompression throughput
+      auto [CT_seq, DT_seq] = calculateCompDecomThroughput(
+          globalByteArray.size(),
+          pi_seq.total_time_compressed,
+          pi_seq.total_time_decompressed
+      );
+
+      // Optionally store CT and DT in ProfilingInfo, if needed
+      pi_seq.compression_throughput = CT_seq;
+      pi_seq.decompression_throughput = DT_seq;
+      pi_seq.total_values=rowCount;
+
       pi_array.push_back(pi_seq);
 
       // Parallel operations
@@ -138,6 +177,20 @@ int main(int argc, char* argv[])
       end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
       pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+      pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+
+      pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+      // Calculate compression and decompression throughput
+      auto [CT_par, DT_par] = calculateCompDecomThroughput(
+          globalByteArray.size(),
+          pi_parallel.total_time_compressed,
+          pi_parallel.total_time_decompressed
+      );
+
+      // Optionally store CT and DT in ProfilingInfo, if needed
+      pi_parallel.compression_throughput = CT_par;
+      pi_parallel.decompression_throughput = DT_par;
+      pi_parallel.total_values=rowCount;
       pi_array.push_back(pi_parallel);
     }
 
@@ -147,7 +200,7 @@ int main(int argc, char* argv[])
     return 1;
   }
   // Write the CSV header
-  file << "Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime,LeadingBytes,ContentBytes,TrailingBytes\n";
+  file << "Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime,compression_throughput,decompression_throughput,rowCount\n";
 
   for (size_t i = 0; i < pi_array.size(); ++i) {
     pi_array[i].printCSV(file, i / 3 + 1); // Correct iteration numbering for three tests per iteration

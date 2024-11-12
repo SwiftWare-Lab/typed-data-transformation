@@ -4,6 +4,9 @@
 #include <string>
 #include <fstream>
 
+#define PROFILING_INFO_H
+
+
 
 struct ProfilingInfo {
   double com_ratio = 0.0;
@@ -13,10 +16,11 @@ struct ProfilingInfo {
   double leading_time = 0.0;
   double content_time = 0.0;
   double trailing_time = 0.0;
-  size_t leading_bytes = 0;
-  size_t content_bytes = 0;
-  size_t trailing_bytes = 0;
+  double compression_throughput = 0.0;
+  double decompression_throughput = 0.0;
+  double total_values = 0.0;
 
+  // Updated printCSV function to include the new fields
   void printCSV(std::ofstream &file, int iteration) {
     file << iteration << ","
          << type << ","
@@ -26,11 +30,10 @@ struct ProfilingInfo {
          << leading_time << ","
          << content_time << ","
          << trailing_time << ","
-         << leading_bytes << ","
-         << content_bytes << ","
-         << trailing_bytes << "\n";
+         << compression_throughput<<","
+         << decompression_throughput<<","
+         << total_values<<"\n";
   }
 };
 
 #endif // PROFILING_INFO_H
-
