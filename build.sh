@@ -16,7 +16,29 @@
 module load StdEnv/2023
 module load gcc/13.3
 module load cmake/3.27.7
+ZLIB_DIR=$PWD/zlib_install
+if ! ldconfig -p | grep -q "libz.so"; then
+    echo "zlib not found on system; installing locally..."
 
+    # Download and install zlib if not available
+    if [ ! -d "$ZLIB_DIR" ]; then
+        wget https://zlib.net/fossils/zlib-1.2.13.tar.gz  # Updated URL
+        tar -xzf zlib-1.2.13.tar.gz
+        cd zlib-1.2.13
+        ./configure --prefix=$ZLIB_DIR
+        make -j40
+        make install
+        cd ..
+    fi
+
+    # Set zlib paths for CMake
+    export ZLIB_LIBRARY=$ZLIB_DIR/lib/libz.so
+    export ZLIB_INCLUDE_DIR=$ZLIB_DIR/include
+    ZLIB_CMAKE_FLAGS="-DZLIB_LIBRARY=$ZLIB_LIBRARY -DZLIB_INCLUDE_DIR=$ZLIB_INCLUDE_DIR"
+else
+    echo "zlib found on system."
+    ZLIB_CMAKE_FLAGS=""
+fi
 
 
 # build the program
