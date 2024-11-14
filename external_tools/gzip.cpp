@@ -94,11 +94,11 @@ int main(int argc, char* argv[])
 
   globalByteArray = convertFloatToBytes(floatArray);
 
-    size_t leadingBytes = 1; // size in bytes for leading segment
+    size_t leadingBytes = 2; // size in bytes for leading segment
     size_t contentBytes = 2; // size in bytes for content segment
-    size_t trailingBytes = 1; // size in bytes for trailing segment
+    size_t trailingBytes = 0; // size in bytes for trailing segment
 
-    int num_iter = 1;
+    int num_iter = 100;
     std::vector<ProfilingInfo> pi_array;
     double compressedSize;
 
@@ -150,7 +150,6 @@ int main(int argc, char* argv[])
       pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
       pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
 
-      pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
       // Calculate compression and decompression throughput
       auto [CT_seq, DT_seq] = calculateCompDecomThroughput(
           globalByteArray.size(),
@@ -175,9 +174,7 @@ int main(int argc, char* argv[])
       end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
       pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-      pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
 
-      pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
       // Calculate compression and decompression throughput
       auto [CT_par, DT_par] = calculateCompDecomThroughput(
           globalByteArray.size(),
