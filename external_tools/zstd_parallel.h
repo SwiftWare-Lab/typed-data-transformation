@@ -89,7 +89,79 @@ size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& 
     compressedData.resize(cSize);
     return cSize;
 }
+// Compress with Zstd using 5 threads
+size_t compressWithZstd1(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
+  size_t const cBuffSize = ZSTD_compressBound(data.size());
+  compressedData.resize(cBuffSize);
 
+  // Create a compression context
+  ZSTD_CCtx* cctx = ZSTD_createCCtx();
+  if (cctx == NULL) {
+    std::cerr << "Failed to create ZSTD_CCtx" << std::endl;
+    return 0;
+  }
+
+  // Set the number of threads to 5
+  ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, 0);
+
+  // Compress using the compression context
+  size_t const cSize = ZSTD_compressCCtx(cctx, compressedData.data(), cBuffSize, data.data(), data.size(), compressionLevel);
+  if (ZSTD_isError(cSize)) {
+    std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
+    ZSTD_freeCCtx(cctx);
+    return 0;
+  }
+
+  // Resize the compressed data to the actual compressed size
+  compressedData.resize(cSize);
+
+  // Free the compression context
+  ZSTD_freeCCtx(cctx);
+  return cSize;
+}
+size_t compressWithZstd2(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
+  unsigned numThreads = 10;  // Number of threads
+  int additionalInt = 2;    // This is hypothetical as it's unclear what this integer represents without your specific Zstd documentation.
+
+  size_t const cBuffSize = ZSTD_compressBound(data.size());
+  compressedData.resize(cBuffSize);
+
+  // Create a compression context
+  ZSTD_CCtx* cctx = ZSTD_createCCtx();
+  if (cctx == NULL) {
+    std::cerr << "Failed to create ZSTD_CCtx" << std::endl;
+    return 0;
+  }
+
+  // Set the compression level
+  if (ZSTD_isError(ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel))) {
+    std::cerr << "Failed to set compression level" << std::endl;
+    ZSTD_freeCCtx(cctx);
+    return 0;
+  }
+
+  // Set the number of threads
+  if (ZSTD_isError(ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, numThreads))) {
+    std::cerr << "Failed to set number of threads" << std::endl;
+    ZSTD_freeCCtx(cctx);
+    return 0;
+  }
+
+  // Compress with an additional integer argument
+  size_t const cSize = ZSTD_compressCCtx(cctx, compressedData.data(), cBuffSize, data.data(), data.size(), additionalInt);
+  if (ZSTD_isError(cSize)) {
+    std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
+    ZSTD_freeCCtx(cctx);
+    return 0;
+  }
+
+  // Resize the compressed data to the actual compressed size
+  compressedData.resize(cSize);
+
+  // Free the compression context
+  ZSTD_freeCCtx(cctx);
+  return cSize;
+}
 // Decompress with Zstd
 size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize) {
     decompressedData.resize(originalSize);
@@ -307,5 +379,4 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
   return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
-
 

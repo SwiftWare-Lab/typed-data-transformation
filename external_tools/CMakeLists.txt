@@ -25,13 +25,14 @@ endif()
 
 
 add_executable(parallel-test
-      # parralel-zstd.cpp
-       # zstd_parallel.h
-       zlib.h
-        gzip.cpp
+      parralel-zstd.cpp
+        zstd_parallel.h
+      # zlib.h
+       # gzip.cpp
 
         profiling_info.h
-       # gzip.cpp
+        zstd_parallel.h
+        # gzip.cpp
         # Add other cpp files or headers here if needed
 )
 
