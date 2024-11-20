@@ -99,6 +99,58 @@ int main(int argc, char* argv[])
     size_t leadingBytes = 1; // size in bytes for leading segment
     size_t contentBytes = 2; // size in bytes for content segment
     size_t trailingBytes = 1; // size in bytes for trailing segment
+////////////////////////////////Entropy///////////////////////
+  std::vector<uint8_t> leading, content, trailing;
+  splitBytesIntoComponents(globalByteArray, leading, content, trailing, leadingBytes, contentBytes, trailingBytes);
+  double leadingEntropy = calculateEntropy(leading,8);
+  double contentEntropy = calculateEntropy(content,16);
+  double trailingEntropy = calculateEntropy(trailing,8);
+  double totalEntropy = calculateEntropy(globalByteArray,32);
+  // double correlation_all = calculateCorrelation(globalByteArray,32);
+  // std::cout << "Correlation_all: " << correlation_all << std::endl;
+  // double correlation_leading = calculateCorrelation(leading,8);
+  // std::cout << "Correlation_leading: " << correlation_leading << std::endl;
+  // double correlation_content = calculateCorrelation(content,16);
+  // std::cout << "Correlation_content: " << correlation_content << std::endl;
+  // double correlation_trailing = calculateCorrelation(trailing,8);
+  // std::cout << "Correlation_trailing: " << correlation_trailing << std::endl;
+
+
+  // // Measure and print distribution for the entire dataset
+  // auto dis_all = measurePatternDistribution(globalByteArray, 32);
+  // std::cout << "Distribution (all):" << std::endl;
+  // for (const auto& pair : dis_all) {
+  //   std::cout << pair.first << ": " << pair.second << std::endl;
+  // }
+  //
+  // // Measure and print distribution for the leading part
+  // auto dist_leading = measurePatternDistribution(leading, 8);
+  // std::cout << "Distribution (leading):" << std::endl;
+  // for (const auto& pair : dist_leading) {
+  //   std::cout << pair.first << ": " << pair.second << std::endl;
+  // }
+  //
+  // // Measure and print distribution for the content part
+  // auto dist_content = measurePatternDistribution(content, 16);
+  // std::cout << "Distribution (content):" << std::endl;
+  // for (const auto& pair : dist_content) {
+  //   std::cout << pair.first << ": " << pair.second << std::endl;
+  // }
+  //
+  // // Measure and print distribution for the trailing part
+  // auto dist_trailing = measurePatternDistribution(trailing, 8);
+  // std::cout << "Distribution (trailing):" << std::endl;
+  // for (const auto& pair : dist_trailing) {
+  //   std::cout << pair.first << ": " << pair.second << std::endl;
+  // }
+  //
+  //
+  // Calculate entropy for expanded data
+  double expandedEntropy = calculateExpandedEntropy(globalByteArray, leadingBytes, contentBytes, trailingBytes);
+
+  // Print the result
+  std::cout << "Entropy for Full Data with Expanded Symbols: " << expandedEntropy << std::endl;
+
 
     int num_iter = 1;
     std::vector<ProfilingInfo> pi_array;
@@ -133,6 +185,10 @@ int main(int argc, char* argv[])
       pi_full.compression_throughput = CT;
       pi_full.decompression_throughput = DT;
       pi_full.total_values=rowCount;
+      pi_full.total_entropy=totalEntropy;
+      pi_full.leading_entropy=leadingEntropy;
+      pi_full.content_entropy=contentEntropy;
+      pi_full.trailing_entropy=trailingEntropy;
 
       pi_array.push_back(pi_full);
 
@@ -169,7 +225,11 @@ int main(int argc, char* argv[])
 
       // Parallel operations
       start = std::chrono::high_resolution_clock::now();
-      compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing, leadingBytes, contentBytes, trailingBytes,numThreads);
+      //compressedSize,compressedLeading , compressedContent , compressedTrailing = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing, leadingBytes, contentBytes, trailingBytes,numThreads);
+      auto [compressedSize, compressedLeadingSize, compressedContentSize, compressedTrailingSize] =
+    zstdDecomposedParallel(globalByteArray, pi_parallel, compressedLeading, compressedContent, compressedTrailing, leadingBytes, contentBytes, trailingBytes, numThreads);
+
+
       end = std::chrono::high_resolution_clock::now();
       pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
       start = std::chrono::high_resolution_clock::now();
@@ -180,6 +240,9 @@ int main(int argc, char* argv[])
       pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
 
       pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+      pi_parallel.com_ratio_leading = calculateCompressionRatio(globalByteArray.size()/4, compressedLeadingSize);
+      pi_parallel.com_ratio_content = calculateCompressionRatio(globalByteArray.size()/2, compressedContentSize);
+      pi_parallel.com_ratio_trailing = calculateCompressionRatio(globalByteArray.size()/4, compressedTrailingSize);
       // Calculate compression and decompression throughput
       auto [CT_par, DT_par] = calculateCompDecomThroughput(
           globalByteArray.size(),
@@ -200,7 +263,8 @@ int main(int argc, char* argv[])
     return 1;
   }
   // Write the CSV header
-  file << "Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime,compression_throughput,decompression_throughput,rowCount\n";
+  file << "Iteration,Type,CompressionRatio,CompressionRatio_leading,CompressionRatio_content,CompressionRatio_trailing,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,"
+  "TrailingTime,compression_throughput,decompression_throughput,rowCount ,total_entropy,leading_entropy,content_entropy,trailing_entropy\n";
 
   for (size_t i = 0; i < pi_array.size(); ++i) {
     pi_array[i].printCSV(file, i / 3 + 1); // Correct iteration numbering for three tests per iteration

@@ -20,6 +20,7 @@
 #include <vector>
 #include <cxxopts.hpp>
 #include "profiling_info.h"
+#include <cmath>
 
 
 
@@ -269,7 +270,7 @@ void zstdDecomposedSequentialDecompression(const std::vector<uint8_t>& compresse
     }
 }
 // Parallel compression with decomposition that takes dynamic byte sizes as parameters
-size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
+std::tuple<size_t, size_t, size_t, size_t> zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
                               std::vector<uint8_t>& compressedLeading,
                               std::vector<uint8_t>& compressedContent,
                               std::vector<uint8_t>& compressedTrailing,
@@ -308,7 +309,8 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
     }
 
     pi.type = "Parallel Decomposition";
-    return (compressedLeading.size() + compressedContent.size() + compressedTrailing.size());
+  return {compressedLeading.size() + compressedContent.size() + compressedTrailing.size(),
+         compressedLeading.size(), compressedContent.size(), compressedTrailing.size()};
 }
 
 
@@ -379,4 +381,157 @@ void zstdDecomposedParallelDecompression(const std::vector<uint8_t>& compressedL
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
   return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
+// Helper function to convert a byte array into a vector of binary patterns of any size
+std::vector<std::string> createBinaryPatterns(const std::vector<uint8_t>& byteArray, size_t patternLength) {
+  std::vector<std::string> patterns;
 
+  // Create a string of bits from the byte array
+  std::string bitStream;
+  for (uint8_t byte : byteArray) {
+    for (int i = 7; i >= 0; --i) {  // Extract bits MSB to LSB
+      bitStream += (byte & (1 << i)) ? '1' : '0';
+    }
+  }
+
+  // Split the bit stream into patterns of the given length
+  for (size_t i = 0; i + patternLength <= bitStream.size(); i += patternLength) {
+    patterns.push_back(bitStream.substr(i, patternLength));
+  }
+
+  return patterns;
+}
+
+// Function to calculate entropy based on binary patterns
+double calculateEntropy(const std::vector<uint8_t>& byteArray, size_t patternLength) {
+  // Convert byte array into binary patterns
+  std::vector<std::string> patterns = createBinaryPatterns(byteArray, patternLength);
+
+  // Calculate the frequency of each unique pattern
+  std::map<std::string, size_t> frequencies;
+  for (const std::string& pattern : patterns) {
+    frequencies[pattern]++;
+  }
+
+  // Calculate probabilities and entropy
+  double entropy = 0.0;
+  size_t total_count = patterns.size();
+  for (const auto& pair : frequencies) {
+    double probability = static_cast<double>(pair.second) / total_count;
+    entropy -= probability * std::log2(probability);
+  }
+
+  return entropy;
+}
+// Function to calculate correlation between binary patterns
+double calculateCorrelation(const std::vector<uint8_t>& byteArray, size_t patternLength) {
+  // Convert byte array into binary patterns
+  std::vector<std::string> patterns = createBinaryPatterns(byteArray, patternLength);
+
+  if (patterns.size() < 2) {
+    return 0.0; // No correlation for single pattern
+  }
+
+  // Transition frequency map
+  std::unordered_map<std::string, size_t> transitionCounts;
+  size_t totalTransitions = 0;
+
+  // Count transitions between patterns
+  for (size_t i = 0; i < patterns.size() - 1; ++i) {
+    std::string transition = patterns[i] + "->" + patterns[i + 1];
+    transitionCounts[transition]++;
+    totalTransitions++;
+  }
+
+  // Calculate probabilities of transitions and their entropy
+  double correlation = 0.0;
+  for (const auto& pair : transitionCounts) {
+    double probability = static_cast<double>(pair.second) / totalTransitions;
+    correlation -= probability * std::log2(probability);
+  }
+
+  return correlation;
+}
+
+// Function to calculate the frequency distribution of patterns
+// std::unordered_map<std::string, double> measurePatternDistribution(const std::vector<uint8_t>& byteArray, size_t patternLength) {
+//   // Generate binary patterns from the byte array
+//   std::vector<std::string> patterns = createBinaryPatterns(byteArray, patternLength);
+//
+//   // Count occurrences of each pattern
+//   std::unordered_map<std::string, size_t> frequencyMap;
+//   for (const std::string& pattern : patterns) {
+//     frequencyMap[pattern]++;
+//   }
+//
+//   // Normalize frequencies to probabilities
+//   std::unordered_map<std::string, double> probabilityMap;
+//   size_t totalPatterns = patterns.size();
+//   for (const auto& pair : frequencyMap) {
+//     probabilityMap[pair.first] = static_cast<double>(pair.second) / totalPatterns;
+//   }
+//
+//   return probabilityMap;
+// }
+// Function to extract a specific bit range as a pattern
+std::string extractPattern(const std::vector<uint8_t>& byteArray, size_t startBit, size_t bitLength) {
+  std::string pattern;
+  size_t endBit = startBit + bitLength;
+  for (size_t bit = startBit; bit < endBit; ++bit) {
+    size_t byteIndex = bit / 8;
+    size_t bitIndex = 7 - (bit % 8);  // MSB to LSB
+    if (byteArray[byteIndex] & (1 << bitIndex)) {
+      pattern += '1';
+    } else {
+      pattern += '0';
+    }
+  }
+  return pattern;
+}
+
+// Function to calculate Shannon entropy
+double calculateEntropy(const std::unordered_map<std::string, size_t>& frequency, size_t totalSymbols) {
+  double entropy = 0.0;
+  for (const auto& entry : frequency) {
+    double prob = static_cast<double>(entry.second) / totalSymbols;
+    entropy -= prob * std::log2(prob);
+  }
+  return entropy;
+}
+
+// Function to calculate entropy for full data with three times more symbols
+double calculateExpandedEntropy(const std::vector<uint8_t>& byteArray,
+                                size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
+  size_t segmentSize = leadingBytes + contentBytes + trailingBytes;
+  size_t numSegments = byteArray.size() / segmentSize;
+
+  // Frequency map for symbols
+  std::unordered_map<std::string, size_t> symbolFrequency;
+
+  // Total symbol count
+  size_t totalSymbols = 0;
+
+  // Iterate through the dataset and extract symbols
+  for (size_t i = 0; i < numSegments; ++i) {
+    size_t base = i * segmentSize;
+
+    // Leading pattern (e.g., A)
+    std::string leadingPattern(byteArray.begin() + base, byteArray.begin() + base + leadingBytes);
+    symbolFrequency[leadingPattern]++;
+    totalSymbols++;
+
+    // Content pattern (e.g., BC)
+    std::string contentPattern(byteArray.begin() + base + leadingBytes,
+                               byteArray.begin() + base + leadingBytes + contentBytes);
+    symbolFrequency[contentPattern]++;
+    totalSymbols++;
+
+    // Trailing pattern (e.g., D)
+    std::string trailingPattern(byteArray.begin() + base + leadingBytes + contentBytes,
+                                byteArray.begin() + base + segmentSize);
+    symbolFrequency[trailingPattern]++;
+    totalSymbols++;
+  }
+
+  // Calculate entropy
+  return calculateEntropy(symbolFrequency, totalSymbols);
+}
