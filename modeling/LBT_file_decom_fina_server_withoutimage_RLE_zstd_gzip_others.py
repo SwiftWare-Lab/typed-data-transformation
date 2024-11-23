@@ -174,7 +174,7 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
     print("Bnd1: ", bnd1, "Bnd2:",bnd2 )
 
     # Tune decomposition steps
-    tune_decomp = [0, 8]
+    tune_decomp = [0]
 
     # Initialize lists to store compressed sizes and dictionaries
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
@@ -698,12 +698,17 @@ def calculate_exact_metadata_size(metadata):
         total_bits += start_index_bits + value_bits + count_bits
 
     return total_bits
+def float_to_int16(arr):
+    # Scale the float array to fit within int16 range and cast to int16
+    max_int16 = np.iinfo(np.int16).max  # 32767
+    scaled_array = (arr * max_int16).astype(np.int16)
+    return scaled_array
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/other/"
+    dataset_path = "/home/jamalids/Downloads/weight/weight/tok_embeddings.weight.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
-    #datasets = [dataset_path]
-    datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
-                f.endswith('.tsv')]
+    datasets = [dataset_path]
+   # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
+             #   f.endswith('.tsv')]
     results = []
     for dataset_path in datasets:
         result_row = {}
@@ -711,15 +716,17 @@ def run_and_collect_data(dataset_path):
         ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
-        group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[:4000000,:]
-        group = group.T
+        #group1 = ts_data1.drop(ts_data1.columns[0], axis=1)
+       # group=group.iloc[:4000000,:]
+       # group = group.T
         #group = group.iloc[:, 0:3000000]
         verify_flag_final = False
         m, n = 8, 1
         ts_n = 32
-
-        group = group.astype(np.float32).to_numpy().reshape(-1)
+        group=ts_data1
+        group = ts_data1.astype(np.int16).values.reshape(-1)
+      #  group = float_to_int16(group1) # Convert and reshape
+        #group = group.astype(np.float32).to_numpy().reshape(-1)
 
         entropy_float = calculate_entropy_float(group)
         print("entropy_float=", entropy_float)

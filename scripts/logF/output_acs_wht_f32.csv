@@ -1,0 +1,4 @@
+Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,LeadingTime,ContentTime,TrailingTime,LeadingBytes,ContentBytes,TrailingBytes
+1,Full Compression,2.92721,0.0107651,0.0473483,0,0,0,0,0,0
+1,Sequential Decomposition,3.30054,0.0500348,0.0874834,0.0118404,0.0205691,0.0124637,0,0,0
+1,Parallel Decomposition,3.30054,0.0475139,0.0840192,0.0103733,0.019393,0.011861,0,0,0
