@@ -46,6 +46,40 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
 
   return {floatArray, rowCount};
 }
+// Function to load a TSV dataset and convert to bfloat16 (uint16_t)
+std::pair<std::vector<uint16_t>, size_t> loadTSVDatasetAsBFloat16(const std::string& filePath) {
+  std::vector<uint16_t> bfloat16Array;
+  std::ifstream file(filePath);
+  std::string line;
+  size_t rowCount = 0;
+
+  if (file.is_open()) {
+    while (std::getline(file, line)) {
+      std::stringstream ss(line);
+      std::string value;
+
+      // Skip the first column value
+      std::getline(ss, value, '\t');
+
+      // Read the rest of the line and convert to bfloat16
+      while (std::getline(ss, value, '\t')) {
+        float floatValue = std::stof(value);
+
+        // Convert 32-bit float to bfloat16 (store the most significant 16 bits)
+        uint16_t bfloat16Value = *reinterpret_cast<uint32_t*>(&floatValue) >> 16;
+
+        bfloat16Array.push_back(bfloat16Value);
+      }
+      rowCount++;
+    }
+    file.close();
+  } else {
+    std::cerr << "Unable to open file: " << filePath << std::endl;
+  }
+
+  return {bfloat16Array, rowCount};
+}
+
 std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   std::vector<uint8_t> byteArray(floatArray.size() * 4);
   for (size_t i = 0; i < floatArray.size(); i++) {
@@ -53,6 +87,15 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
     for (size_t j = 0; j < 4; j++) {
       byteArray[i * 4 + j] = floatBytes[j];
     }
+  }
+  return byteArray;
+}
+std::vector<uint8_t> convertBFloat16ToBytes(const std::vector<uint16_t>& bfloat16Array) {
+  std::vector<uint8_t> byteArray(bfloat16Array.size() * 2); // Each bfloat16 is 2 bytes
+  for (size_t i = 0; i < bfloat16Array.size(); ++i) {
+    uint16_t value = bfloat16Array[i];
+    byteArray[i * 2] = static_cast<uint8_t>(value & 0xFF);        // Extract low byte
+    byteArray[i * 2 + 1] = static_cast<uint8_t>((value >> 8));   // Extract high byte
   }
   return byteArray;
 }
@@ -87,18 +130,21 @@ int main(int argc, char* argv[])
     int numThreads = result["threads"].as<int>();
     //std::string mode = result["mode"].as<std::string>();
 
-    auto [floatArray, rowCount] = loadTSVDataset(datasetPath);
+    //auto [floatArray, rowCount] = loadTSVDataset(datasetPath);
+  auto [floatArray, rowCount] = loadTSVDatasetAsBFloat16(datasetPath);
     std::cout << "Loaded " << rowCount << " rows with " << floatArray.size() << " total values." << std::endl;
     if (floatArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
       return 1;
     }
 
-  globalByteArray = convertFloatToBytes(floatArray);
+    //globalByteArray = convertFloatToBytes(floatArray);
+    globalByteArray = convertBFloat16ToBytes(floatArray);
+
 
     size_t leadingBytes = 1; // size in bytes for leading segment
-    size_t contentBytes = 2; // size in bytes for content segment
-    size_t trailingBytes = 1; // size in bytes for trailing segment
+    size_t contentBytes = 1; // size in bytes for content segment
+    size_t trailingBytes = 0; // size in bytes for trailing segment
 
     int num_iter = 1;
     std::vector<ProfilingInfo> pi_array;
