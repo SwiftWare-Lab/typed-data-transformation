@@ -46,6 +46,36 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
 
   return {floatArray, rowCount};
 }
+
+//double64
+std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& filePath) {
+  std::vector<double> doubleArray;  // Use double for 64-bit floating-point
+  std::ifstream file(filePath);
+  std::string line;
+  size_t rowCount = 0;
+
+  if (file.is_open()) {
+    while (std::getline(file, line)) {
+      std::stringstream ss(line);
+      std::string value;
+
+      // Skip the first column value
+      std::getline(ss, value, '\t');
+
+      // Read the rest of the line and convert to doubles
+      while (std::getline(ss, value, '\t')) {
+        doubleArray.push_back(std::stod(value));  // Convert to double
+      }
+      rowCount++;
+    }
+    file.close();
+  } else {
+    std::cerr << "Unable to open file: " << filePath << std::endl;
+  }
+
+  return {doubleArray, rowCount};
+}
+
 // Function to load a TSV dataset and convert to bfloat16 (uint16_t)
 std::pair<std::vector<uint16_t>, size_t> loadTSVDatasetAsBFloat16(const std::string& filePath) {
   std::vector<uint16_t> bfloat16Array;
@@ -79,7 +109,42 @@ std::pair<std::vector<uint16_t>, size_t> loadTSVDatasetAsBFloat16(const std::str
 
   return {bfloat16Array, rowCount};
 }
+std::pair<std::vector<int16_t>, size_t> loadTSVDatasetAsInt16(const std::string& filePath) {
+  std::vector<int16_t> int16Array;
+  std::ifstream file(filePath);
+  std::string line;
+  size_t rowCount = 0;
 
+  if (file.is_open()) {
+    while (std::getline(file, line)) {
+      std::stringstream ss(line);
+      std::string value;
+
+      // Skip the first column value
+      //std::getline(ss, value, '\t');
+
+      // Read the rest of the line and convert to int16_t
+      while (std::getline(ss, value, '\t')) {
+        try {
+          // Convert string to float, then cast to int16_t
+          float floatValue = std::stof(value);
+          int16_t int16Value = static_cast<int16_t>(floatValue);
+
+          // Store the converted value
+          int16Array.push_back(int16Value);
+        } catch (const std::exception& e) {
+          std::cerr << "Error converting value: " << value << " - " << e.what() << std::endl;
+        }
+      }
+      rowCount++;
+    }
+    file.close();
+  } else {
+    std::cerr << "Unable to open file: " << filePath << std::endl;
+  }
+
+  return {int16Array, rowCount};
+}
 std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   std::vector<uint8_t> byteArray(floatArray.size() * 4);
   for (size_t i = 0; i < floatArray.size(); i++) {
@@ -90,15 +155,30 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   }
   return byteArray;
 }
-std::vector<uint8_t> convertBFloat16ToBytes(const std::vector<uint16_t>& bfloat16Array) {
-  std::vector<uint8_t> byteArray(bfloat16Array.size() * 2); // Each bfloat16 is 2 bytes
-  for (size_t i = 0; i < bfloat16Array.size(); ++i) {
-    uint16_t value = bfloat16Array[i];
-    byteArray[i * 2] = static_cast<uint8_t>(value & 0xFF);        // Extract low byte
-    byteArray[i * 2 + 1] = static_cast<uint8_t>((value >> 8));   // Extract high byte
+std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray) {
+  std::vector<uint8_t> byteArray(doubleArray.size() * 8);  // Each double is 8 bytes
+  for (size_t i = 0; i < doubleArray.size(); i++) {
+    // Get a pointer to the bytes of the double
+    uint8_t* doubleBytes = reinterpret_cast<uint8_t*>(const_cast<double*>(&doubleArray[i]));
+    for (size_t j = 0; j < 8; j++) {
+      // Copy each byte of the double into the correct position in the byteArray
+      byteArray[i * 8 + j] = doubleBytes[j];
+    }
   }
   return byteArray;
 }
+
+std::vector<uint8_t> convertInt16ToBytes(const std::vector<int16_t>& int16Array) {
+  std::vector<uint8_t> byteArray(int16Array.size() * 2); // Each int16_t needs 2 bytes
+  for (size_t i = 0; i < int16Array.size(); ++i) {
+    int16_t value = int16Array[i];
+    // Extract low and high bytes
+    byteArray[i * 2] = static_cast<uint8_t>(value & 0xFF);        // Low byte
+    byteArray[i * 2 + 1] = static_cast<uint8_t>((value >> 8));    // High byte
+  }
+  return byteArray;
+}
+
 std::pair<double, double> calculateCompDecomThroughput(size_t originalSize, double compressedTime, double decompressedTime) {
   // Convert originalSize from bytes to gigabytes
   double originalSizeGB = static_cast<double>(originalSize) / 1e9;
@@ -115,8 +195,8 @@ int main(int argc, char* argv[])
   options.add_options()
     ("d,dataset", "Path to the dataset file", cxxopts::value<std::string>())
     ("o,outcsv", "Output CSV file path", cxxopts::value<std::string>())
-    ("t,threads", "Number of threads to use", cxxopts::value<int>()->default_value("10"))
-    ("h,help", "Print help");
+ ("t,threads", "Number of threads to use", cxxopts::value<int>()->default_value("10"))
+   ("h,help", "Print help");
 
     auto result = options.parse(argc, argv);
 
@@ -131,7 +211,8 @@ int main(int argc, char* argv[])
     //std::string mode = result["mode"].as<std::string>();
 
     //auto [floatArray, rowCount] = loadTSVDataset(datasetPath);
-  auto [floatArray, rowCount] = loadTSVDatasetAsBFloat16(datasetPath);
+     auto [floatArray, rowCount] = loadTSVDatasetdouble(datasetPath);
+  //auto [floatArray, rowCount] = loadTSVDatasetAsInt16(datasetPath);
     std::cout << "Loaded " << rowCount << " rows with " << floatArray.size() << " total values." << std::endl;
     if (floatArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
@@ -139,12 +220,13 @@ int main(int argc, char* argv[])
     }
 
     //globalByteArray = convertFloatToBytes(floatArray);
-    globalByteArray = convertBFloat16ToBytes(floatArray);
+  globalByteArray = convertDoubleToBytes(floatArray);
+   // globalByteArray = convertInt16ToBytes(floatArray);
 
 
-    size_t leadingBytes = 1; // size in bytes for leading segment
-    size_t contentBytes = 1; // size in bytes for content segment
-    size_t trailingBytes = 0; // size in bytes for trailing segment
+    size_t leadingBytes = 3; // size in bytes for leading segment
+    size_t contentBytes = 4; // size in bytes for content segment
+    size_t trailingBytes = 1; // size in bytes for trailing segment
 
     int num_iter = 1;
     std::vector<ProfilingInfo> pi_array;
