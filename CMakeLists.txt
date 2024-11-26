@@ -38,21 +38,21 @@ FetchContent_MakeAvailable(zstd)
 
 option(PROFILING_ENABLED "Enables Modules for Profiling, needs LIBFPM4" OFF)
 
-FetchContent_Declare(
-        googlebenchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG v1.9.0
-)
+#FetchContent_Declare(
+# googlebenchmark
+#  GIT_REPOSITORY https://github.com/google/benchmark.git
+#    GIT_TAG v1.9.0
+#)
 # enable BENCHMARK_DOWNLOAD_DEPENDENCIES
-set(BENCHMARK_DOWNLOAD_DEPENDENCIES ON)
-if (PROFILING_ENABLED)
+#set(BENCHMARK_DOWNLOAD_DEPENDENCIES ON)
+#if (PROFILING_ENABLED)
     # enable PFM
-    set(BENCHMARK_ENABLE_LIBPFM OFF)
-endif()
+# set(BENCHMARK_ENABLE_LIBPFM OFF)
+#endif()
 # disable tests
 #set(BENCHMARK_ENABLE_TESTING OFF)
 
-FetchContent_MakeAvailable(googlebenchmark)
+#FetchContent_MakeAvailable(googlebenchmark)
 
 ## Argparse
 include(FetchContent)

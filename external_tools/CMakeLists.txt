@@ -29,15 +29,42 @@ if(NOT lz4_POPULATED)
 endif()
 
 add_executable(parallel-test
-        parralel-zstd.cpp
-        zstd_parallel.h
-
-        profiling_info.h
+       # parralel-zstd.cpp
+      # zstd_parallel.h
+       # profiling_info.h
         lz4_parallel.h
-        parralel-zstd.cpp
-        # parallel-lz4.cpp
-        # Add other cpp files or headers here if needed
+      # parralel-zstd.cpp
+        #snappy_parallel.h
+        #parallel-snappy.cpp
+        parallel-lz4.cpp
 )
+# Fetch Snappy for compression
+FetchContent_Declare(
+        snappy
+        GIT_REPOSITORY https://github.com/google/snappy.git
+        GIT_TAG main
+)
+FetchContent_GetProperties(snappy)
+if(NOT snappy_POPULATED)
+    FetchContent_Populate(snappy)
+    set(SNAPPY_BUILD_BENCHMARKS OFF CACHE BOOL "Disable Snappy benchmarks" FORCE)
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Google Benchmark tests" FORCE)
+    set(SNAPPY_BUILD_TESTS OFF CACHE BOOL "Disable Snappy tests" FORCE)
+    add_subdirectory(${snappy_SOURCE_DIR} ${snappy_BINARY_DIR})
+endif()
+
+# Fetch Google Benchmark (ensure tests are disabled)
+FetchContent_Declare(
+        benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG main
+)
+FetchContent_GetProperties(benchmark)
+if(NOT benchmark_POPULATED)
+    FetchContent_Populate(benchmark)
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Google Benchmark tests" FORCE)
+    add_subdirectory(${benchmark_SOURCE_DIR} ${benchmark_BINARY_DIR})
+endif()
 
 target_link_libraries(parallel-test
         PRIVATE
@@ -45,6 +72,7 @@ target_link_libraries(parallel-test
         benchmark::benchmark
         OpenMP::OpenMP_CXX
         lz4
+        snappy
         # argparse can be replaced or used alongside cxxopts if required
 )
 
