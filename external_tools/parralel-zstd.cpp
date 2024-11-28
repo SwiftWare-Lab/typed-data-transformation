@@ -217,16 +217,50 @@ int main(int argc, char* argv[]) {
 
     globalByteArray = convertDoubleToBytes(floatArray);
 
-    // Define the sizes of 8 components
-    std::vector<size_t> componentSizes = {1, 1, 1, 1, 1, 1, 1, 1};
+    // Define multiple configurations for component sizes
+  std::vector<std::vector<size_t>> componentSizesList = {
+    {7, 1, 0, 0, 0, 0, 0, 0},  // 7 bytes + 1 byte
+    {6, 2, 0, 0, 0, 0, 0, 0},  // 6 bytes + 2 bytes
+    {6, 1, 1, 0, 0, 0, 0, 0},  // 6 bytes + 1 byte + 1 byte
+    {5, 3, 0, 0, 0, 0, 0, 0},  // 5 bytes + 3 bytes
+    {5, 2, 1, 0, 0, 0, 0, 0},  // 5 bytes + 2 bytes + 1 byte
+    {5, 1, 1, 1, 0, 0, 0, 0},  // 5 bytes + 1 byte + 1 byte + 1 byte
+    {4, 4, 0, 0, 0, 0, 0, 0},  // 4 bytes + 4 bytes
+    {4, 3, 1, 0, 0, 0, 0, 0},  // 4 bytes + 3 bytes + 1 byte
+    {4, 2, 2, 0, 0, 0, 0, 0},  // 4 bytes + 2 bytes + 2 bytes
+    {4, 2, 1, 1, 0, 0, 0, 0},  // 4 bytes + 2 bytes + 1 byte + 1 byte
+    {4, 1, 1, 1, 1, 0, 0, 0},  // 4 bytes + 1 byte + 1 byte + 1 byte + 1 byte
+    {3, 3, 2, 0, 0, 0, 0, 0},  // 3 bytes + 3 bytes + 2 bytes
+    {3, 3, 1, 1, 0, 0, 0, 0},  // 3 bytes + 3 bytes + 1 byte + 1 byte
+    {3, 2, 2, 1, 0, 0, 0, 0},  // 3 bytes + 2 bytes + 2 bytes + 1 byte
+    {3, 2, 1, 1, 1, 0, 0, 0},  // 3 bytes + 2 bytes + 1 byte + 1 byte + 1 byte
+    {3, 1, 1, 1, 1, 1, 0, 0},  // 3 bytes + 1 byte + 1 byte + 1 byte + 1 byte + 1 byte
+    {2, 2, 2, 2, 0, 0, 0, 0},  // 2 bytes + 2 bytes + 2 bytes + 2 bytes
+    {2, 2, 2, 1, 1, 0, 0, 0},  // 2 bytes + 2 bytes + 2 bytes + 1 byte + 1 byte
+    {2, 2, 1, 1, 1, 1, 0, 0},  // 2 bytes + 2 bytes + 1 byte + 1 byte + 1 byte + 1 byte
+    {2, 1, 1, 1, 1, 1, 1, 0},  // 2 bytes + 1 byte + 1 byte + 1 byte + 1 byte + 1 byte + 1 byte
+    {1, 1, 1, 1, 1, 1, 1, 1},  // 8 groups of 1 byte
+    {1, 5, 1, 1, 0, 0, 0, 0},  // 1 byte + 5 bytes + 1 byte + 1 byte
+    {1, 4, 2, 1, 0, 0, 0, 0},  // 1 byte + 4 bytes + 2 bytes + 1 byte
+    {2, 3, 2, 1, 0, 0, 0, 0}   // 2 bytes + 3 bytes + 2 bytes + 1 byte
+  };
 
-    int num_iter = 1;
     std::vector<ProfilingInfo> pi_array;
+for (const auto& componentSizes : componentSizesList) {
+    std::cout << "Testing with component sizes: ";
+    for (auto size : componentSizes) std::cout << size << " ";
+    std::cout << std::endl;
 
-    for (int i = 0; i < num_iter; i++) {
-        // Full compression and decompression without decomposition
-        ProfilingInfo pi_full;
-        std::vector<uint8_t> compressedData, decompressedData;
+    // Temporary storage for compressed components
+    std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
+
+    // Loop over each run type (Full, Sequential, Parallel)
+    for (int i = 0; i < 1; ++i) { // Set `num_iter` for multiple runs if needed
+
+        // --- Full Compression ---
+        ProfilingInfo pi_full(componentSizes.size());  // Initialize profiling info
+        std::vector<uint8_t> compressedData, decompressedData; // Reset temporary storage
+
         auto start = std::chrono::high_resolution_clock::now();
         double compressedSize = zstdCompression(globalByteArray, pi_full, compressedData);
         auto end = std::chrono::high_resolution_clock::now();
@@ -239,11 +273,13 @@ int main(int argc, char* argv[]) {
         pi_full.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_full.total_values = rowCount;
 
+        pi_full.type = "Full"; // Set type for CSV output
         pi_array.push_back(pi_full);
 
-        // Sequential operations with decomposition
-        ProfilingInfo pi_seq;
-        std::vector<std::vector<uint8_t>> compressedComponents(8);
+        // --- Sequential Compression ---
+        ProfilingInfo pi_seq(componentSizes.size());  // Initialize profiling info
+        compressedComponents.clear();                // Reset components for this run
+        compressedComponents.resize(componentSizes.size()); // Reinitialize
 
         start = std::chrono::high_resolution_clock::now();
         compressedSize = zstdDecomposedSequential(globalByteArray, pi_seq, compressedComponents, componentSizes);
@@ -257,10 +293,13 @@ int main(int argc, char* argv[]) {
         pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_seq.total_values = rowCount;
 
+        pi_seq.type = "Sequential"; // Set type for CSV output
         pi_array.push_back(pi_seq);
 
-        // Parallel operations with decomposition
-        ProfilingInfo pi_parallel;
+        // --- Parallel Compression ---
+        ProfilingInfo pi_parallel(componentSizes.size()); // Initialize profiling info
+        compressedComponents.clear();                    // Reset components for this run
+        compressedComponents.resize(componentSizes.size()); // Reinitialize
 
         start = std::chrono::high_resolution_clock::now();
         compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
@@ -274,24 +313,43 @@ int main(int argc, char* argv[]) {
         pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_parallel.total_values = rowCount;
 
+        pi_parallel.type = "Parallel"; // Set type for CSV output
         pi_array.push_back(pi_parallel);
     }
+}
 
-    // Output results to CSV
-    std::ofstream file(outputCSV);
-    if (!file) {
-        std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
-        return 1;
+  // Write results to CSV
+  std::ofstream file(outputCSV);
+  if (!file) {
+    std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
+    return 1;
+  }
+
+  // Write the CSV header
+  file << "Iteration,ComponentSizes,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
+       << "Component1Time,Component2Time,Component3Time,Component4Time,Component5Time,"
+       << "Component6Time,Component7Time,Component8Time,CompressionThroughput,DecompressionThroughput,TotalValues\n";
+
+  size_t configIndex = 0; // Track current configuration index
+  size_t iteration = 1;
+
+  for (size_t i = 0; i < pi_array.size(); ++i) {
+    if (i % 3 == 0 && i > 0) {
+      // Move to the next configuration after every 3 entries (Full, Sequential, Parallel)
+      configIndex++;
     }
 
-    // Write CSV header
-    file << "Iteration,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
-         << "Component1Time,Component2Time,Component3Time,Component4Time,Component5Time,"
-         << "Component6Time,Component7Time,Component8Time,CompressionThroughput,DecompressionThroughput,TotalValues\n";
-
-    for (size_t i = 0; i < pi_array.size(); ++i) {
-        pi_array[i].printCSV(file, i / 3 + 1);
+    // Write iteration and component sizes
+    file << iteration++ << ",";
+    for (size_t size : componentSizesList[configIndex]) {
+      file << size << " ";
     }
+    file << ",";
+
+    // Write profiling info
+    pi_array[i].printCSV(file, iteration);
+  }
+
 
     return 0;
 }
