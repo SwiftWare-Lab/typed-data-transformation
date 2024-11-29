@@ -16,16 +16,14 @@
 #include <chrono>
 #include <cstdint>
 #include <omp.h>
-#include <cstring>
-#include <vector>
-#include <cxxopts.hpp>
+
 #include "profiling_info.h"
 #include <numeric>
 
 
 
 
-// Declare globalByteArray as an external variable
+// Declare  as an external variable
 extern std::vector<uint8_t> globalByteArray;
 
 // Verify if original and reconstructed data match
@@ -132,8 +130,8 @@ void zstdDecompression(const std::vector<uint8_t>& compressedData, std::vector<u
 
     // Verify decompressed data
     if (!verifyDataMatch(globalByteArray, decompressedData)) {
-        std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-    }
+      std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+   }
 }
 
 void zstdDecomposedSequentialDecompression(const std::vector<std::vector<uint8_t>>& compressedComponents,
@@ -150,7 +148,7 @@ void zstdDecomposedSequentialDecompression(const std::vector<std::vector<uint8_t
   for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Temporary buffer for the decompressed component
+    // Temporary buffer for the decompressed component(????????????????????)
     std::vector<uint8_t> tempComponent(floatCount * componentBytes[compIdx]);
 
     // Decompress the current component
@@ -172,10 +170,10 @@ void zstdDecomposedSequentialDecompression(const std::vector<std::vector<uint8_t
     baseOffset += componentBytes[compIdx];
   }
 
-  // Verify decompressed data
-  if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-    std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-  }
+  // // Verify decompressed data
+   if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+     std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+   }
 }
 
 size_t zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo &pi,
@@ -186,7 +184,8 @@ size_t zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo 
   splitBytesIntoComponents(data, components, componentSizes);
 
   size_t compressedSizeTotal = 0;
-  pi.component_times.resize(8); // Ensure the vector can hold 8 component times
+
+  pi.component_times.assign(8, 0.0);
 
   // Compress each component sequentially and record the compression time
   for (size_t i = 0; i < 8; ++i) {
@@ -210,7 +209,8 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
   omp_set_num_threads(numThreads);
 
   size_t compressedSizeTotal = 0;
-  pi.component_times.resize(8); // Ensure the vector can hold 8 component times
+
+  pi.component_times.assign(8, 0.0);
 
 #pragma omp parallel for
   for (size_t i = 0; i < 8; ++i) {
@@ -234,7 +234,7 @@ void zstdDecomposedParallelDecompression(const std::vector<std::vector<uint8_t>>
   size_t floatCount = totalSize / totalBytesPerElement;
   std::vector<uint8_t> reconstructedData(totalSize);
 
-  pi.component_times.resize(numComponents); // Ensure space for component times
+  pi.component_times.resize(numComponents);
   omp_set_num_threads(numThreads);
 
 #pragma omp parallel for
@@ -247,10 +247,11 @@ void zstdDecomposedParallelDecompression(const std::vector<std::vector<uint8_t>>
     // Decompress the current component
     decompressWithZstd(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
 
-    // Calculate the base offset for this component
+    // Calculate the base offset for this component( im not sure about it?????????????)
     size_t baseOffset = std::accumulate(componentBytes.begin(), componentBytes.begin() + compIdx, 0);
 
     // Reassemble the decompressed data
+#pragma omp parallel for
     for (size_t i = 0; i < floatCount; ++i) {
       std::copy(tempComponent.begin() + i * componentBytes[compIdx],
                 tempComponent.begin() + (i + 1) * componentBytes[compIdx],
@@ -262,11 +263,61 @@ void zstdDecomposedParallelDecompression(const std::vector<std::vector<uint8_t>>
   }
 
   // Verify decompressed data
-  if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-    std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-  }
+   if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+     std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+   }
 }
+void zstdDecomposedParallelDecompression2(const std::vector<std::vector<uint8_t>>& compressedComponents,
+                                         ProfilingInfo &pi,
+                                         const std::vector<size_t>& componentBytes,
+                                         int numThreads) {
+    size_t totalSize = globalByteArray.size();
+    size_t numComponents = componentBytes.size();
+    size_t totalBytesPerElement = std::accumulate(componentBytes.begin(), componentBytes.end(), 0);
+    size_t floatCount = totalSize / totalBytesPerElement;
+    std::vector<uint8_t> reconstructedData(totalSize);
 
+    // Precompute base offsets
+    std::vector<size_t> baseOffsets(numComponents, 0);
+    for (size_t i = 1; i < numComponents; ++i) {
+        baseOffsets[i] = baseOffsets[i - 1] + componentBytes[i - 1];
+    }
+
+    pi.component_times.resize(numComponents);
+    omp_set_num_threads(numThreads);
+
+#pragma omp parallel
+    {
+        // Allocate thread-local temporary buffer
+        std::vector<uint8_t> tempComponent(floatCount * *std::max_element(componentBytes.begin(), componentBytes.end()));
+
+#pragma omp for
+        for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
+            auto start = std::chrono::high_resolution_clock::now();
+
+            // Decompress the current component
+            decompressWithZstd(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
+
+            // Calculate base offset
+            size_t baseOffset = baseOffsets[compIdx];
+
+            // Reassemble the decompressed data
+            for (size_t i = 0; i < floatCount; ++i) {
+                std::copy(tempComponent.begin() + i * componentBytes[compIdx],
+                          tempComponent.begin() + (i + 1) * componentBytes[compIdx],
+                          reconstructedData.begin() + i * totalBytesPerElement + baseOffset);
+            }
+
+            auto end = std::chrono::high_resolution_clock::now();
+            pi.component_times[compIdx] = std::chrono::duration<double>(end - start).count();
+        }
+    }
+
+
+     if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+        std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+     }
+}
 
 
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {

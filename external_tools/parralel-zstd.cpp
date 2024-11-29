@@ -33,7 +33,7 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
       // Skip the first column value
       std::getline(ss, value, '\t');
 
-      // Read the rest of the line and convert to floats
+
       while (std::getline(ss, value, '\t')) {
         floatArray.push_back(std::stof(value));
       }
@@ -62,7 +62,7 @@ std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& f
       // Skip the first column value
       std::getline(ss, value, '\t');
 
-      // Read the rest of the line and convert to doubles
+
       while (std::getline(ss, value, '\t')) {
         doubleArray.push_back(std::stod(value));  // Convert to double
       }
@@ -91,11 +91,11 @@ std::pair<std::vector<uint16_t>, size_t> loadTSVDatasetAsBFloat16(const std::str
       // Skip the first column value
       std::getline(ss, value, '\t');
 
-      // Read the rest of the line and convert to bfloat16
+
       while (std::getline(ss, value, '\t')) {
         float floatValue = std::stof(value);
 
-        // Convert 32-bit float to bfloat16 (store the most significant 16 bits)
+
         uint16_t bfloat16Value = *reinterpret_cast<uint32_t*>(&floatValue) >> 16;
 
         bfloat16Array.push_back(bfloat16Value);
@@ -120,17 +120,14 @@ std::pair<std::vector<int16_t>, size_t> loadTSVDatasetAsInt16(const std::string&
       std::stringstream ss(line);
       std::string value;
 
-      // Skip the first column value
-      //std::getline(ss, value, '\t');
 
-      // Read the rest of the line and convert to int16_t
       while (std::getline(ss, value, '\t')) {
         try {
-          // Convert string to float, then cast to int16_t
+
           float floatValue = std::stof(value);
           int16_t int16Value = static_cast<int16_t>(floatValue);
 
-          // Store the converted value
+
           int16Array.push_back(int16Value);
         } catch (const std::exception& e) {
           std::cerr << "Error converting value: " << value << " - " << e.what() << std::endl;
@@ -169,7 +166,7 @@ std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray
 }
 
 std::vector<uint8_t> convertInt16ToBytes(const std::vector<int16_t>& int16Array) {
-  std::vector<uint8_t> byteArray(int16Array.size() * 2); // Each int16_t needs 2 bytes
+  std::vector<uint8_t> byteArray(int16Array.size() * 2);
   for (size_t i = 0; i < int16Array.size(); ++i) {
     int16_t value = int16Array[i];
     // Extract low and high bytes
@@ -217,32 +214,32 @@ int main(int argc, char* argv[]) {
 
     globalByteArray = convertDoubleToBytes(floatArray);
 
-    // Define multiple configurations for component sizes
+    // multiple configurations for component sizes
   std::vector<std::vector<size_t>> componentSizesList = {
-    {7, 1, 0, 0, 0, 0, 0, 0},  // 7 bytes + 1 byte
-    {6, 2, 0, 0, 0, 0, 0, 0},  // 6 bytes + 2 bytes
-    {6, 1, 1, 0, 0, 0, 0, 0},  // 6 bytes + 1 byte + 1 byte
-    {5, 3, 0, 0, 0, 0, 0, 0},  // 5 bytes + 3 bytes
-    {5, 2, 1, 0, 0, 0, 0, 0},  // 5 bytes + 2 bytes + 1 byte
-    {5, 1, 1, 1, 0, 0, 0, 0},  // 5 bytes + 1 byte + 1 byte + 1 byte
-    {4, 4, 0, 0, 0, 0, 0, 0},  // 4 bytes + 4 bytes
-    {4, 3, 1, 0, 0, 0, 0, 0},  // 4 bytes + 3 bytes + 1 byte
-    {4, 2, 2, 0, 0, 0, 0, 0},  // 4 bytes + 2 bytes + 2 bytes
-    {4, 2, 1, 1, 0, 0, 0, 0},  // 4 bytes + 2 bytes + 1 byte + 1 byte
-    {4, 1, 1, 1, 1, 0, 0, 0},  // 4 bytes + 1 byte + 1 byte + 1 byte + 1 byte
-    {3, 3, 2, 0, 0, 0, 0, 0},  // 3 bytes + 3 bytes + 2 bytes
-    {3, 3, 1, 1, 0, 0, 0, 0},  // 3 bytes + 3 bytes + 1 byte + 1 byte
-    {3, 2, 2, 1, 0, 0, 0, 0},  // 3 bytes + 2 bytes + 2 bytes + 1 byte
-    {3, 2, 1, 1, 1, 0, 0, 0},  // 3 bytes + 2 bytes + 1 byte + 1 byte + 1 byte
-    {3, 1, 1, 1, 1, 1, 0, 0},  // 3 bytes + 1 byte + 1 byte + 1 byte + 1 byte + 1 byte
-    {2, 2, 2, 2, 0, 0, 0, 0},  // 2 bytes + 2 bytes + 2 bytes + 2 bytes
-    {2, 2, 2, 1, 1, 0, 0, 0},  // 2 bytes + 2 bytes + 2 bytes + 1 byte + 1 byte
-    {2, 2, 1, 1, 1, 1, 0, 0},  // 2 bytes + 2 bytes + 1 byte + 1 byte + 1 byte + 1 byte
-    {2, 1, 1, 1, 1, 1, 1, 0},  // 2 bytes + 1 byte + 1 byte + 1 byte + 1 byte + 1 byte + 1 byte
-    {1, 1, 1, 1, 1, 1, 1, 1},  // 8 groups of 1 byte
-    {1, 5, 1, 1, 0, 0, 0, 0},  // 1 byte + 5 bytes + 1 byte + 1 byte
-    {1, 4, 2, 1, 0, 0, 0, 0},  // 1 byte + 4 bytes + 2 bytes + 1 byte
-    {2, 3, 2, 1, 0, 0, 0, 0}   // 2 bytes + 3 bytes + 2 bytes + 1 byte
+    {7, 1, 0, 0, 0, 0, 0, 0},
+    {6, 2, 0, 0, 0, 0, 0, 0},
+    {6, 1, 1, 0, 0, 0, 0, 0},
+    {5, 3, 0, 0, 0, 0, 0, 0},
+    {5, 2, 1, 0, 0, 0, 0, 0},
+    {5, 1, 1, 1, 0, 0, 0, 0},
+    {4, 4, 0, 0, 0, 0, 0, 0},
+    {4, 3, 1, 0, 0, 0, 0, 0},
+    {4, 2, 2, 0, 0, 0, 0, 0},
+    {4, 2, 1, 1, 0, 0, 0, 0},
+    {4, 1, 1, 1, 1, 0, 0, 0},
+    {3, 3, 2, 0, 0, 0, 0, 0},
+    {3, 3, 1, 1, 0, 0, 0, 0},
+    {3, 2, 2, 1, 0, 0, 0, 0},
+    {3, 2, 1, 1, 1, 0, 0, 0},
+    {3, 1, 1, 1, 1, 1, 0, 0},
+    {2, 2, 2, 2, 0, 0, 0, 0},
+    {2, 2, 2, 1, 1, 0, 0, 0},
+    {2, 2, 1, 1, 1, 1, 0, 0},
+    {2, 1, 1, 1, 1, 1, 1, 0},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 5, 1, 1, 0, 0, 0, 0},
+    {1, 4, 2, 1, 0, 0, 0, 0},
+    {2, 3, 2, 1, 0, 0, 0, 0}
   };
 
     std::vector<ProfilingInfo> pi_array;
@@ -255,11 +252,11 @@ for (const auto& componentSizes : componentSizesList) {
     std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
 
     // Loop over each run type (Full, Sequential, Parallel)
-    for (int i = 0; i < 1; ++i) { // Set `num_iter` for multiple runs if needed
+    for (int i = 0; i < 1; ++i) {
 
         // --- Full Compression ---
-        ProfilingInfo pi_full(componentSizes.size());  // Initialize profiling info
-        std::vector<uint8_t> compressedData, decompressedData; // Reset temporary storage
+        ProfilingInfo pi_full(componentSizes.size());
+        std::vector<uint8_t> compressedData, decompressedData;
 
         auto start = std::chrono::high_resolution_clock::now();
         double compressedSize = zstdCompression(globalByteArray, pi_full, compressedData);
@@ -273,11 +270,11 @@ for (const auto& componentSizes : componentSizesList) {
         pi_full.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_full.total_values = rowCount;
 
-        pi_full.type = "Full"; // Set type for CSV output
+        pi_full.type = "Full";
         pi_array.push_back(pi_full);
 
         // --- Sequential Compression ---
-        ProfilingInfo pi_seq(componentSizes.size());  // Initialize profiling info
+        ProfilingInfo pi_seq(componentSizes.size());
         compressedComponents.clear();                // Reset components for this run
         compressedComponents.resize(componentSizes.size()); // Reinitialize
 
@@ -293,13 +290,13 @@ for (const auto& componentSizes : componentSizesList) {
         pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_seq.total_values = rowCount;
 
-        pi_seq.type = "Sequential"; // Set type for CSV output
+        pi_seq.type = "Sequential";
         pi_array.push_back(pi_seq);
 
         // --- Parallel Compression ---
-        ProfilingInfo pi_parallel(componentSizes.size()); // Initialize profiling info
-        compressedComponents.clear();                    // Reset components for this run
-        compressedComponents.resize(componentSizes.size()); // Reinitialize
+        ProfilingInfo pi_parallel(componentSizes.size());
+        compressedComponents.clear();
+        compressedComponents.resize(componentSizes.size());
 
         start = std::chrono::high_resolution_clock::now();
         compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
@@ -313,7 +310,7 @@ for (const auto& componentSizes : componentSizesList) {
         pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
         pi_parallel.total_values = rowCount;
 
-        pi_parallel.type = "Parallel"; // Set type for CSV output
+        pi_parallel.type = "Parallel";
         pi_array.push_back(pi_parallel);
     }
 }
@@ -326,7 +323,7 @@ for (const auto& componentSizes : componentSizesList) {
   }
 
   // Write the CSV header
-  file << "Iteration,ComponentSizes,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
+  file << "Iteration,ComponentSizes,Number,Type,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
        << "Component1Time,Component2Time,Component3Time,Component4Time,Component5Time,"
        << "Component6Time,Component7Time,Component8Time,CompressionThroughput,DecompressionThroughput,TotalValues\n";
 
@@ -346,7 +343,6 @@ for (const auto& componentSizes : componentSizesList) {
     }
     file << ",";
 
-    // Write profiling info
     pi_array[i].printCSV(file, iteration);
   }
 
