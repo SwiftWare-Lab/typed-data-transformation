@@ -14,7 +14,7 @@
 #include <cstring>
 #include <vector>
 #include <cxxopts.hpp>
-
+#include <cmath>
 #include "zstd_parallel.h"
 std::vector<uint8_t> globalByteArray;
 
@@ -152,6 +152,21 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   }
   return byteArray;
 }
+std::vector<float> convertBytesToFloat(const std::vector<uint8_t>& byteArray) {
+  if (byteArray.size() % 4 != 0) {
+    throw std::runtime_error("Byte array size is not a multiple of 4.");
+  }
+
+  std::vector<float> floatArray(byteArray.size() / 4);
+
+  for (size_t i = 0; i < floatArray.size(); i++) {
+    const uint8_t* bytePtr = &byteArray[i * 4];
+    float* floatPtr = reinterpret_cast<float*>(const_cast<uint8_t*>(bytePtr));
+    floatArray[i] = *floatPtr;
+  }
+
+  return floatArray;
+}
 std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray) {
   std::vector<uint8_t> byteArray(doubleArray.size() * 8);  // Each double is 8 bytes
   for (size_t i = 0; i < doubleArray.size(); i++) {
@@ -186,12 +201,25 @@ std::pair<double, double> calculateCompDecomThroughput(size_t originalSize, doub
 
   return {compressionThroughput, decompressionThroughput};
 }
+
+bool areVectorsEqual(const std::vector<float>& a, const std::vector<float>& b, float epsilon = 1e-5) {
+  if (a.size() != b.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < a.size(); i++) {
+    if (std::fabs(a[i] - b[i]) > epsilon) { // Compare with tolerance for floating-point values
+      return false;
+    }
+  }
+  return true;
+}
 int main(int argc, char* argv[]) {
     cxxopts::Options options("DataCompressor", "Compress datasets and profile the compression");
     options.add_options()
         ("d,dataset", "Path to the dataset file", cxxopts::value<std::string>())
         ("o,outcsv", "Output CSV file path", cxxopts::value<std::string>())
         ("t,threads", "Number of threads to use", cxxopts::value<int>()->default_value("10"))
+        ("b,bits", "Floating-point precision (32 or 64 bits)", cxxopts::value<int>()->default_value("64"))
         ("h,help", "Print help");
 
     auto result = options.parse(argc, argv);
@@ -204,43 +232,86 @@ int main(int argc, char* argv[]) {
     std::string datasetPath = result["dataset"].as<std::string>();
     std::string outputCSV = result["outcsv"].as<std::string>();
     int numThreads = result["threads"].as<int>();
+    int precisionBits = result["bits"].as<int>();
 
-    auto [floatArray, rowCount] = loadTSVDatasetdouble(datasetPath);
-    std::cout << "Loaded " << rowCount << " rows with " << floatArray.size() << " total values." << std::endl;
-    if (floatArray.empty()) {
-        std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
+
+    size_t rowCount;
+   std::vector<std::vector<size_t>> componentSizesList;
+
+    if (precisionBits == 64) {
+        auto [floatArray, rows] = loadTSVDatasetdouble(datasetPath);
+        std::cout << "Loaded " << rows << " rows with " << floatArray.size() << " total values (64-bit)." << std::endl;
+        if (floatArray.empty()) {
+            std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
+            return 1;
+        }
+        globalByteArray = convertDoubleToBytes(floatArray);
+
+        rowCount = rows;
+       componentSizesList = {
+        {7, 1, 0, 0, 0, 0, 0, 0},
+        {6, 2, 0, 0, 0, 0, 0, 0},
+        {6, 1, 1, 0, 0, 0, 0, 0},
+        {5, 3, 0, 0, 0, 0, 0, 0},
+        {5, 2, 1, 0, 0, 0, 0, 0},
+        {5, 1, 1, 1, 0, 0, 0, 0},
+        {4, 4, 0, 0, 0, 0, 0, 0},
+        {4, 3, 1, 0, 0, 0, 0, 0},
+        {4, 2, 2, 0, 0, 0, 0, 0},
+        {4, 2, 1, 1, 0, 0, 0, 0},
+        {4, 1, 1, 1, 1, 0, 0, 0},
+        {3, 3, 2, 0, 0, 0, 0, 0},
+        {3, 3, 1, 1, 0, 0, 0, 0},
+        {3, 2, 2, 1, 0, 0, 0, 0},
+        {3, 2, 1, 1, 1, 0, 0, 0},
+        {3, 1, 1, 1, 1, 1, 0, 0},
+        {2, 2, 2, 2, 0, 0, 0, 0},
+        {2, 2, 2, 1, 1, 0, 0, 0},
+        {2, 2, 1, 1, 1, 1, 0, 0},
+        {2, 1, 1, 1, 1, 1, 1, 0},
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 5, 1, 1, 0, 0, 0, 0},
+        {1, 4, 2, 1, 0, 0, 0, 0},
+        {2, 3, 2, 1, 0, 0, 0, 0}
+      };
+
+    } else if (precisionBits == 32) {
+        auto [floatArray, rows] = loadTSVDataset(datasetPath);
+        std::cout << "Loaded " << rows << " rows with " << floatArray.size() << " total values (32-bit)." << std::endl;
+        if (floatArray.empty()) {
+            std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
+            return 1;
+        }
+        globalByteArray = convertFloatToBytes(floatArray);
+      ////////////////////////
+      std::vector<uint8_t> byteArray = convertFloatToBytes(floatArray);
+      std::vector<float> reconstructedArray = convertBytesToFloat(byteArray);
+
+      // Check if the reconstructed array matches the original
+      if (areVectorsEqual(floatArray, reconstructedArray)) {
+        std::cout << "Reconstruction successful! Arrays are equal." << std::endl;
+      } else {
+        std::cout << "Reconstruction failed! Arrays are not equal." << std::endl;
+      }
+      ///
+        rowCount = rows;
+         componentSizesList = {
+
+          {1, 1, 1, 1},
+          {1, 1, 2,0},
+          {1, 2, 1,0},
+          {1, 3, 0,0},
+          {2, 1, 1,0},
+         {2, 2,0,0},
+         {3, 1,0,0},
+
+      };
+
+    } else {
+        std::cerr << "Unsupported floating-point precision: " << precisionBits << ". Use 32 or 64." << std::endl;
         return 1;
     }
-
-    globalByteArray = convertDoubleToBytes(floatArray);
-
     // multiple configurations for component sizes
-  std::vector<std::vector<size_t>> componentSizesList = {
-    {7, 1, 0, 0, 0, 0, 0, 0},
-    {6, 2, 0, 0, 0, 0, 0, 0},
-    {6, 1, 1, 0, 0, 0, 0, 0},
-    {5, 3, 0, 0, 0, 0, 0, 0},
-    {5, 2, 1, 0, 0, 0, 0, 0},
-    {5, 1, 1, 1, 0, 0, 0, 0},
-    {4, 4, 0, 0, 0, 0, 0, 0},
-    {4, 3, 1, 0, 0, 0, 0, 0},
-    {4, 2, 2, 0, 0, 0, 0, 0},
-    {4, 2, 1, 1, 0, 0, 0, 0},
-    {4, 1, 1, 1, 1, 0, 0, 0},
-    {3, 3, 2, 0, 0, 0, 0, 0},
-    {3, 3, 1, 1, 0, 0, 0, 0},
-    {3, 2, 2, 1, 0, 0, 0, 0},
-    {3, 2, 1, 1, 1, 0, 0, 0},
-    {3, 1, 1, 1, 1, 1, 0, 0},
-    {2, 2, 2, 2, 0, 0, 0, 0},
-    {2, 2, 2, 1, 1, 0, 0, 0},
-    {2, 2, 1, 1, 1, 1, 0, 0},
-    {2, 1, 1, 1, 1, 1, 1, 0},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 5, 1, 1, 0, 0, 0, 0},
-    {1, 4, 2, 1, 0, 0, 0, 0},
-    {2, 3, 2, 1, 0, 0, 0, 0}
-  };
 
     std::vector<ProfilingInfo> pi_array;
 for (const auto& componentSizes : componentSizesList) {
@@ -285,6 +356,7 @@ for (const auto& componentSizes : componentSizesList) {
 
         start = std::chrono::high_resolution_clock::now();
         zstdDecomposedSequentialDecompression(compressedComponents, pi_seq, componentSizes);
+
         end = std::chrono::high_resolution_clock::now();
         pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
         pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);

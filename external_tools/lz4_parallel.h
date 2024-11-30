@@ -9,8 +9,7 @@
 #include "profiling_info.h"
 #include <omp.h>
 
-// Declare globalByteArray as an external variable
-extern std::vector<uint8_t> globalByteArray;
+
 // Declare globalByteArray as an external variable
 extern std::vector<uint8_t> globalByteArray;
 
