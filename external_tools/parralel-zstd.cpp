@@ -257,10 +257,10 @@ int main(int argc, char* argv[]) {
         rowCount = rows;
          componentSizesList = {
 
-          {1, 1, 1, 1},
+           {1, 1, 1, 1},
           {1, 1, 2,0},
          {1, 2, 1,0},
-          {1, 3, 0,0},
+           {1, 3, 0,0},
           {2, 1, 1,0},
          {2, 2,0,0},
           {3, 1,0,0},
@@ -273,160 +273,166 @@ int main(int argc, char* argv[]) {
     }
 
 std::vector<ProfilingInfo> pi_array;
-  int iter=1;
+  int iter=20;
 
     for (const auto& componentSizes : componentSizesList) {
-        std::cout << "Testing with component sizes: ";
-        for (auto size : componentSizes) std::cout << size << " ";
-        std::cout << std::endl;
+      std::cout << "Testing with component sizes: ";
+      for (auto size : componentSizes) std::cout << size << " ";
+      std::cout << std::endl;
 
-        std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
-        double compressionThroughput = 0.0, decompressionThroughput = 0.0;
+      std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
+      double compressionThroughput = 0.0, decompressionThroughput = 0.0;
 
-        for (int i = 0; i < iter; ++i) {
-          // Outer loop for 3 runs
-          // --- Full Compression ---
-          ProfilingInfo pi_full(componentSizes.size());
-          std::vector<uint8_t> compressedData, decompressedData;
+      for (int i = 0; i < iter; ++i) {
+        // Outer loop for 3 runs
+        // --- Full Compression ---
+        ProfilingInfo pi_full(componentSizes.size());
+        std::vector<uint8_t> compressedData, decompressedData;
 
-          auto start = std::chrono::high_resolution_clock::now();
-          double compressedSize = zstdCompression(globalByteArray, pi_full, compressedData);
-          auto end = std::chrono::high_resolution_clock::now();
-          pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
+        auto start = std::chrono::high_resolution_clock::now();
+        double compressedSize = zstdCompression(globalByteArray, pi_full, compressedData);
+        auto end = std::chrono::high_resolution_clock::now();
+        pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
-          start = std::chrono::high_resolution_clock::now();
-          zstdDecompression(compressedData, decompressedData, pi_full);
-          end = std::chrono::high_resolution_clock::now();
-          pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+        zstdDecompression(compressedData, decompressedData, pi_full);
+        end = std::chrono::high_resolution_clock::now();
+        pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
-          pi_full.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-          std::tie(compressionThroughput, decompressionThroughput) =
-              calculateCompDecomThroughput(globalByteArray.size(), pi_full.total_time_compressed, pi_full.total_time_decompressed);
+        pi_full.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        std::tie(compressionThroughput, decompressionThroughput) =
+            calculateCompDecomThroughput(globalByteArray.size(), pi_full.total_time_compressed, pi_full.total_time_decompressed);
 
-          pi_full.compression_throughput = compressionThroughput;
-          pi_full.decompression_throughput = decompressionThroughput;
-          pi_full.total_values = rowCount;
-          pi_full.type = "Full";
-          pi_array.push_back(pi_full);
+        pi_full.compression_throughput = compressionThroughput;
+        pi_full.decompression_throughput = decompressionThroughput;
+        pi_full.total_values = rowCount;
+        pi_full.type = "Full";
+        pi_array.push_back(pi_full);
 
-          // --- Sequential Compression ---
-          ProfilingInfo pi_seq(componentSizes.size());
-          compressedComponents.clear();
-          compressedComponents.resize(componentSizes.size());
+        // --- Sequential Compression ---
+        ProfilingInfo pi_seq(componentSizes.size());
+        compressedComponents.clear();
+        compressedComponents.resize(componentSizes.size());
 
-          start = std::chrono::high_resolution_clock::now();
-          compressedSize = zstdDecomposedSequential(globalByteArray, pi_seq, compressedComponents, componentSizes);
-          end = std::chrono::high_resolution_clock::now();
-          pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+        compressedSize = zstdDecomposedSequential(globalByteArray, pi_seq, compressedComponents, componentSizes);
+        end = std::chrono::high_resolution_clock::now();
+        pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
-          start = std::chrono::high_resolution_clock::now();
-          zstdDecomposedSequentialDecompression(compressedComponents, pi_seq, componentSizes);
-          end = std::chrono::high_resolution_clock::now();
-          pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+        zstdDecomposedSequentialDecompression(compressedComponents, pi_seq, componentSizes);
+        end = std::chrono::high_resolution_clock::now();
+        pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
-          pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-          std::tie(compressionThroughput, decompressionThroughput) =
-              calculateCompDecomThroughput(globalByteArray.size(), pi_seq.total_time_compressed, pi_seq.total_time_decompressed);
+        pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        std::tie(compressionThroughput, decompressionThroughput) =
+            calculateCompDecomThroughput(globalByteArray.size(), pi_seq.total_time_compressed, pi_seq.total_time_decompressed);
 
-          pi_seq.compression_throughput = compressionThroughput;
-          pi_seq.decompression_throughput = decompressionThroughput;
-          pi_seq.total_values = rowCount;
-          pi_seq.type = "Sequential";
-          pi_array.push_back(pi_seq);
+        pi_seq.compression_throughput = compressionThroughput;
+        pi_seq.decompression_throughput = decompressionThroughput;
+        pi_seq.total_values = rowCount;
+        pi_seq.type = "Sequential";
+        pi_array.push_back(pi_seq);
 
-          // --- Parallel Compression ---
-          ProfilingInfo pi_parallel(componentSizes.size());
-          compressedComponents.clear();
-          compressedComponents.resize(componentSizes.size());
+        // --- Parallel Compression ---
+        ProfilingInfo pi_parallel(componentSizes.size());
+        compressedComponents.clear();
+        compressedComponents.resize(componentSizes.size());
 
-          start = std::chrono::high_resolution_clock::now();
-          compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
-          end = std::chrono::high_resolution_clock::now();
-          pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+        compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
+        end = std::chrono::high_resolution_clock::now();
+        pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
-          start = std::chrono::high_resolution_clock::now();
-          std::vector<uint8_t> decompressedData2 = zstdDecomposedParallelDecompression(compressedComponents, pi_parallel, componentSizes, numThreads);
-          end = std::chrono::high_resolution_clock::now();
-          pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+        std::vector<uint8_t> decompressedData2 = zstdDecomposedParallelDecompression(compressedComponents, pi_parallel, componentSizes, numThreads);
+        end = std::chrono::high_resolution_clock::now();
+        pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
-          pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-          std::tie(compressionThroughput, decompressionThroughput) =
-              calculateCompDecomThroughput(globalByteArray.size(), pi_parallel.total_time_compressed, pi_parallel.total_time_decompressed);
+        pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        std::tie(compressionThroughput, decompressionThroughput) =
+            calculateCompDecomThroughput(globalByteArray.size(), pi_parallel.total_time_compressed, pi_parallel.total_time_decompressed);
 
-          pi_parallel.compression_throughput = compressionThroughput;
-          pi_parallel.decompression_throughput = decompressionThroughput;
-          pi_parallel.total_values = rowCount;
-          pi_parallel.type = "Parallel";
-          if (precisionBits == 64) {
-            // Load original dataset
-            auto [floatArray1, rows] = loadTSVDatasetdouble(datasetPath);
+        pi_parallel.compression_throughput = compressionThroughput;
+        pi_parallel.decompression_throughput = decompressionThroughput;
+        pi_parallel.total_values = rowCount;
+        pi_parallel.type = "Parallel";
+        if (precisionBits == 64) {
+          // Load original dataset
+          auto [floatArray1, rows] = loadTSVDatasetdouble(datasetPath);
 
-            // Convert decompressed byte data back to double array
-            std::vector<double> reconstructedArray2 = convertBytesToDouble(decompressedData2);
+          // Convert decompressed byte data back to double array
+          std::vector<double> reconstructedArray2 = convertBytesToDouble(decompressedData2);
 
-            // Compare original and reconstructed arrays
-            if (areVectorsEqualdouble(floatArray1, reconstructedArray2)) {
-              std::cout << "Reconstruction successful! Arrays are equal." << std::endl;
-            } else {
-              std::cerr << "Reconstruction failed! Arrays are not equal." << std::endl;
-            }
-          } else if (precisionBits == 32) {
-            // Convert decompressed byte data back to float array
-            std::vector<float> reconstructedArray2 = convertBytesToFloat(decompressedData2);
-
-            // Load original dataset
-            auto [floatArray, rows] = loadTSVDataset(datasetPath);
-
-            // Compare original and reconstructed arrays
-            if (areVectorsEqual(floatArray, reconstructedArray2)) {
-              std::cout << "Reconstruction successful! Arrays are equal." << std::endl;
-            } else {
-              std::cerr << "Reconstruction failed! Arrays are not equal." << std::endl;
-            }
+          // Compare original and reconstructed arrays
+          if (areVectorsEqualdouble(floatArray1, reconstructedArray2)) {
+            std::cout << "Reconstruction successful! Arrays are equal." << std::endl;
           } else {
-            std::cerr << "Unsupported precision: " << precisionBits << ". Use 32 or 64." << std::endl;
+            std::cerr << "Reconstruction failed! Arrays are not equal." << std::endl;
           }
+        } else if (precisionBits == 32) {
+          // Convert decompressed byte data back to float array
+          std::vector<float> reconstructedArray2 = convertBytesToFloat(decompressedData2);
 
-          pi_array.push_back(pi_parallel);
+          // Load original dataset
+          auto [floatArray, rows] = loadTSVDataset(datasetPath);
 
-
+          // Compare original and reconstructed arrays
+          if (areVectorsEqual(floatArray, reconstructedArray2)) {
+            std::cout << "Reconstruction successful! Arrays are equal." << std::endl;
+          } else {
+            std::cerr << "Reconstruction failed! Arrays are not equal." << std::endl;
           }
+        } else {
+          std::cerr << "Unsupported precision: " << precisionBits << ". Use 32 or 64." << std::endl;
         }
 
-    // Write results to CSV
-    std::ofstream file(outputCSV);
-    if (!file) {
-        std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
-        return 1;
+        pi_array.push_back(pi_parallel);
+
+      }
     }
 
-    // Write the CSV header
-    file << "Iteration,OuterLoop,ComponentSizes,id,RunType,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
-         << "Component1Time,Component2Time,Component3Time,Component4Time,Component5Time,"
-         << "Component6Time,Component7Time,Component8Time,CompressionThroughput,DecompressionThroughput,TotalValues\n";
+  // Initialize the CSV file and write the header
+  std::ofstream file(outputCSV);
+  if (!file) {
+    std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
+    return 1;
+  }
 
-    size_t iteration = 1; // Global iteration counter
+  file << "Iteration,OuterLoop,ComponentSizes,RunType,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
+       << "CompressionThroughput,DecompressionThroughput,TotalValues\n";
 
-    for (size_t configIndex = 0; configIndex < componentSizesList.size(); ++configIndex) {
-        const auto& componentSizes = componentSizesList[configIndex];
+  // Iterate over each configuration of component sizes
+  int globalIteration = 1;
+  size_t pi_index = 0;
 
-        for (int i = 0; i < iter; ++i) { // Outer loop for 3 runs
-            for (int runTypeIndex = 0; runTypeIndex < 3; ++runTypeIndex) { // Full, Sequential, Parallel
-                const ProfilingInfo& pi = pi_array[(configIndex * iter * 3) + (i * 3) + runTypeIndex];
-
-                // Write iteration, outer loop index, component sizes, and profiling data
-                file << iteration++ << ",";    // Global iteration count
-                file << i + 1 << ",";          // Outer loop iteration (1-based index)
-                for (size_t size : componentSizes) {
-                    file << size << " ";
-                }
-                file << ",";
-
-                // Append profiling information in CSV format
-                pi.printCSV(file, iteration);
-            }
-        }
+  for (const auto& componentSizes : componentSizesList) {
+    std::string componentSizesStr;
+    for (auto size : componentSizes) {
+      componentSizesStr += std::to_string(size) + " ";
     }
+
+    for (int i = 0; i < iter; ++i) {
+      for (int runTypeIndex = 0; runTypeIndex < 3; ++runTypeIndex) { // Full, Sequential, Parallel
+        const ProfilingInfo& pi = pi_array[pi_index++];
+
+        file << globalIteration << ","
+             << i + 1 << ","
+             << componentSizesStr << ","
+             << pi.type << ","
+             << pi.com_ratio << ","
+             << pi.total_time_compressed << ","
+             << pi.total_time_decompressed << ","
+             << pi.compression_throughput << ","
+             << pi.decompression_throughput << ","
+             << pi.total_values << "\n";
+      }
+      globalIteration++;
+    }
+  }
+  file.close();
+
 
     return 0;
 }
+
