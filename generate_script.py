@@ -6,12 +6,13 @@ parser = argparse.ArgumentParser(description="Generate SBATCH job scripts for ea
 parser.add_argument("--dataset", required=True, help="Path to the dataset directory containing .tsv files.")
 parser.add_argument("--outcsv", required=True, help="Directory where output CSV files and job scripts will be stored.")
 parser.add_argument("--threads", type=int, default=10, help="Number of threads to use for processing each dataset.")
-
+parser.add_argument("--bits", type=int, default=32, help="Number of bits for  each dataset.")
 # Parse arguments
 args = parser.parse_args()
 DATASET_DIR = args.dataset
 OUTPUT_DIR = args.outcsv
 NUM_THREADS = args.threads
+bits=args.bits
 
 # Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -45,7 +46,7 @@ for dataset_file in os.listdir(DATASET_DIR):
 
 # Run the program with the dataset
 ./build/external_tools/parallel-test "{dataset_path}" "{outcsv}" {NUM_THREADS}
-./build/external_tools/parallel-test --dataset "{dataset_path}" --outcsv "{outcsv}" --threads {NUM_THREADS}
+./build/external_tools/parallel-test --dataset "{dataset_path}" --outcsv "{outcsv}" --threads {NUM_THREADS} --bits {bits}
 """)
 
         # Make the job script executable

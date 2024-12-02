@@ -273,6 +273,7 @@ int main(int argc, char* argv[]) {
     }
 
 std::vector<ProfilingInfo> pi_array;
+  int iter=1;
 
     for (const auto& componentSizes : componentSizesList) {
         std::cout << "Testing with component sizes: ";
@@ -282,7 +283,7 @@ std::vector<ProfilingInfo> pi_array;
         std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
         double compressionThroughput = 0.0, decompressionThroughput = 0.0;
 
-        for (int i = 0; i < 20; ++i) {
+        for (int i = 0; i < iter; ++i) {
           // Outer loop for 3 runs
           // --- Full Compression ---
           ProfilingInfo pi_full(componentSizes.size());
@@ -409,9 +410,9 @@ std::vector<ProfilingInfo> pi_array;
     for (size_t configIndex = 0; configIndex < componentSizesList.size(); ++configIndex) {
         const auto& componentSizes = componentSizesList[configIndex];
 
-        for (int i = 0; i < 3; ++i) { // Outer loop for 3 runs
+        for (int i = 0; i < iter; ++i) { // Outer loop for 3 runs
             for (int runTypeIndex = 0; runTypeIndex < 3; ++runTypeIndex) { // Full, Sequential, Parallel
-                const ProfilingInfo& pi = pi_array[(configIndex * 3 * 3) + (i * 3) + runTypeIndex];
+                const ProfilingInfo& pi = pi_array[(configIndex * iter * 3) + (i * 3) + runTypeIndex];
 
                 // Write iteration, outer loop index, component sizes, and profiling data
                 file << iteration++ << ",";    // Global iteration count
