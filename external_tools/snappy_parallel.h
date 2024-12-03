@@ -10,9 +10,9 @@
 #include <snappy.h>
 #include "profiling_info.h"
 #include <omp.h>
+#include <numeric>
 
-// Declare globalByteArray as an external variable
-extern std::vector<uint8_t> globalByteArray;
+
 // Declare globalByteArray as an external variable
 extern std::vector<uint8_t> globalByteArray;
 
@@ -32,34 +32,30 @@ bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uin
   return true;
 }
 void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
-                              std::vector<uint8_t>& leading,
-                              std::vector<uint8_t>& content,
-                              std::vector<uint8_t>& trailing,
-                              size_t leadingBytes,
-                              size_t contentBytes,
-                              size_t trailingBytes) {
-  size_t numElements = byteArray.size() / (leadingBytes + contentBytes + trailingBytes);
+                              std::vector<std::vector<uint8_t>>& components,
+                              const std::vector<size_t>& componentSizes,int numThreads) {
+  size_t numComponents = componentSizes.size();
+  size_t totalBytes = std::accumulate(componentSizes.begin(), componentSizes.end(), 0);
+  size_t numElements = byteArray.size() / totalBytes;
 
-  // Resize the vectors to accommodate the exact number of bytes
-  leading.resize(numElements * leadingBytes);
-  content.resize(numElements * contentBytes);
-  trailing.resize(numElements * trailingBytes);
+  // Resize components to hold the split data
+  components.resize(numComponents);
+  for (size_t i = 0; i < numComponents; ++i) {
+    components[i].resize(numElements * componentSizes[i]);
+  }
 
-  // Using OpenMP SIMD to optimize vector operations
-#pragma omp simd
-  for (size_t i = 0; i < numElements; ++i) {
-    size_t base = i * (leadingBytes + contentBytes + trailingBytes);
-    for (size_t j = 0; j < leadingBytes; ++j) {
-      leading[i * leadingBytes + j] = byteArray[base + j];
-    }
-    for (size_t k = 0; k < contentBytes; ++k) {
-      content[i * contentBytes + k] = byteArray[base + leadingBytes + k];
-    }
-    for (size_t l = 0; l < trailingBytes; ++l) {
-      trailing[i * trailingBytes + l] = byteArray[base + leadingBytes + contentBytes + l];
+  // Use OpenMP to parallelize the component processing
+#pragma omp parallel for num_threads(numThreads)
+  for (size_t i = 0; i < numComponents; ++i) {
+    size_t offset = std::accumulate(componentSizes.begin(), componentSizes.begin() + i, 0);
+    for (size_t j = 0; j < numElements; ++j) {
+      std::copy(byteArray.begin() + j * totalBytes + offset,
+                byteArray.begin() + j * totalBytes + offset + componentSizes[i],
+                components[i].begin() + j * componentSizes[i]);
     }
   }
 }
+
 
 // Compress with Snappy
 size_t compressWithSnappy(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData) {
@@ -92,11 +88,8 @@ size_t decompressWithSnappy(const std::vector<uint8_t>& compressedData, std::vec
 
 // Full compression without decomposition
 size_t snappyCompression(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedData) {
-  auto start = std::chrono::high_resolution_clock::now();
-  size_t compressedSize = compressWithSnappy(data, compressedData); // Fast compression
-  auto end = std::chrono::high_resolution_clock::now();
 
-  pi.type = "LZ4 Full Compression";
+  size_t compressedSize = compressWithSnappy(data, compressedData); // Fast compression
 
   return compressedSize;
 }
@@ -110,188 +103,142 @@ void snappyDecompression(const std::vector<uint8_t>& compressedData, std::vector
     std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
   }
 }
+
 // Sequential compression with decomposition that takes dynamic byte sizes as parameters
 size_t snappyDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo &pi,
-                                std::vector<uint8_t>& compressedLeading,
-                                std::vector<uint8_t>& compressedContent,
-                                std::vector<uint8_t>& compressedTrailing,
-                                size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
-    std::vector<uint8_t> leading, content, trailing;
-    splitBytesIntoComponents(data, leading, content, trailing, leadingBytes, contentBytes, trailingBytes);
+                                std::vector<std::vector<uint8_t>>& compressedComponents,
+                                const std::vector<size_t>& componentSizes) {
+  // Split data into components
+  std::vector<std::vector<uint8_t>> components(componentSizes.size());
+  splitBytesIntoComponents(data, components, componentSizes,1);
 
-    auto start = std::chrono::high_resolution_clock::now();
-    size_t compressedSize_l = compressWithSnappy(leading, compressedLeading);
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.leading_time = std::chrono::duration<double>(end - start).count();
+  size_t compressedSizeTotal = 0;
 
-    start = std::chrono::high_resolution_clock::now();
-    size_t compressedSize_c = compressWithSnappy(content, compressedContent);
-    end = std::chrono::high_resolution_clock::now();
-    pi.content_time = std::chrono::duration<double>(end - start).count();
+  pi.component_times.assign(componentSizes.size(), 0.0);
 
-    start = std::chrono::high_resolution_clock::now();
-    size_t compressedSize_t = compressWithSnappy(trailing, compressedTrailing);
-    end = std::chrono::high_resolution_clock::now();
-    pi.trailing_time = std::chrono::duration<double>(end - start).count();
+  // Compress each component sequentially and record the compression time
+  for (size_t i = 0; i < componentSizes.size(); ++i) {
+    compressedSizeTotal += compressWithSnappy(components[i], compressedComponents[i]);
+  }
+  return compressedSizeTotal;
 
-    pi.type = "Sequential Decomposition";
-    return compressedSize_l + compressedSize_c + compressedSize_t;
 }
 
-// Sequential decompression with decomposition that  takes dynamic byte sizes as parameters
-void snappyDecomposedSequentialDecompression(const std::vector<uint8_t>& compressedLeading,
-                                           const std::vector<uint8_t>& compressedContent,
-                                           const std::vector<uint8_t>& compressedTrailing,
+// Sequential decompression with decomposition
+void snappyDecomposedSequentialDecompression(const std::vector<std::vector<uint8_t>>& compressedComponents,
                                            ProfilingInfo &pi,
-                                           size_t leadingBytes, size_t contentBytes, size_t trailingBytes) {
-    size_t totalSize = globalByteArray.size();  // Ensure globalByteArray is appropriately defined and accessible
-    size_t floatCount = totalSize / (leadingBytes + contentBytes + trailingBytes);
+                                           const std::vector<size_t>& componentBytes) {
+  size_t totalSize = globalByteArray.size();
+  size_t numComponents = componentBytes.size();
+  size_t totalBytesPerElement = std::accumulate(componentBytes.begin(), componentBytes.end(), 0);
+  size_t floatCount = totalSize / totalBytesPerElement;
+  std::vector<uint8_t> reconstructedData(totalSize);
 
-    std::vector<uint8_t> reconstructedData(totalSize);
+  size_t baseOffset = 0;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    std::vector<uint8_t> tempLeading(floatCount * leadingBytes);
-    decompressWithSnappy(compressedLeading, tempLeading, floatCount * leadingBytes);
+  for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
+
+    std::vector<uint8_t> tempComponent(floatCount * componentBytes[compIdx]);
+
+    // Decompress the current component
+    decompressWithSnappy(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
+
+    // Reassemble the decompressed data
     for (size_t i = 0; i < floatCount; ++i) {
-        for (size_t j = 0; j < leadingBytes; ++j) {
-            reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + j] = tempLeading[i * leadingBytes + j];
-        }
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.leading_time = std::chrono::duration<double>(end - start).count();
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<uint8_t> tempContent(floatCount * contentBytes);
-    decompressWithSnappy(compressedContent, tempContent, floatCount * contentBytes);
-    for (size_t i = 0; i < floatCount; ++i) {
-        for (size_t j = 0; j < contentBytes; ++j) {
-            reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + j] = tempContent[i * contentBytes + j];
-        }
-    }
-    end = std::chrono::high_resolution_clock::now();
-    pi.content_time = std::chrono::duration<double>(end - start).count();
-
-    start = std::chrono::high_resolution_clock::now();
-    std::vector<uint8_t> tempTrailing(floatCount * trailingBytes);
-    decompressWithSnappy(compressedTrailing, tempTrailing, floatCount * trailingBytes);
-    for (size_t i = 0; i < floatCount; ++i) {
-        for (size_t j = 0; j < trailingBytes; ++j) {
-            reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + contentBytes + j] = tempTrailing[i * trailingBytes + j];
-        }
-    }
-    end = std::chrono::high_resolution_clock::now();
-    pi.trailing_time = std::chrono::duration<double>(end - start).count();
-
-    // Verify decompressed data
-    if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-        std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-    }
-}
-// Parallel compression with decomposition that takes dynamic byte sizes as parameters
-size_t snappyDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
-                              std::vector<uint8_t>& compressedLeading,
-                              std::vector<uint8_t>& compressedContent,
-                              std::vector<uint8_t>& compressedTrailing,
-                              size_t leadingBytes, size_t contentBytes, size_t trailingBytes,int numThreads) {
-    std::vector<uint8_t> leading, content, trailing;
-    splitBytesIntoComponents(data, leading, content, trailing, leadingBytes, contentBytes, trailingBytes);
-
-    double compressedSize_l = 0, compressedSize_c = 0, compressedSize_t = 0;
-    omp_set_num_threads(numThreads);
-
-    #pragma omp parallel sections
-    {
-        #pragma omp section
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            compressedSize_l = compressWithSnappy(leading, compressedLeading);
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.leading_time = std::chrono::duration<double>(end - start).count();
-        }
-
-        #pragma omp section
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            compressedSize_c = compressWithSnappy(content, compressedContent);
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.content_time = std::chrono::duration<double>(end - start).count();
-        }
-
-        #pragma omp section
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            compressedSize_t = compressWithSnappy(trailing, compressedTrailing);
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.trailing_time = std::chrono::duration<double>(end - start).count();
-        }
+      std::copy(tempComponent.begin() + i * componentBytes[compIdx],
+                tempComponent.begin() + (i + 1) * componentBytes[compIdx],
+                reconstructedData.begin() + i * totalBytesPerElement + baseOffset);
     }
 
-    pi.type = "Parallel Decomposition";
-    return (compressedLeading.size() + compressedContent.size() + compressedTrailing.size());
-}
+    baseOffset += componentBytes[compIdx];
+  }
 
-
-
-// Decompression function with dynamic byte segmentation and OpenMP parallelization
-void sanppyDecomposedParallelDecompression(const std::vector<uint8_t>& compressedLeading,
-                                         const std::vector<uint8_t>& compressedContent,
-                                         const std::vector<uint8_t>& compressedTrailing,
-                                         ProfilingInfo &pi,
-                                         size_t leadingBytes, size_t contentBytes, size_t trailingBytes, int numThreads) {
-    size_t totalSize = globalByteArray.size();
-    size_t floatCount = totalSize / (leadingBytes + contentBytes + trailingBytes);
-    std::vector<uint8_t> reconstructedData(totalSize);
-    omp_set_num_threads(numThreads);
-
-    #pragma omp parallel sections
-    {
-        #pragma omp section
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::vector<uint8_t> tempLeading(floatCount * leadingBytes);
-            decompressWithSnappy(compressedLeading, tempLeading, floatCount * leadingBytes);
-            for (size_t i = 0; i < floatCount; ++i) {
-                for (size_t j = 0; j < leadingBytes; ++j) {
-                    reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + j] = tempLeading[i * leadingBytes + j];
-                }
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.leading_time = std::chrono::duration<double>(end - start).count();
-        }
-
-        #pragma omp section
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::vector<uint8_t> tempContent(floatCount * contentBytes);
-            decompressWithSnappy(compressedContent, tempContent, floatCount * contentBytes);
-            for (size_t i = 0; i < floatCount; ++i) {
-                for (size_t j = 0; j < contentBytes; ++j) {
-                    reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + j] = tempContent[i * contentBytes + j];
-                }
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.content_time = std::chrono::duration<double>(end - start).count();
-        }
-
-        #pragma omp section
-        {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::vector<uint8_t> tempTrailing(floatCount * trailingBytes);
-            decompressWithSnappy(compressedTrailing, tempTrailing, floatCount * trailingBytes);
-            for (size_t i = 0; i < floatCount; ++i) {
-                for (size_t j = 0; j < trailingBytes; ++j) {
-                    reconstructedData[i * (leadingBytes + contentBytes + trailingBytes) + leadingBytes + contentBytes + j] = tempTrailing[i * trailingBytes + j];
-                }
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            pi.trailing_time = std::chrono::duration<double>(end - start).count();
-        }
-    }
-
-    // Verify decompressed data
-    if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-       std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+   // Verify decompressed data
+   if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+     std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
    }
+  }
+// Parallel compression with decomposition
+
+size_t snappyDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
+                              std::vector<std::vector<uint8_t>>& compressedComponents,
+                              const std::vector<size_t>& componentSizes, int numThreads) {
+  // Split data into components
+  std::vector<std::vector<uint8_t>> components(componentSizes.size());
+  splitBytesIntoComponents(data, components, componentSizes, numThreads);
+
+  // omp_set_num_threads(numThreads);
+
+  size_t compressedSizeTotal = 0;
+
+  pi.component_times.assign(componentSizes.size(), 0.0);
+
+  // #pragma omp parallel  for num_threads(numThreads)
+#pragma omp parallel for schedule(dynamic) num_threads(numThreads)
+  for (size_t i = 0; i < componentSizes.size(); ++i) {
+
+    compressedSizeTotal += compressWithSnappy(components[i], compressedComponents[i]);
+
+
+  }
+
+  return compressedSizeTotal;
+}
+std::vector<uint8_t> snappyDecomposedParallelDecompression(
+    const std::vector<std::vector<uint8_t>>& compressedComponents,
+    ProfilingInfo& pi,
+    const std::vector<size_t>& componentBytes,
+    int numThreads) {
+  size_t totalSize = globalByteArray.size(); // Size of the original data
+  size_t numComponents = componentBytes.size();
+  size_t totalBytesPerElement = std::accumulate(componentBytes.begin(), componentBytes.end(), 0);
+  size_t floatCount = totalSize / totalBytesPerElement;
+  std::vector<uint8_t> reconstructedData(totalSize);
+
+  pi.component_times.resize(numComponents);
+  omp_set_num_threads(numThreads);
+
+#pragma omp parallel for
+  for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
+
+
+    // Temporary buffer for the decompressed component
+    std::vector<uint8_t> tempComponent(floatCount * componentBytes[compIdx]);
+
+    // Decompress the current component
+    decompressWithSnappy(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
+
+    // Calculate the base offset for this component
+    size_t baseOffset = std::accumulate(componentBytes.begin(), componentBytes.begin() + compIdx, 0);
+
+    // Reassemble the decompressed data with unrolling
+    size_t comByteComp = componentBytes[compIdx];
+
+#pragma omp parallel for schedule(static, 100000)
+    for (size_t i = 0; i < floatCount; ++i) {
+      size_t baseIndex = i * totalBytesPerElement + baseOffset;
+      size_t tempIndex = i * comByteComp;
+
+#pragma omp simd
+      for (size_t j = 0; j < comByteComp; ++j) {
+        reconstructedData[baseIndex + j] = tempComponent[tempIndex + j];
+      }
+    }
+
+
+  }
+
+  // Verify decompressed data
+  if (!verifyDataMatch(globalByteArray, reconstructedData)) {
+    std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
+  }
+
+  return reconstructedData;
+}
+
+
+double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
+  return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
 
 #endif //SNAPPY_PARALLEL_H

@@ -206,50 +206,7 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
   return compressedSizeTotal;
 }
 
-std::vector<uint8_t> zstdDecomposedParallelDecompression1(const std::vector<std::vector<uint8_t>>& compressedComponents,
-                                         ProfilingInfo &pi,
-                                         const std::vector<size_t>& componentBytes,
-                                         int numThreads) {
-  size_t totalSize = globalByteArray.size();
-  size_t numComponents = componentBytes.size();
-  size_t totalBytesPerElement = std::accumulate(componentBytes.begin(), componentBytes.end(), 0);
-  size_t floatCount = totalSize / totalBytesPerElement;
-  std::vector<uint8_t> reconstructedData(totalSize);
 
-  pi.component_times.resize(numComponents);
-  omp_set_num_threads(numThreads);
-
-#pragma omp parallel for
-  for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // Temporary buffer for the decompressed component
-    std::vector<uint8_t> tempComponent(floatCount * componentBytes[compIdx]);
-
-    // Decompress the current component
-    decompressWithZstd(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
-
-    // Calculate the base offset for this component( im not sure about it?????????????)
-    size_t baseOffset = std::accumulate(componentBytes.begin(), componentBytes.begin() + compIdx, 0);
-
-    // Reassemble the decompressed data
-#pragma omp parallel for
-    for (size_t i = 0; i < floatCount; ++i) {
-      std::copy(tempComponent.begin() + i * componentBytes[compIdx],
-                tempComponent.begin() + (i + 1) * componentBytes[compIdx],
-                reconstructedData.begin() + i * totalBytesPerElement + baseOffset);
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.component_times[compIdx] = std::chrono::duration<double>(end - start).count();
-  }
-
-  // Verify decompressed data
-   // if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-   //   std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-   // }
-  return reconstructedData;
-}
 
 std::vector<uint8_t> zstdDecomposedParallelDecompression(
     const std::vector<std::vector<uint8_t>>& compressedComponents,
