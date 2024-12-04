@@ -1,21 +1,15 @@
 //
-// Created by jamalids on 04/11/24.
-//
 
 #include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
-#include <zstd.h>
 #include <chrono>
 #include <cstdint>
-#include <omp.h>
-#include <cstring>
-#include <vector>
 #include <cxxopts.hpp>
+#include "zlib-parallel.h"
 #include <cmath>
-#include "zstd_parallel.h"
 std::vector<uint8_t> globalByteArray;
 
 
@@ -273,7 +267,7 @@ int main(int argc, char* argv[]) {
     }
 
 std::vector<ProfilingInfo> pi_array;
-  int iter=1;
+  int iter=10;
 
     for (const auto& componentSizes : componentSizesList) {
       std::cout << "Testing with component sizes: ";
@@ -290,12 +284,12 @@ std::vector<ProfilingInfo> pi_array;
         std::vector<uint8_t> compressedData, decompressedData;
 
         auto start = std::chrono::high_resolution_clock::now();
-        double compressedSize = zstdCompression(globalByteArray, pi_full, compressedData);
+        double compressedSize = zlibCompression(globalByteArray, pi_full, compressedData);
         auto end = std::chrono::high_resolution_clock::now();
         pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
         start = std::chrono::high_resolution_clock::now();
-        zstdDecompression(compressedData, decompressedData, pi_full);
+        zlibDecompression(compressedData, decompressedData, pi_full);
         end = std::chrono::high_resolution_clock::now();
         pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
@@ -315,12 +309,12 @@ std::vector<ProfilingInfo> pi_array;
         compressedComponents.resize(componentSizes.size());
 
         start = std::chrono::high_resolution_clock::now();
-        compressedSize = zstdDecomposedSequential(globalByteArray, pi_seq, compressedComponents, componentSizes);
+        compressedSize = zlibDecomposedSequential(globalByteArray, pi_seq, compressedComponents, componentSizes);
         end = std::chrono::high_resolution_clock::now();
         pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
         start = std::chrono::high_resolution_clock::now();
-        zstdDecomposedSequentialDecompression(compressedComponents, pi_seq, componentSizes);
+        zlibDecomposedSequentialDecompression(compressedComponents, pi_seq, componentSizes);
         end = std::chrono::high_resolution_clock::now();
         pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
@@ -340,12 +334,12 @@ std::vector<ProfilingInfo> pi_array;
         compressedComponents.resize(componentSizes.size());
 
         start = std::chrono::high_resolution_clock::now();
-        compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
+        compressedSize = zlibDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
         end = std::chrono::high_resolution_clock::now();
         pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
         start = std::chrono::high_resolution_clock::now();
-        std::vector<uint8_t> decompressedData2 = zstdDecomposedParallelDecompression(compressedComponents, pi_parallel, componentSizes, numThreads);
+        std::vector<uint8_t> decompressedData2 = zlibDecomposedParallelDecompression(compressedComponents, pi_parallel, componentSizes, numThreads);
         end = std::chrono::high_resolution_clock::now();
         pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 

@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
     }
 
 std::vector<ProfilingInfo> pi_array;
-  int iter=20;
+  int iter=1;
 
     for (const auto& componentSizes : componentSizesList) {
       std::cout << "Testing with component sizes: ";

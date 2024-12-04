@@ -35,7 +35,7 @@ for dataset_file in os.listdir(DATASET_DIR):
 #SBATCH --mail-user=jamalids@mcmaster.ca
 #SBATCH --nodes=1
 #SBATCH --output="compression.%j.%N.out"
-#SBATCH --time 24:59:00
+#SBATCH --time 20:59:00
 # Load necessary modules
 module load StdEnv/.2022a
 module load gcc/13.2

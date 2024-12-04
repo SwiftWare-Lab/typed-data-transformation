@@ -3,7 +3,8 @@ project(zstd-test-project CXX C)
 
 # Set the C++ standard globally
 set(CMAKE_CXX_STANDARD 17)
-
+set(ZLIB_ROOT "/usr")
+find_package(ZLIB REQUIRED)
 FetchContent_Declare(
         cxxopts
         GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
@@ -29,16 +30,16 @@ if(NOT lz4_POPULATED)
 endif()
 
 add_executable(parallel-test
-      # parralel-zstd.cpp
+     # parralel-zstd.cpp
      # zstd_parallel.h
-       # profiling_info.h
+     # profiling_info.h
      #lz4_parallel.h
-      # parralel-zstd.cpp
-      snappy_parallel.h
-      parallel-snappy.cpp
-       # parallel-snappy.cpp
-       #  parallel-lz4.cpp
-)
+     #parallel-lz4.cpp
+    # snappy_parallel.h
+    #  parallel-snappy.cpp
+    zlib-parallel.h
+     zlib-parallel.cpp
+    )
 # Fetch Snappy for compression
 FetchContent_Declare(
         snappy
@@ -74,6 +75,7 @@ target_link_libraries(parallel-test
         OpenMP::OpenMP_CXX
         lz4
         snappy
+        ZLIB::ZLIB
         # argparse can be replaced or used alongside cxxopts if required
 )
 
