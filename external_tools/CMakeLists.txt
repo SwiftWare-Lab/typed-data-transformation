@@ -32,12 +32,12 @@ add_executable(parallel-test
       # parralel-zstd.cpp
      # zstd_parallel.h
        # profiling_info.h
-     lz4_parallel.h
+     #lz4_parallel.h
       # parralel-zstd.cpp
-      #snappy_parallel.h
-
-      #  parallel-snappy.cpp
-         parallel-lz4.cpp
+      snappy_parallel.h
+      parallel-snappy.cpp
+       # parallel-snappy.cpp
+       #  parallel-lz4.cpp
 )
 # Fetch Snappy for compression
 FetchContent_Declare(
