@@ -209,30 +209,30 @@ int main(int argc, char* argv[]) {
 
         rowCount = rows;
        componentSizesList = {
-        {7, 1, 0, 0, 0, 0, 0, 0},
-        {6, 2, 0, 0, 0, 0, 0, 0},
-        {6, 1, 1, 0, 0, 0, 0, 0},
-        {5, 3, 0, 0, 0, 0, 0, 0},
-        {5, 2, 1, 0, 0, 0, 0, 0},
-        {5, 1, 1, 1, 0, 0, 0, 0},
-        {4, 4, 0, 0, 0, 0, 0, 0},
-        {4, 3, 1, 0, 0, 0, 0, 0},
-        {4, 2, 2, 0, 0, 0, 0, 0},
-        {4, 2, 1, 1, 0, 0, 0, 0},
-        {4, 1, 1, 1, 1, 0, 0, 0},
-        {3, 3, 2, 0, 0, 0, 0, 0},
-        {3, 3, 1, 1, 0, 0, 0, 0},
-        {3, 2, 2, 1, 0, 0, 0, 0},
-        {3, 2, 1, 1, 1, 0, 0, 0},
-        {3, 1, 1, 1, 1, 1, 0, 0},
-        {2, 2, 2, 2, 0, 0, 0, 0},
-        {2, 2, 2, 1, 1, 0, 0, 0},
-        {2, 2, 1, 1, 1, 1, 0, 0},
-        {2, 1, 1, 1, 1, 1, 1, 0},
+       {7, 1},
+        {6, 2},
+        {6, 1, 1},
+        {5, 3},
+        {5, 2, 1},
+        {5, 1, 1, 1},
+        {4, 4},
+        {4, 3, 1},
+        {4, 2, 2},
+        {4, 2, 1, 1},
+        {4, 1, 1, 1, 1},
+        {3, 3, 2},
+        {3, 3, 1, 1},
+        {3, 2, 2, 1},
+        {3, 2, 1, 1, 1},
+        {3, 1, 1, 1, 1, 1},
+        {2, 2, 2, 2},
+        {2, 2, 2, 1, 1},
+        {2, 2, 1, 1, 1, 1},
+        {2, 1, 1, 1, 1, 1, 1},
         {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 5, 1, 1, 0, 0, 0, 0},
-        {1, 4, 2, 1, 0, 0, 0, 0},
-        {2, 3, 2, 1, 0, 0, 0, 0}
+        {1, 5, 1, 1},
+        {1, 4, 2, 1},
+        {2, 3, 2, 1}
       };
 
     } else if (precisionBits == 32) {
@@ -258,12 +258,12 @@ int main(int argc, char* argv[]) {
          componentSizesList = {
 
            {1, 1, 1, 1},
-          {1, 1, 2,0},
-         {1, 2, 1,0},
-           {1, 3, 0,0},
-          {2, 1, 1,0},
-         {2, 2,0,0},
-          {3, 1,0,0},
+          {1, 1, 2},
+         {1, 2, 1},
+           {1, 3},
+          {2, 1, 1},
+         {2, 2},
+          {3, 1},
 
       };
 
@@ -271,11 +271,12 @@ int main(int argc, char* argv[]) {
         std::cerr << "Unsupported floating-point precision: " << precisionBits << ". Use 32 or 64." << std::endl;
         return 1;
     }
-
+std::vector<int> threadSizesList = {4,8,16,20,24,28,32,36,38,42};
 std::vector<ProfilingInfo> pi_array;
-  int iter=1;
+  int iter=2;
 
     for (const auto& componentSizes : componentSizesList) {
+
       std::cout << "Testing with component sizes: ";
       for (auto size : componentSizes) std::cout << size << " ";
       std::cout << std::endl;
@@ -283,7 +284,9 @@ std::vector<ProfilingInfo> pi_array;
       std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
       double compressionThroughput = 0.0, decompressionThroughput = 0.0;
 
-      for (int i = 0; i < iter; ++i) {
+     for (int numThreads : threadSizesList) {
+       std::cout << "Testing with threads: " << numThreads << std::endl;
+        for (int i = 0; i < iter; i++) {
         // Outer loop for 3 runs
         // --- Full Compression ---
         ProfilingInfo pi_full(componentSizes.size());
@@ -357,6 +360,7 @@ std::vector<ProfilingInfo> pi_array;
         pi_parallel.decompression_throughput = decompressionThroughput;
         pi_parallel.total_values = rowCount;
         pi_parallel.type = "Parallel";
+        pi_parallel.thread_count=numThreads;
         if (precisionBits == 64) {
           // Load original dataset
           auto [floatArray1, rows] = loadTSVDatasetdouble(datasetPath);
@@ -391,7 +395,7 @@ std::vector<ProfilingInfo> pi_array;
 
       }
     }
-
+}
   // Initialize the CSV file and write the header
   std::ofstream file(outputCSV);
   if (!file) {
@@ -399,7 +403,7 @@ std::vector<ProfilingInfo> pi_array;
     return 1;
   }
 
-  file << "Iteration,OuterLoop,ComponentSizes,RunType,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
+  file << "Iteration,OuterLoop,ComponentSizes,ThreadCount,RunType,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
        << "CompressionThroughput,DecompressionThroughput,TotalValues\n";
 
   // Iterate over each configuration of component sizes
@@ -412,13 +416,15 @@ std::vector<ProfilingInfo> pi_array;
       componentSizesStr += std::to_string(size) + " ";
     }
 
-    for (int i = 0; i < iter; ++i) {
+    for (int i : threadSizesList) {
+      for(size_t i = 0; i < iter; i++) {
       for (int runTypeIndex = 0; runTypeIndex < 3; ++runTypeIndex) { // Full, Sequential, Parallel
         const ProfilingInfo& pi = pi_array[pi_index++];
 
         file << globalIteration << ","
-             << i + 1 << ","
+             << i  << ","
              << componentSizesStr << ","
+             << pi.thread_count << "," // Add thread count here
              << pi.type << ","
              << pi.com_ratio << ","
              << pi.total_time_compressed << ","
@@ -430,9 +436,9 @@ std::vector<ProfilingInfo> pi_array;
       globalIteration++;
     }
   }
+}
   file.close();
 
 
-    return 0;
+  return 0;
 }
-

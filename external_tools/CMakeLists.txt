@@ -89,17 +89,17 @@ if(NOT bzip2_POPULATED)
     target_include_directories(bzip2 PRIVATE ${bzip2_SOURCE_DIR})
 endif()
 add_executable(parallel-test
-        # parralel-zstd.cpp
-        # zstd_parallel.h
-        # profiling_info.h
+         parralel-zstd.cpp
+         zstd_parallel.h
+         profiling_info.h
         #lz4_parallel.h
         #parallel-lz4.cpp
         # snappy_parallel.h
         #  parallel-snappy.cpp
         #  zlib-parallel.h
         #  zlib-parallel.cpp
-        bz2_parallel.h
-        parallel-bzip2.cpp
+       # bz2_parallel.h
+       # parallel-bzip2.cpp
 )
 
 target_link_libraries(parallel-test

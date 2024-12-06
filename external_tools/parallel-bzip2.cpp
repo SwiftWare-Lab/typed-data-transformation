@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
 
     std::string datasetPath = result["dataset"].as<std::string>();
     std::string outputCSV = result["outcsv"].as<std::string>();
-    int numThreads = result["threads"].as<int>();
+    int numThreads1 = result["threads"].as<int>();
     int precisionBits = result["bits"].as<int>();
 
 
@@ -250,12 +250,12 @@ int main(int argc, char* argv[]) {
          componentSizesList = {
 
            {1, 1, 1, 1},
-          {1, 1, 2},
-         {1, 2, 1},
-           {1, 3},
-          {2, 1,1},
-         {2, 2},
-          {3, 1},
+         //  {1, 1, 2},
+         // {1, 2, 1},
+         //   {1, 3},
+         //  {2, 1,1},
+         // {2, 2},
+         //  {3, 1},
 
       };
 
@@ -265,7 +265,9 @@ int main(int argc, char* argv[]) {
     }
 
 std::vector<ProfilingInfo> pi_array;
-  int iter=5;
+  int iter=1;
+
+  std::vector<int> threadSizesList = {4, 8,  16,  24, 32, 40};
 
     for (const auto& componentSizes : componentSizesList) {
       std::cout << "Testing with component sizes: ";
@@ -275,7 +277,7 @@ std::vector<ProfilingInfo> pi_array;
       std::vector<std::vector<uint8_t>> compressedComponents(componentSizes.size());
       double compressionThroughput = 0.0, decompressionThroughput = 0.0;
 
-      for (int i = 0; i < iter; ++i) {
+      for (int numThreads : threadSizesList) {
         // Outer loop for 3 runs
         // --- Full Compression ---
         ProfilingInfo pi_full(componentSizes.size());
@@ -349,6 +351,7 @@ std::vector<ProfilingInfo> pi_array;
         pi_parallel.decompression_throughput = decompressionThroughput;
         pi_parallel.total_values = rowCount;
         pi_parallel.type = "Parallel";
+        pi_parallel.thread_count=numThreads;
         if (precisionBits == 64) {
           // Load original dataset
           auto [floatArray1, rows] = loadTSVDatasetdouble(datasetPath);
@@ -391,7 +394,7 @@ std::vector<ProfilingInfo> pi_array;
     return 1;
   }
 
-  file << "Iteration,OuterLoop,ComponentSizes,RunType,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
+  file << "Iteration,OuterLoop,ComponentSizes,ThreadCount,RunType,CompressionRatio,TotalTimeCompressed,TotalTimeDecompressed,"
        << "CompressionThroughput,DecompressionThroughput,TotalValues\n";
 
   // Iterate over each configuration of component sizes
@@ -404,13 +407,14 @@ std::vector<ProfilingInfo> pi_array;
       componentSizesStr += std::to_string(size) + " ";
     }
 
-    for (int i = 0; i < iter; ++i) {
+    for (int i : threadSizesList) {
       for (int runTypeIndex = 0; runTypeIndex < 3; ++runTypeIndex) { // Full, Sequential, Parallel
         const ProfilingInfo& pi = pi_array[pi_index++];
 
         file << globalIteration << ","
-             << i + 1 << ","
+             << i  << ","
              << componentSizesStr << ","
+             << pi.thread_count << "," // Add thread count here
              << pi.type << ","
              << pi.com_ratio << ","
              << pi.total_time_compressed << ","
@@ -422,10 +426,12 @@ std::vector<ProfilingInfo> pi_array;
       globalIteration++;
     }
   }
+
   file.close();
 
 
-    return 0;
+  return 0;
 }
+
 
 

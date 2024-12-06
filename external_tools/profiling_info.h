@@ -16,13 +16,16 @@ struct ProfilingInfo {
   double compression_throughput = 0.0;
   double decompression_throughput = 0.0;
   double total_values = 0.0;
+  int thread_count = 0; // Add thread count
 
+  // Constructor with default initialization
   ProfilingInfo(size_t num_components = 0)
       : component_times(num_components, 0.0) {}
 
   // Add const to this method
   void printCSV(std::ofstream &file, int iteration) const {
     file << iteration << ","
+         << thread_count << "," // Add thread count to the CSV
          << type << ","
          << com_ratio << ","
          << total_time_compressed << ","
