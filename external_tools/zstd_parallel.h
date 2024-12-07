@@ -18,6 +18,7 @@
 
 #include "profiling_info.h"
 #include <numeric>
+#include <filesystem>
 
 
 
@@ -25,6 +26,30 @@
 // Declare  as an external variable
 extern std::vector<uint8_t> globalByteArray;
 
+
+// Save compressed data to a file
+void saveCompressedData(const std::string& filename, const std::vector<uint8_t>& compressedData) {
+  // Specify the directory path
+  std::string directory = "/home/jamalids/Documents/file";
+
+  // Ensure the directory exists
+  std::filesystem::create_directories(directory);
+
+  // Prepend the directory path to the filename
+  std::string fullPath = directory + "/" + filename;
+
+  // Open the file in binary mode
+  std::ofstream outFile(fullPath, std::ios::binary);
+  if (!outFile) {
+    std::cerr << "Error: Could not open file for writing: " << fullPath << std::endl;
+    return;
+  }
+
+  // Write the compressed data to the file
+  outFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size());
+  outFile.close();
+ // std::cout << "Compressed data saved to " << fullPath << std::endl;
+}
 // Verify if original and reconstructed data match
 bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uint8_t>& reconstructed) {
     if (original.size() != reconstructed.size()) {
@@ -79,6 +104,7 @@ size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& 
         return 0;
     }
     compressedData.resize(cSize);
+
     return cSize;
 }
 
@@ -96,6 +122,11 @@ size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vecto
 size_t zstdCompression(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedData) {
 
     size_t compressedSize = compressWithZstd(data, compressedData, 3);
+  std::cout << "File compressed  full: " <<compressedSize << "\nCompressed size: " << compressedSize << " bytes\n";
+  if (compressedSize > 0) {
+
+    saveCompressedData(std::to_string(33) + ".zst", compressedData);
+  }
 
     pi.type = "Full Compression";
     return compressedSize;
@@ -197,10 +228,19 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
 // #pragma omp parallel  for num_threads(numThreads)
 #pragma omp parallel for schedule(dynamic) num_threads(numThreads)
   for (size_t i = 0; i < componentSizes.size(); ++i) {
-    auto start = std::chrono::high_resolution_clock::now();
-    compressedSizeTotal += compressWithZstd(components[i], compressedComponents[i], 3);
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.component_times[i] = std::chrono::duration<double>(end - start).count();
+    size_t compressedSize = compressWithZstd(components[i], compressedComponents[i], 3);
+
+    // Accumulate the total compressed size
+    compressedSizeTotal += compressedSize;
+    std::cout << "\nFile compressed : " <<compressedSize <<"com"<<i  << " bytes\n";
+    std::cout << "File uncompressed : " <<components[i].size() <<"com"<<i <<" bytes\n";
+
+    // Save the compressed component (thread-safe if `saveCompressedData` is safe)
+    if (compressedSize > 0) {
+      saveCompressedData(std::to_string(i) + ".zst", compressedComponents[i]);
+    }
+
+
   }
   pi.type = "Parallel Decomposition with 8 Components";
   return compressedSizeTotal;
