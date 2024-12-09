@@ -64,7 +64,7 @@ void analyzeCompressionImpact(const std::vector<uint8_t>& globalByteArray,
                               const std::vector<std::vector<uint8_t>>& decomposedComponents,
                               const ProfilingInfo& fullProfile,
                               const ProfilingInfo& decomposedProfile,
-                              const std::vector<float>& fullFloats) {
+                              const std::vector<float>& fullFloats,const std::vector<size_t>& componentSizes) {
     // Float-Level Entropy Analysis
     std::cout << "===== Float-Level Entropy Analysis =====\n";
     double floatEntropy = calculateFloatEntropy(fullFloats);
@@ -78,10 +78,12 @@ void analyzeCompressionImpact(const std::vector<uint8_t>& globalByteArray,
     double combinedEntropy = 0.0;
     for (size_t i = 0; i < decomposedComponents.size(); ++i) {
         double componentEntropy = calculateEntropy(decomposedComponents[i]);
-        combinedEntropy += componentEntropy;
+      double size =static_cast<double>(componentSizes[i]) / 4.0;
+        combinedEntropy += componentEntropy * size;
         std::cout << "Component " << i + 1 << " Byte-Level Entropy: " << componentEntropy << "\n";
     }
     std::cout << "Combined Decomposed Byte-Level Entropy: " << combinedEntropy << "\n\n";
+  std::cout << "fullEntropy -Combined Decomposed  : " << fullEntropy - combinedEntropy << "\n\n";
 
     // Compression Ratio Analysis
     std::cout << "===== Compression Ratio Analysis =====\n";
@@ -376,13 +378,13 @@ int main(int argc, char* argv[]) {
     rowCount = rows;
     componentSizesList = {
 
-      // {1, 1, 1, 1},
-      //  {1, 1, 2},
-      // {1, 2, 1},
-      //   {1, 3},
-      {2, 1, 1},
-     // {2, 2},
-     //  {3, 1},
+     //{1, 1, 1, 1},
+   //{1, 1, 2},
+     {1, 2, 1},
+  // {1, 3},
+    //{2, 1, 1},
+    // {2, 2},
+   // {3, 1},
 
   };
 
@@ -514,7 +516,10 @@ int main(int argc, char* argv[]) {
         ProfilingInfo fullProfile = pi_full; // After running zstdCompression
         ProfilingInfo decomposedProfile = pi_parallel; // After running zstdDecomposedParallel
         auto [fullFloats, rows] = loadTSVDataset(datasetPath);
-        analyzeCompressionImpact(globalByteArray, compressedComponents, fullProfile, decomposedProfile, fullFloats);
+        std::vector<std::vector<uint8_t>> components(componentSizes.size());
+
+        splitBytesIntoComponents(globalByteArray, components, componentSizes,1);
+        analyzeCompressionImpact(globalByteArray, components, fullProfile, decomposedProfile, fullFloats,componentSizes);
 
 
 
@@ -567,7 +572,7 @@ int main(int argc, char* argv[]) {
     }
     file.close();
     // Specify the folder to search for .zst files
-    std::string folderPath = "/home/jamalids/Documents/file";
+    std::string folderPath = "/home/samira/Documents/file";
 
     // Check if the folder exists
     if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {

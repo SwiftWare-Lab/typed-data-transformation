@@ -30,7 +30,7 @@ extern std::vector<uint8_t> globalByteArray;
 // Save compressed data to a file
 void saveCompressedData(const std::string& filename, const std::vector<uint8_t>& compressedData) {
   // Specify the directory path
-  std::string directory = "/home/jamalids/Documents/file";
+  std::string directory = "/home/samira/Documents/file";
 
   // Ensure the directory exists
   std::filesystem::create_directories(directory);
@@ -94,16 +94,52 @@ void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
 }
 
 
-// Compress with Zstd
+// Compress with Zstd and enable debug logging
 size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
-    size_t const cBuffSize = ZSTD_compressBound(data.size());
-    compressedData.resize(cBuffSize);
-    size_t const cSize = ZSTD_compress(compressedData.data(), cBuffSize, data.data(), data.size(), compressionLevel);
-    if (ZSTD_isError(cSize)) {
-        std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
+    // Create a Zstd compression context
+    ZSTD_CCtx* cctx = ZSTD_createCCtx();
+    if (!cctx) {
+        std::cerr << "Zstd compression error: Failed to create compression context" << std::endl;
         return 0;
     }
+
+    // Set advanced compression parameters
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, 10); // Single-threaded for simplicity
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+    ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, 1); // Enable long-distance matching
+  //  ZSTD_CCtx_setParameter(cctx, ZSTD_c_format, ZSTD_f_zstd1);          // Zstd format
+
+    // Enable verbose logging (debug level)
+    //ZSTD_CCtx_setParameter(cctx, ZSTD_c_verbosity, 2); // 0: Silent, 1: Minimal, 2: Debug
+
+    // Allocate compression buffer
+    size_t const cBuffSize = ZSTD_compressBound(data.size());
+    compressedData.resize(cBuffSize);
+
+    // Perform compression with debug logging
+    std::cout << "Starting Zstd compression with debug logging...\n";
+    size_t const cSize = ZSTD_compress2(
+        cctx,                            // Compression context
+        compressedData.data(),           // Destination buffer
+        cBuffSize,                       // Destination buffer size
+        data.data(),                     // Source data
+        data.size()                      // Source data size
+    );
+
+    // Check for errors
+    if (ZSTD_isError(cSize)) {
+        std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
+        ZSTD_freeCCtx(cctx); // Free the compression context
+        return 0;
+    }
+
+    // Resize compressedData to the actual compressed size
     compressedData.resize(cSize);
+
+    // Free the compression context
+    ZSTD_freeCCtx(cctx);
+
+    std::cout << "Compression complete. Compressed size: " << cSize << " bytes\n";
 
     return cSize;
 }
@@ -191,6 +227,7 @@ size_t zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo 
   // Split data into components
   std::vector<std::vector<uint8_t>> components(componentSizes.size());
   splitBytesIntoComponents(data, components, componentSizes,1);
+
 
   size_t compressedSizeTotal = 0;
 
