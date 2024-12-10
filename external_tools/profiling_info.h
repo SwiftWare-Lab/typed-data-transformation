@@ -17,6 +17,8 @@ struct ProfilingInfo {
   double decompression_throughput = 0.0;
   double total_values = 0.0;
   int thread_count = 0; // Add thread count
+  double entropy_full_byte=0;
+  double entropy_decompose_byte=0;
 
   // Constructor with default initialization
   ProfilingInfo(size_t num_components = 0)
@@ -29,7 +31,9 @@ struct ProfilingInfo {
          << type << ","
          << com_ratio << ","
          << total_time_compressed << ","
-         << total_time_decompressed << ",";
+         << total_time_decompressed << ","
+         << entropy_full_byte << ","
+         << entropy_decompose_byte << ",";
 
     // Append component times dynamically
     for (size_t i = 0; i < component_times.size(); ++i) {

@@ -18,37 +18,27 @@
 
 #include "profiling_info.h"
 #include <numeric>
-#include <filesystem>
 
 
 
 
 // Declare  as an external variable
 extern std::vector<uint8_t> globalByteArray;
-
-
-// Save compressed data to a file
-void saveCompressedData(const std::string& filename, const std::vector<uint8_t>& compressedData) {
-  // Specify the directory path
-  std::string directory = "/home/samira/Documents/file";
-
-  // Ensure the directory exists
-  std::filesystem::create_directories(directory);
-
-  // Prepend the directory path to the filename
-  std::string fullPath = directory + "/" + filename;
-
-  // Open the file in binary mode
-  std::ofstream outFile(fullPath, std::ios::binary);
-  if (!outFile) {
-    std::cerr << "Error: Could not open file for writing: " << fullPath << std::endl;
-    return;
+//calculate Entropy
+double calculateEntropy(const std::vector<uint8_t>& data) {
+  std::vector<size_t> frequency(256, 0);
+  for (uint8_t byte : data) {
+    frequency[byte]++;
   }
-
-  // Write the compressed data to the file
-  outFile.write(reinterpret_cast<const char*>(compressedData.data()), compressedData.size());
-  outFile.close();
- // std::cout << "Compressed data saved to " << fullPath << std::endl;
+  double entropy = 0.0;
+  size_t dataSize = data.size();
+  for (size_t freq : frequency) {
+    if (freq > 0) {
+      double probability = static_cast<double>(freq) / dataSize;
+      entropy -= probability * log2(probability);
+    }
+  }
+  return entropy;
 }
 // Verify if original and reconstructed data match
 bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uint8_t>& reconstructed) {
@@ -94,53 +84,16 @@ void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
 }
 
 
-// Compress with Zstd and enable debug logging
+// Compress with Zstd
 size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
-    // Create a Zstd compression context
-    ZSTD_CCtx* cctx = ZSTD_createCCtx();
-    if (!cctx) {
-        std::cerr << "Zstd compression error: Failed to create compression context" << std::endl;
-        return 0;
-    }
-
-    // Set advanced compression parameters
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_nbWorkers, 10); // Single-threaded for simplicity
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
-    ZSTD_CCtx_setParameter(cctx, ZSTD_c_enableLongDistanceMatching, 1); // Enable long-distance matching
-  //  ZSTD_CCtx_setParameter(cctx, ZSTD_c_format, ZSTD_f_zstd1);          // Zstd format
-
-    // Enable verbose logging (debug level)
-    //ZSTD_CCtx_setParameter(cctx, ZSTD_c_verbosity, 2); // 0: Silent, 1: Minimal, 2: Debug
-
-    // Allocate compression buffer
     size_t const cBuffSize = ZSTD_compressBound(data.size());
     compressedData.resize(cBuffSize);
-
-    // Perform compression with debug logging
-    std::cout << "Starting Zstd compression with debug logging...\n";
-    size_t const cSize = ZSTD_compress2(
-        cctx,                            // Compression context
-        compressedData.data(),           // Destination buffer
-        cBuffSize,                       // Destination buffer size
-        data.data(),                     // Source data
-        data.size()                      // Source data size
-    );
-
-    // Check for errors
+    size_t const cSize = ZSTD_compress(compressedData.data(), cBuffSize, data.data(), data.size(), compressionLevel);
     if (ZSTD_isError(cSize)) {
         std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
-        ZSTD_freeCCtx(cctx); // Free the compression context
         return 0;
     }
-
-    // Resize compressedData to the actual compressed size
     compressedData.resize(cSize);
-
-    // Free the compression context
-    ZSTD_freeCCtx(cctx);
-
-    std::cout << "Compression complete. Compressed size: " << cSize << " bytes\n";
-
     return cSize;
 }
 
@@ -158,12 +111,9 @@ size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vecto
 size_t zstdCompression(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedData) {
 
     size_t compressedSize = compressWithZstd(data, compressedData, 3);
-  std::cout << "File compressed  full: " <<compressedSize << "\nCompressed size: " << compressedSize << " bytes\n";
-  if (compressedSize > 0) {
 
-    saveCompressedData(std::to_string(33) + ".zst", compressedData);
-  }
-
+    double entropy =calculateEntropy( data);
+    pi.entropy_full_byte=entropy;
     pi.type = "Full Compression";
     return compressedSize;
 }
@@ -228,7 +178,6 @@ size_t zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo 
   std::vector<std::vector<uint8_t>> components(componentSizes.size());
   splitBytesIntoComponents(data, components, componentSizes,1);
 
-
   size_t compressedSizeTotal = 0;
 
   pi.component_times.assign(componentSizes.size(), 0.0);
@@ -261,25 +210,22 @@ size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &p
   size_t compressedSizeTotal = 0;
 
   pi.component_times.assign(componentSizes.size(), 0.0);
+  double combinedEntropy = 0.0;
 
 // #pragma omp parallel  for num_threads(numThreads)
 #pragma omp parallel for schedule(dynamic) num_threads(numThreads)
   for (size_t i = 0; i < componentSizes.size(); ++i) {
-    size_t compressedSize = compressWithZstd(components[i], compressedComponents[i], 3);
-
-    // Accumulate the total compressed size
-    compressedSizeTotal += compressedSize;
-    std::cout << "\nFile compressed : " <<compressedSize <<"com"<<i  << " bytes\n";
-    std::cout << "File uncompressed : " <<components[i].size() <<"com"<<i <<" bytes\n";
-
-    // Save the compressed component (thread-safe if `saveCompressedData` is safe)
-    if (compressedSize > 0) {
-      saveCompressedData(std::to_string(i) + ".zst", compressedComponents[i]);
-    }
-
-
+    auto start = std::chrono::high_resolution_clock::now();
+    compressedSizeTotal += compressWithZstd(components[i], compressedComponents[i], 3);
+    auto end = std::chrono::high_resolution_clock::now();
+    pi.component_times[i] = std::chrono::duration<double>(end - start).count();
+    double componentEntropy = calculateEntropy(components[i]);
+    double size =static_cast<double>(componentSizes[i]) / 8;
+    combinedEntropy += componentEntropy * size;
   }
-  pi.type = "Parallel Decomposition with 8 Components";
+  pi.type = "Parallel Decomposition ";
+  pi.entropy_decompose_byte=combinedEntropy;
+
   return compressedSizeTotal;
 }
 
@@ -342,5 +288,3 @@ std::vector<uint8_t> zstdDecomposedParallelDecompression(
 double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
   return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
 }
-
-
