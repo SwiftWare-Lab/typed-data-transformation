@@ -704,7 +704,7 @@ def float_to_int16(arr):
     scaled_array = (arr * max_int16).astype(np.int16)
     return scaled_array
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Downloads/weight/weight/tok_embeddings.weight.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/hdr_palermo_f32.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
     datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if

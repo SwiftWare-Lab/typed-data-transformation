@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Specify the directories containing the CSV files
-directories = ['/home/jamalids/Documents/2D/data1/Fcbench/llog-gzip-H']
+directories = ['/home/jamalids/Documents/2D/data1/Fcbench/log32-H']
 
 # List to hold DataFrames
 dataframes = []
@@ -21,14 +21,14 @@ for directory_path in directories:
 combined_df = pd.concat(dataframes, ignore_index=True)
 
 # Save the combined DataFrame with all data to a CSV file
-all_data_output_path = '/home/jamalids/Documents/2D/data1/Fcbench/llog-gzip-H/combined_all_data.csv'
+all_data_output_path = '/home/jamalids/Documents/2D/data1/Fcbench/log32-H/combined_32H_data.csv'
 combined_df.to_csv(all_data_output_path, index=False)
 print(f'Combined CSV with all data saved to {all_data_output_path}')
 
 # Find the median row for each dataset and Type
 median_rows = []
 
-for (dataset, type_), group in combined_df.groupby(['dataset', 'Type']):
+for (dataset, type_,ComponentSizes_), group in combined_df.groupby(['dataset', 'RunType','ComponentSizes']):
     # Sort the group by TotalTimeCompressed and TotalTimeDecompressed
     sorted_group = group.sort_values(by=['TotalTimeCompressed', 'TotalTimeDecompressed']).reset_index(drop=True)
 
@@ -45,7 +45,7 @@ for (dataset, type_), group in combined_df.groupby(['dataset', 'Type']):
 median_rows_df = pd.DataFrame(median_rows)
 
 # Save the final DataFrame with only the median rows to a separate CSV file
-median_data_output_path = '/home/jamalids/Documents/2D/data1/Fcbench/llog-gzip-H/combined_median_rows.csv'
+median_data_output_path = '//home/jamalids/Documents/2D/data1/Fcbench/log32-H//combined_median_32H.csv'
 median_rows_df.to_csv(median_data_output_path, index=False)
 
 print(f'Combined CSV with median rows saved to {median_data_output_path}')

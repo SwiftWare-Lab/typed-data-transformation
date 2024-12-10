@@ -165,14 +165,14 @@ def decomposition_based_compression(image_ts, leading_zero_pos, tail_zero_pos, m
           "Min Tail: ", min_tail, "Max Tail: ", max_tail, "Avg Tail: ", avg_tail)
 
     # Set bounds based on ad-hoc conditions
-    bnd1 = max_lead if max_lead < 28 else avg_lead
-    bnd2 = min_tail if min_tail >= 4 else 32-avg_tail
-   # bnd1=8
-   # bnd2=32-8
+   # bnd1 = max_lead if max_lead < 28 else avg_lead
+  #  bnd2 = min_tail if min_tail >= 4 else 32-avg_tail
+    bnd1=16
+    bnd2=32-8
     print("Bnd1: ", bnd1, "Bnd2:",bnd2 )
 
     # Tune decomposition steps
-    tune_decomp = [0, 1,2]
+    tune_decomp = [0]
 
     # Initialize lists to store compressed sizes and dictionaries
     lead_comp_size, tail_comp_size, content_comp_size = [], [], []
@@ -662,7 +662,7 @@ def calculate_exact_metadata_size(metadata):
 
     return total_bits
 def run_and_collect_data(dataset_path):
-    dataset_path = "/home/jamalids/Documents/2D/data1/TS/L/citytemp_f32.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/citytemp_f32.tsv"
     #dataset_path ="/home/jamalids/Documents/2D/data1/num_brain_f64.tsv"
     datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
@@ -675,7 +675,7 @@ def run_and_collect_data(dataset_path):
         dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
         print("datasetname##################################",dataset_name)
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[:100,:]
+        #group=group.iloc[:100,:]
         group = group.T
         #group = group.iloc[:, 0:3000000]
         verify_flag_final = False
@@ -769,8 +769,8 @@ def run_and_collect_data(dataset_path):
                  leading_gzip, content_gzip,tailing_gzip,
                  leading_fpzip_R, content_fpzip_R, tailing_fpzip_R, leading_fpzip, content_fpzip, tailing_fpzip
                  )  = decomposition_based_compression(bool_array,l_z_array,t_z_array,m, n)
-                trailing_float1 = bits_to_float32(trailing_mixed_array_orig[1])
-                a,r=compress_with_fpzip(trailing_float1)
+              #  trailing_float1 = bits_to_float32(trailing_mixed_array_orig[1])
+               # a,r=compress_with_fpzip(trailing_float1)
                 # Store results dynamically
                 result_row = {"M": m, "N": n, "Original Size (bits)": bool_array_size_bits}
                 total_encoded_b = {}
