@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import entropy
 
+
 # Step 1: Generate a binary pattern with equal probability for 0 and 1
 # Generate 100 random bits (0s and 1s) with 50% probability for each
 high_entropy_pattern = np.random.choice([0, 1], size=100, p=[0.5, 0.5])

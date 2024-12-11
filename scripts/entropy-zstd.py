@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # File path
-file_path = '/home/jamalids/Documents/32-H/combined_32H_data.csv'
+file_path = '/home/jamalids/Documents/64-L/combined_64L_data.csv'
 
 # Load the dataset
 df = pd.read_csv(file_path)
@@ -18,7 +18,7 @@ num_datasets = len(unique_datasets)
 
 # Set the number of rows and columns for subplots
 nrows, ncols = 3, 2
-fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 8), sharex=True)
+fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 20), sharex=True)
 axes = axes.flatten()  # Flatten the axes array for easier indexing
 
 # Create handles for legends
@@ -34,7 +34,7 @@ for i, (dataset, ax) in enumerate(zip(unique_datasets, axes)):
     df_parallel = data[data["RunType"] == "Parallel"]
 
     # Plot bar for Full and Parallel Compression Ratios
-    bar_width = 0.35
+    bar_width = 0.3
     x = range(len(df_full["ComponentSizes"]))
     bars_full = ax.bar(x, df_full["CompressionRatio"], width=bar_width, label="Compression Ratio (Zstd)", color='cyan')
     bars_parallel = ax.bar(
@@ -42,7 +42,7 @@ for i, (dataset, ax) in enumerate(zip(unique_datasets, axes)):
     )
     ax.set_ylabel("Compression Ratio", fontsize=10)
     ax.set_xticks([p + bar_width / 2 for p in x])
-    ax.set_xticklabels(df_full["ComponentSizes"], fontsize=9)
+    ax.set_xticklabels(df_full["ComponentSizes"], fontsize=9,rotation=90)
     ax.tick_params(axis='y', labelsize=9)
 
     # Create a secondary y-axis for entropy lines
@@ -87,5 +87,5 @@ fig.legend(
 #fig.suptitle("Compression Ratios, Full Entropy, and Decomposed Entropy for All Datasets", fontsize=14, y=0.92)
 
 
-plt.savefig("/home/jamalids/Documents/32-H/entropy-zstd.png")
+plt.savefig("/home/jamalids/Documents/64-L/entropy-zstd.png")
 plt.show()

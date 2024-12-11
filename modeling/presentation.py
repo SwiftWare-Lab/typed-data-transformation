@@ -760,7 +760,7 @@ def plot_table_float(float_values, name):
 ####################################################################
 def run_and_collect_data(dataset_path):
    # dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/"
-    dataset_path ="/home/jamalids/Documents/2D/data1/Fcbench/HPC/H/msg_bt_f64.tsv"
+    dataset_path ="/home/jamalids/Documents/2D/data1/Fcbench/High-Entropy/64/tpch_order_f64.tsv"
     datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if
             #  f.endswith('.tsv')]
@@ -773,10 +773,10 @@ def run_and_collect_data(dataset_path):
         print("datasetname##################################",dataset_name)
 
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
-        group=group.iloc[1361:1405,:]
+      #  group=group.iloc[1361:1405,:]
         group = group.T
 
-        group= [0.98,0.85,0.97,0.86,0.79,1.23,7.01,5.87]
+       # group= [0.98,0.85,0.97,0.86,0.79,1.23,7.01,5.87]
        # group = np.round(group, 2)
         group= np.array(group)
         verify_flag_final = False
@@ -803,8 +803,8 @@ def run_and_collect_data(dataset_path):
         bool_array_size_bits = bool_array.nbytes  # Size in bits
         filename = f"{dataset_name}_all.png"
         plot_bitmap_standalone(bool_array,filename)
-        group_p = np.round(group, 2)
-        plot_table_float(group_p, "all.png")
+       # group_p = np.round(group, 2)
+      #  plot_table_float(group_p, "all.png")
         # Split array and apply RLE
         non_consecutive_array, metadata = split_array_on_multiple_consecutive_values(group, threshold_percentage=1)
         non_consecutive_array1 = np.round(non_consecutive_array, 2)
