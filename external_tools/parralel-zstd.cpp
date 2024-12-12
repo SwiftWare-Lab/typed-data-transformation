@@ -17,6 +17,7 @@
 #include <cmath>
 #include "zstd_parallel.h"
 std::vector<uint8_t> globalByteArray;
+std::vector<uint8_t> globalByteArrayNon;
 
 
 std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath) {
@@ -173,6 +174,59 @@ bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<doubl
   }
   return true;
 }
+//////RLE//////////////////////
+// Helper function to convert RLE metadata to a flattened array
+template <typename T>
+std::vector<float> convertRLE(const std::vector<std::tuple<int, T, int>>& metadata) {
+  std::vector<float> consecutiveValues;
+  for (const auto& item : metadata) {
+    int startIndex;
+    T value;
+    int count;
+    std::tie(startIndex, value, count) = item;
+
+    consecutiveValues.push_back(static_cast<float>(startIndex));
+    consecutiveValues.push_back(static_cast<float>(value));
+    consecutiveValues.push_back(static_cast<float>(count));
+  }
+  return consecutiveValues;
+}
+
+// Function to split array based on consecutive values
+template <typename T>
+std::tuple<std::vector<T>, std::vector<std::tuple<int, T, int>>>
+splitArrayOnMultipleConsecutiveValues(const std::vector<T>& data, int threshold) {
+  int totalLength = data.size();
+  int consecutiveCount = 1;
+  int startIdx = 0;
+
+  std::vector<T> nonConsecutiveArray;
+  std::vector<std::tuple<int, T, int>> metadata;
+
+  for (int i = 1; i < totalLength; ++i) {
+    if (data[i] == data[i - 1]) {
+      consecutiveCount++;
+    } else {
+      if (consecutiveCount > threshold) {
+        metadata.emplace_back(i - consecutiveCount, data[i - 1], consecutiveCount);
+      } else {
+        nonConsecutiveArray.insert(nonConsecutiveArray.end(), data.begin() + startIdx, data.begin() + i);
+      }
+      startIdx = i;
+      consecutiveCount = 1;
+    }
+  }
+
+  // Handle the last segment
+  if (consecutiveCount > threshold) {
+    metadata.emplace_back(totalLength - consecutiveCount, data.back(), consecutiveCount);
+  } else {
+    nonConsecutiveArray.insert(nonConsecutiveArray.end(), data.begin() + startIdx, data.end());
+  }
+
+  return std::make_tuple(nonConsecutiveArray, metadata);
+}
+
 int main(int argc, char* argv[]) {
     cxxopts::Options options("DataCompressor", "Compress datasets and profile the compression");
     options.add_options()
@@ -193,6 +247,8 @@ int main(int argc, char* argv[]) {
     std::string outputCSV = result["outcsv"].as<std::string>();
     int numThreads = result["threads"].as<int>();
     int precisionBits = result["bits"].as<int>();
+    int threshold =5;
+  size_t  metadataSize=0;
 
 
     size_t rowCount;
@@ -200,12 +256,25 @@ int main(int argc, char* argv[]) {
 
     if (precisionBits == 64) {
         auto [floatArray, rows] = loadTSVDatasetdouble(datasetPath);
+      // Convert float to int32_t (bitwise reinterpretation)
+     // auto intData = reinterpretToInteger(floatArray);
+
+      // Call the function for int32_t
+      auto [nonConsecutiveArray, metadata] = splitArrayOnMultipleConsecutiveValues(floatArray, threshold);
+      std::vector<float> flattenedRLE = convertRLE(metadata);
         std::cout << "Loaded " << rows << " rows with " << floatArray.size() << " total values (64-bit)." << std::endl;
+        std::cout << "Loaded " << rows << " rows with " << nonConsecutiveArray.size() << " nonConsecutiveArray values (64-bit)." << std::endl;
+      // Measure original metadata size
+       metadataSize = metadata.size() * sizeof(std::tuple<int, double, int>);
+      std::cout << "Size of original metadata: " << metadataSize << " bytes" << std::endl;
+
         if (floatArray.empty()) {
             std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
             return 1;
         }
-        globalByteArray = convertDoubleToBytes(floatArray);
+        globalByteArrayNon = convertDoubleToBytes(nonConsecutiveArray);
+      globalByteArray = convertDoubleToBytes(floatArray);
+
 
         rowCount = rows;
        componentSizesList = {
@@ -237,15 +306,25 @@ int main(int argc, char* argv[]) {
 
     } else if (precisionBits == 32) {
         auto [floatArray, rows] = loadTSVDataset(datasetPath);
+      auto [nonConsecutiveArray, metadata] = splitArrayOnMultipleConsecutiveValues(floatArray, threshold);
+      std::vector<float> flattenedRLE = convertRLE(metadata);
         std::cout << "Loaded " << rows << " rows with " << floatArray.size() << " total values (32-bit)." << std::endl;
+        std::cout << "Loaded " << rows << " rows with " << nonConsecutiveArray.size() << " nonConsecutiveArray values (32-bit)." << std::endl;
+      // Measure original metadata size
+       metadataSize = metadata.size() * sizeof(std::tuple<int, float, int>);
+      std::cout << "Size of original metadata: " << metadataSize << " bytes" << std::endl;
+
         if (floatArray.empty()) {
             std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
             return 1;
         }
-        globalByteArray = convertFloatToBytes(floatArray);
+        globalByteArrayNon = convertFloatToBytes(nonConsecutiveArray);
+         globalByteArray = convertFloatToBytes(floatArray);
       ////////////////////////
       std::vector<uint8_t> byteArray = convertFloatToBytes(floatArray);
       std::vector<float> reconstructedArray = convertBytesToFloat(byteArray);
+
+
 
       // Check if the reconstructed array matches the original
       if (areVectorsEqual(floatArray, reconstructedArray)) {
@@ -257,11 +336,11 @@ int main(int argc, char* argv[]) {
         rowCount = rows;
          componentSizesList = {
 
-           {1, 1, 1, 1},
-          {1, 1, 2},
+         {1, 1, 1, 1},
+         {1, 1, 2},
          {1, 2, 1},
-           {1, 3},
-          {2, 1, 1},
+         {1, 3},
+         {2, 1, 1},
          {2, 2},
           {3, 1},
 
@@ -343,7 +422,7 @@ std::vector<ProfilingInfo> pi_array;
         compressedComponents.resize(componentSizes.size());
 
         start = std::chrono::high_resolution_clock::now();
-        compressedSize = zstdDecomposedParallel(globalByteArray, pi_parallel, compressedComponents, componentSizes, numThreads);
+        compressedSize = zstdDecomposedParallel(globalByteArrayNon, pi_parallel, compressedComponents, componentSizes, numThreads);
         end = std::chrono::high_resolution_clock::now();
         pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
@@ -352,7 +431,7 @@ std::vector<ProfilingInfo> pi_array;
         end = std::chrono::high_resolution_clock::now();
         pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
-        pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
+        pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize+metadataSize);
         std::tie(compressionThroughput, decompressionThroughput) =
             calculateCompDecomThroughput(globalByteArray.size(), pi_parallel.total_time_compressed, pi_parallel.total_time_decompressed);
 

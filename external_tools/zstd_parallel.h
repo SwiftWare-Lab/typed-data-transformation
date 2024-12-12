@@ -24,6 +24,7 @@
 
 // Declare  as an external variable
 extern std::vector<uint8_t> globalByteArray;
+extern std::vector<uint32_t> globalIntArrayNon;
 //calculate Entropy
 double calculateEntropy(const std::vector<uint8_t>& data) {
   std::vector<size_t> frequency(256, 0);
