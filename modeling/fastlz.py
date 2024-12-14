@@ -1,9 +1,12 @@
 import os
 import numpy as np
 import pandas as pd
-import zlib
 from numpy.lib.stride_tricks import as_strided
-import lz4.frame as fastlz  # Using lz4 as an alternative example
+import lz4.frame as fastlz
+#import pylzma as fastlz
+import heapq
+from collections import Counter, defaultdict
+
 
 def split_bytes_into_components(byte_array, component_sizes):
     byte_array = np.frombuffer(byte_array, dtype=np.uint8)
@@ -22,73 +25,153 @@ def fastlz_compress(data):
     compression_ratio = len(data) / len(compressed)
     return compressed, compression_ratio
 
-def decomposition_based_compression(byte_array, component_sizes):
+
+def rle_compress(data):
+    # First, ensure the data is in bytes format if it's a numpy array
+    if isinstance(data, np.ndarray):
+        data = data.tobytes()
+
+    # Check if the bytes object is empty
+    if not data:
+        return b'', 0
+
+    compressed_data = []
+    count = 1
+    last = data[0]
+
+    # Iterate over each byte in the data starting from the second byte
+    for current in data[1:]:
+        if current == last and count < 255:
+            count += 1
+        else:
+            compressed_data.extend([count, last])
+            last = current
+            count = 1
+
+    # Append the last run
+    compressed_data.extend([count, last])
+
+    # Convert list to bytes
+    compressed_bytes = bytes(compressed_data)
+    compression_ratio = len(data) / len(compressed_bytes) if compressed_bytes else 1
+
+    return compressed_bytes, compression_ratio
+
+
+def huffman_coding(data):
+    """Create a Huffman tree and encode the data."""
+    if isinstance(data, np.ndarray):
+        data = data.tobytes()
+
+    # Frequency dictionary of the data
+    frequency = Counter(data)
+    heap = [[weight, [symbol, ""]] for symbol, weight in frequency.items()]
+    heapq.heapify(heap)
+
+    while len(heap) > 1:
+        lo = heapq.heappop(heap)
+        hi = heapq.heappop(heap)
+        for pair in lo[1:]:
+            pair[1] = '0' + pair[1]
+        for pair in hi[1:]:
+            pair[1] = '1' + pair[1]
+        heapq.heappush(heap, [lo[0] + hi[0]] + lo[1:] + hi[1:])
+
+    huffman_dict = defaultdict(str)
+    for pair in heap[0][1:]:
+        huffman_dict[pair[0]] = pair[1]
+
+    # Encode data
+    encoded_data = ''.join(huffman_dict[byte] for byte in data)
+    compressed_bytes = bytes(int(encoded_data[i:i+8], 2) for i in range(0, len(encoded_data), 8))
+    compression_ratio = len(data) / len(compressed_bytes)
+
+    return compressed_bytes, compression_ratio, huffman_dict
+
+
+
+def decomposition_based_compression2(byte_array, component_sizes):
     components = split_bytes_into_components(byte_array, component_sizes)
-    compressed_sizes = []
+    compressed_sizes_rle = []
     total_original_size = len(byte_array)
     results = []
 
     for i, comp in enumerate(components):
+        rle_comp, rle_ratio = rle_compress(comp)
+        compressed_sizes_rle.append(len(rle_comp))
+        print(f"Component {i}: Compressed size = {len(rle_comp)}")  # Debugging output
+
+    total_compressed_size_rle = sum(compressed_sizes_rle)
+    print(f"Total compressed size RLE: {total_compressed_size_rle}")  # Sum check
+
+    return results
+def decomposition_based_compression(byte_array, component_sizes):
+    components = split_bytes_into_components(byte_array, component_sizes)
+    compressed_sizes_fastlz = []
+    compressed_sizes_rle = []
+    compressed_sizes_huffman = []
+    total_original_size = len(byte_array)
+    results = []
+
+    # Loop through each component and perform compression
+    for comp in components:
+        # FastLZ Compression
         compressed_comp, lz77_ratio = fastlz_compress(comp)
-        compressed_sizes.append(len(compressed_comp))
-       # results.append({
-           # "Component": i + 1,
-           # "Compression Ratio": lz77_ratio,
-           # "Compressed Size": len(compressed_comp)
-        #})
+        compressed_sizes_fastlz.append(len(compressed_comp))
 
-    # Compress the whole array
+        # RLE Compression
+        rle_comp, rle_ratio = rle_compress(comp)
+        compressed_sizes_rle.append(len(rle_comp))
+
+        # Huffman Compression
+        huffman_comp, huffman_ratio, _ = huffman_coding(comp)
+        compressed_sizes_huffman.append(len(huffman_comp))
+
+    # Compress the whole array with FastLZ, RLE, and Huffman
     compressed_full, full_ratio = fastlz_compress(byte_array)
-    total_compressed_size = sum(compressed_sizes)
-    decomposition_ratio = total_original_size / total_compressed_size
+    rle_full, rle_full_ratio = rle_compress(byte_array)
+    huffman_full, huffman_full_ratio, _ = huffman_coding(byte_array)  # Adjusted unpacking here
 
+    # Calculate total compressed sizes for FastLZ, RLE, and Huffman
+    total_compressed_size_fastlz = sum(compressed_sizes_fastlz)
+    total_compressed_size_rle = sum(compressed_sizes_rle)
+    total_compressed_size_huff = sum(compressed_sizes_huffman)
+
+    # Append overall results for full data
     results.append({
-        "Component": "Full Data",
-        "Compression Ratio": full_ratio,
-        "Compressed Size": len(compressed_full)
+        "Type": "Full Data",
+        "Compression Ratio FastLZ": full_ratio,
+        "Compressed Size FastLZ": len(compressed_full),
+        "Compression Ratio RLE": rle_full_ratio,
+        "Compressed Size RLE": len(rle_full),
+        "Compression Ratio Huffman": huffman_full_ratio,
+        "Compressed Size Huffman": len(huffman_full)
     })
+
+    # Append decomposition ratios
     results.append({
-        "Component": "decomposition_ratio",
-        "Compression Ratio": decomposition_ratio,
-        "Compressed Size": total_compressed_size
+        "Type": "Decompression",
+        "Compression Ratio FastLZ": total_original_size / total_compressed_size_fastlz,
+        "Compressed Size FastLZ": total_compressed_size_fastlz,
+        "Compression Ratio RLE": total_original_size / total_compressed_size_rle,
+        "Compressed Size RLE": total_compressed_size_rle,
+        "Compression Ratio Huffman": total_original_size / total_compressed_size_huff,
+        "Compressed Size Huffman": total_compressed_size_huff
     })
 
     return results
 
+
 def run_and_collect_data():
-    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/32/solar_wind_f32.tsv"
-    # Step 1: Read the TSV file without headers
-    ts_data1 = pd.read_csv(dataset_path, delimiter='\t', header=None)
-
-    # Extract the dataset name from the path
+    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/32/citytemp_f32.tsv"
+    ts_data1= pd.read_csv(dataset_path, delimiter='\t', header=None)
+   # ts_data1  = ts_data1.iloc [0:2000, :]
     dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
-
-    # Step 2: Drop the first column
     data_without_first_col = ts_data1.drop(ts_data1.columns[0], axis=1)
 
-    # Step 3: Convert the data to float and transpose
-    # This results in a 2D NumPy array of type float32
     data_float32 = data_without_first_col.astype(float).T.to_numpy().astype(np.float32)
+    byte_array = data_float32.flatten().tobytes()
 
-    # Step 4: Flatten the array to 1D if it's multi-dimensional
-    # This ensures that slicing works correctly
-    data_flat = data_float32.flatten()
-
-    # Step 5: Slice the array to keep only the first 2048 float32 values
-    # Ensure that the data has at least 2048 values to avoid IndexError
-    num_floats = 2048
-    if len(data_flat) < num_floats:
-        raise ValueError(f"Insufficient data: Expected at least {num_floats} float32 values, but got {len(data_flat)}.")
-    data_limited = data_flat[:num_floats]
-
-    # Step 6: Convert the sliced array to bytes (8 KB)
-    byte_array = data_limited.tobytes()
-
-    # Step 6: Convert the sliced array to bytes (8 KB)
-    byte_array = data_limited.tobytes()
-    #byte_array = ts_data1.drop(ts_data1.columns[0], axis=1).astype(float).T.to_numpy().astype(np.float32).tobytes()
-
-    # Different component sizes to try
     component_configurations = [
         [1, 1, 1, 1],
         [1, 1, 2],
