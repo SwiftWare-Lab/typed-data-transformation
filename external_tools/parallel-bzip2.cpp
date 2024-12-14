@@ -250,12 +250,12 @@ int main(int argc, char* argv[]) {
          componentSizesList = {
 
            {1, 1, 1, 1},
-         //  {1, 1, 2},
-         // {1, 2, 1},
-         //   {1, 3},
-         //  {2, 1,1},
-         // {2, 2},
-         //  {3, 1},
+           {1, 1, 2},
+          {1, 2, 1},
+            {1, 3},
+           {2, 1,1},
+          {2, 2},
+           {3, 1},
 
       };
 
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
 std::vector<ProfilingInfo> pi_array;
   int iter=1;
 
-  std::vector<int> threadSizesList = {4, 8,  16,  24, 32, 40};
+  std::vector<int> threadSizesList = { 32};
 
     for (const auto& componentSizes : componentSizesList) {
       std::cout << "Testing with component sizes: ";
