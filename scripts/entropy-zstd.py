@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # File path
-file_path = '/home/jamalids/Documents/64-L/combined_64L_data.csv'
+file_path = '/home/jamalids/Documents/fastlz/entropy/combined_32L_data.csv'
 
 # Load the dataset
 df = pd.read_csv(file_path)
@@ -17,7 +17,7 @@ unique_datasets = df['dataset'].unique()
 num_datasets = len(unique_datasets)
 
 # Set the number of rows and columns for subplots
-nrows, ncols = 3, 2
+nrows, ncols = 2,1
 fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 20), sharex=True)
 axes = axes.flatten()  # Flatten the axes array for easier indexing
 
@@ -42,7 +42,7 @@ for i, (dataset, ax) in enumerate(zip(unique_datasets, axes)):
     )
     ax.set_ylabel("Compression Ratio", fontsize=10)
     ax.set_xticks([p + bar_width / 2 for p in x])
-    ax.set_xticklabels(df_full["ComponentSizes"], fontsize=9,rotation=90)
+    ax.set_xticklabels(df_full["ComponentSizes"], rotation=45, ha='right', fontsize=9)
     ax.tick_params(axis='y', labelsize=9)
 
     # Create a secondary y-axis for entropy lines
@@ -64,28 +64,6 @@ for i, (dataset, ax) in enumerate(zip(unique_datasets, axes)):
         handles_compression, labels_compression = ax.get_legend_handles_labels()
         handles_entropy, labels_entropy = ax2.get_legend_handles_labels()
 
-# Remove empty subplots if the number of datasets is less than the number of subplots
-for j in range(num_datasets, len(axes)):
-    fig.delaxes(axes[j])
 
-# Adjust layout
-fig.tight_layout(pad=5)
-
-# Add a single legend above the first row
-fig.legend(
-    handles_compression + handles_entropy,
-    labels_compression + labels_entropy,
-    loc="upper center",
-    bbox_to_anchor=(0.5, 1.0),
-    ncol=4,
-    fontsize=10,
-    title="Metrics",
-    title_fontsize=10
-)
-
-# Add an overall title for the figure
-#fig.suptitle("Compression Ratios, Full Entropy, and Decomposed Entropy for All Datasets", fontsize=14, y=0.92)
-
-
-plt.savefig("/home/jamalids/Documents/64-L/entropy-zstd.png")
+plt.savefig("/home/jamalids/Documents/fastlz/entropy/entropy-zstd.png")
 plt.show()
