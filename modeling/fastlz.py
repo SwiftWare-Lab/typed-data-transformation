@@ -58,36 +58,6 @@ def rle_compress(data):
     return compressed_bytes, compression_ratio
 
 
-def huffman_coding(data):
-    """Create a Huffman tree and encode the data."""
-    if isinstance(data, np.ndarray):
-        data = data.tobytes()
-
-    # Frequency dictionary of the data
-    frequency = Counter(data)
-    heap = [[weight, [symbol, ""]] for symbol, weight in frequency.items()]
-    heapq.heapify(heap)
-
-    while len(heap) > 1:
-        lo = heapq.heappop(heap)
-        hi = heapq.heappop(heap)
-        for pair in lo[1:]:
-            pair[1] = '0' + pair[1]
-        for pair in hi[1:]:
-            pair[1] = '1' + pair[1]
-        heapq.heappush(heap, [lo[0] + hi[0]] + lo[1:] + hi[1:])
-
-    huffman_dict = defaultdict(str)
-    for pair in heap[0][1:]:
-        huffman_dict[pair[0]] = pair[1]
-
-    # Encode data
-    encoded_data = ''.join(huffman_dict[byte] for byte in data)
-    compressed_bytes = bytes(int(encoded_data[i:i+8], 2) for i in range(0, len(encoded_data), 8))
-    compression_ratio = len(data) / len(compressed_bytes)
-
-    return compressed_bytes, compression_ratio, huffman_dict
-
 
 
 def decomposition_based_compression2(byte_array, component_sizes):
@@ -109,7 +79,6 @@ def decomposition_based_compression(byte_array, component_sizes):
     components = split_bytes_into_components(byte_array, component_sizes)
     compressed_sizes_fastlz = []
     compressed_sizes_rle = []
-    compressed_sizes_huffman = []
     total_original_size = len(byte_array)
     results = []
 
@@ -123,19 +92,14 @@ def decomposition_based_compression(byte_array, component_sizes):
         rle_comp, rle_ratio = rle_compress(comp)
         compressed_sizes_rle.append(len(rle_comp))
 
-        # Huffman Compression
-        huffman_comp, huffman_ratio, _ = huffman_coding(comp)
-        compressed_sizes_huffman.append(len(huffman_comp))
 
     # Compress the whole array with FastLZ, RLE, and Huffman
     compressed_full, full_ratio = fastlz_compress(byte_array)
     rle_full, rle_full_ratio = rle_compress(byte_array)
-    huffman_full, huffman_full_ratio, _ = huffman_coding(byte_array)  # Adjusted unpacking here
 
     # Calculate total compressed sizes for FastLZ, RLE, and Huffman
     total_compressed_size_fastlz = sum(compressed_sizes_fastlz)
     total_compressed_size_rle = sum(compressed_sizes_rle)
-    total_compressed_size_huff = sum(compressed_sizes_huffman)
 
     # Append overall results for full data
     results.append({
@@ -144,8 +108,7 @@ def decomposition_based_compression(byte_array, component_sizes):
         "Compressed Size FastLZ": len(compressed_full),
         "Compression Ratio RLE": rle_full_ratio,
         "Compressed Size RLE": len(rle_full),
-        "Compression Ratio Huffman": huffman_full_ratio,
-        "Compressed Size Huffman": len(huffman_full)
+
     })
 
     # Append decomposition ratios
@@ -155,8 +118,7 @@ def decomposition_based_compression(byte_array, component_sizes):
         "Compressed Size FastLZ": total_compressed_size_fastlz,
         "Compression Ratio RLE": total_original_size / total_compressed_size_rle,
         "Compressed Size RLE": total_compressed_size_rle,
-        "Compression Ratio Huffman": total_original_size / total_compressed_size_huff,
-        "Compressed Size Huffman": total_compressed_size_huff
+
     })
 
     return results
