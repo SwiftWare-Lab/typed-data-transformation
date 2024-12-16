@@ -26,6 +26,8 @@ def snappy_comp(data):
 
 def fastlz_compress(data):
     return  fastlz.compress(data)
+
+
 def rle_compress(data):
 
     if isinstance(data, np.ndarray):

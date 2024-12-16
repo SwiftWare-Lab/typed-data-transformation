@@ -8,6 +8,9 @@ from xor_based import encode_xor_floats
 from utils import tuple_to_string, compute_entropy, list_to_string
 from compression_tools import zstd_comp,zlib_comp,bz2_comp,snappy_comp,fastlz_compress,rle_compress,huffman_compress
 
+
+
+
 def possible_sum(m):
     ### compute all possible set of integers that sum to m
     possible_sets = []
@@ -41,11 +44,15 @@ def merge_order_with_decomposition(order, decomposition):
     return merged_order
 
 
-def find_all_combinations(all_possible_consecutive_comp, m):
+def find_all_combinations(all_possible_consecutive_comp, m, contiguous=True):
     # find all combinations of decomposition in a naive way
     byte_loc = np.arange(0, m)
-    # get all m! permutations of byte_loc
-    all_permutations = list(itertools.permutations(byte_loc))
+    if contiguous:
+        # make a tuple of size m
+        all_permutations = [tuple(range(0, m))]
+    else:
+        # get all m! permutations of byte_loc
+        all_permutations = list(itertools.permutations(byte_loc))
     # for every composition, apply all permutations
     all_decomposition = []
     for composition in all_possible_consecutive_comp:
@@ -86,9 +93,9 @@ def analyze_data(data_set_list, data_set_word):
     return entropy_list, WE, entropy_word
 
 
-def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=None, m=4, chuck_no=-1):
+def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=None, m=4, chuck_no=-1, contig_order=True):
     if not given_decomp:
-        all_4, len_4 = find_all_combinations(possible_sum(m), m)
+        all_4, len_4 = find_all_combinations(possible_sum(m), m, contig_order)
     else:
         all_4, len_4 = given_decomp, len(given_decomp)
     # view data_set as bytes
@@ -130,11 +137,16 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
     return stat_array
 
 
+# use argparser to get the dataset path
+
 chunk_size = -1
+contig_order = True
 dataset_path = sys.argv[1]
 m = int(sys.argv[2])
 if len(sys.argv) > 3:
     chunk_size = int(sys.argv[3])
+if len(sys.argv) > 4:
+    contig_order = bool(sys.argv[4])
 
 
 dataset_name = dataset_path.split('/')[-1].split('.')[0]
@@ -149,8 +161,12 @@ else:
     sliced_data = data_set.values[:, 1].astype(np.float64)
 
 if chunk_size == -1:
-    comp_tool_dict = {'huffman_compress' : huffman_compress}
-    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict)
+    comp_tool_dict = {'huffman_compress' : huffman_compress,
+                      'zstd' : zstd_comp, 'zlib' : zlib_comp,
+                      'bz2' : bz2_comp, 'snappy' : snappy_comp,
+                      'fastlz' : fastlz_compress, 'rle' : rle_compress,
+                      'xor': encode_xor_floats }
+    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order)
     # store stats in a csv file
     stats_df = pd.DataFrame(stats)
     if not os.path.exists('logs'):
@@ -158,12 +174,14 @@ if chunk_size == -1:
     stats_df.to_csv(f'logs/{dataset_name}_decomposition_stats.csv', index=False)
 
 else:
-    comp_tool_dict = {'zstd' : zstd_comp, 'xor' : encode_xor_floats}
+    comp_tool_dict = {'zstd' : zstd_comp, 'zlib' : zlib_comp,
+                      'bz2' : bz2_comp, 'snappy' : snappy_comp,
+                      'xor' : encode_xor_floats}
     no_chunks = len(sliced_data) // chunk_size
     no_chunks = np.min([100, no_chunks])
     stats_array = []
     for i in range(no_chunks):
-        stats = test_decomposition(sliced_data[i*chunk_size:(i+1)*chunk_size], dataset_name, m=m, comp_tool_dict=comp_tool_dict, chuck_no=i)
+        stats = test_decomposition(sliced_data[i*chunk_size:(i+1)*chunk_size], dataset_name, m=m, comp_tool_dict=comp_tool_dict, chuck_no=i, contig_order=contig_order)
         stats_array.extend(stats)
     # store stats in a csv file
     stats_df = pd.DataFrame(stats_array)
