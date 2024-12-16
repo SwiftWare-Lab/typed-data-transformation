@@ -6,7 +6,7 @@ import pandas as pd
 
 from xor_based import encode_xor_floats
 from utils import tuple_to_string, compute_entropy, list_to_string
-from compression_tools import zstd_comp
+from compression_tools import zstd_comp,zlib_comp,bz2_comp,snappy_comp,fastlz_compress,rle_compress,huffman_compress
 
 def possible_sum(m):
     ### compute all possible set of integers that sum to m
@@ -149,7 +149,7 @@ else:
     sliced_data = data_set.values[:, 1].astype(np.float64)
 
 if chunk_size == -1:
-    comp_tool_dict = {'zstd' : zstd_comp}
+    comp_tool_dict = {'huffman_compress' : huffman_compress}
     stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict)
     # store stats in a csv file
     stats_df = pd.DataFrame(stats)
