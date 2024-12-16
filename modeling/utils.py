@@ -128,4 +128,35 @@ def floats_to_bool_arrays(float_list):
     bool_arrays = [float_to_bool_array(f) for f in float_list]
     # Return as a numpy array
     return np.array(bool_arrays, dtype=bool)
-import numpy as np
+
+
+def tuple_to_string(t):
+    res = '( '
+    for ele in t:
+        res += '('
+        for i in ele:
+            res += str(i)
+            res += ','
+        res += '), '
+    res += ')'
+    return res
+
+def list_to_string(l):
+    res = '('
+    for ele in l:
+        res += str(ele)
+        res += ','
+    res += ')'
+    return res
+
+
+def compute_entropy(data_set):
+    from collections import Counter
+    import numpy as np
+    # Count the occurrences of each byte value
+    counts = Counter(data_set)
+    # Calculate the probability of each byte value
+    probs = np.array(list(counts.values())) / len(data_set)
+    # Calculate the entropy using the formula
+    entropy = -np.sum(probs * np.log2(probs))
+    return entropy

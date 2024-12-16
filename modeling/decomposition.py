@@ -1,0 +1,176 @@
+import sys
+import os
+import numpy as np
+import itertools
+import pandas as pd
+
+from xor_based import encode_xor_floats
+from utils import tuple_to_string, compute_entropy, list_to_string
+from compression_tools import zstd_comp
+
+def possible_sum(m):
+    ### compute all possible set of integers that sum to m
+    possible_sets = []
+    for i in range(1, m+1):
+        if i == m:
+            possible_sets.append([i])
+        else:
+            for j in possible_sum(m-i):
+                possible_sets.append([i] + j)
+    return possible_sets
+
+
+def find_uniqe_sets(possible_sets):
+    # sort all sets
+    possible_sets_sorted = [sorted(x) for x in possible_sets]
+    # remove duplicates
+    unique_sets = list(set([tuple(x) for x in possible_sets_sorted]))
+    return unique_sets
+
+
+def merge_order_with_decomposition(order, decomposition):
+    # merge order with decomposition
+    cur_len = 0
+    # empty set
+    merged_order = set()
+    for i in range(len(decomposition)):
+        comp_len = decomposition[i]
+        cur_comp = order[cur_len:cur_len+comp_len]
+        merged_order.add(cur_comp)
+        cur_len += comp_len
+    return merged_order
+
+
+def find_all_combinations(all_possible_consecutive_comp, m):
+    # find all combinations of decomposition in a naive way
+    byte_loc = np.arange(0, m)
+    # get all m! permutations of byte_loc
+    all_permutations = list(itertools.permutations(byte_loc))
+    # for every composition, apply all permutations
+    all_decomposition = []
+    for composition in all_possible_consecutive_comp:
+        for permutation in all_permutations:
+            cur_comp = merge_order_with_decomposition(permutation, composition)
+            all_decomposition.append(cur_comp)
+    # remove duplicates
+    all_perm_length = len(all_decomposition)
+    all_decomposition = list(set([tuple(x) for x in all_decomposition]))
+    return all_decomposition, all_perm_length
+
+
+
+
+def compress_data(data_set_list, compress_method):
+    # view data_set as bytes
+    compressed_data, compressed_size = [], 0
+    for cmp in data_set_list:
+        data_set_bytes = np.frombuffer(cmp.flatten().tobytes(), dtype=np.byte)
+        compressed_comp = compress_method(data_set_bytes)
+        compressed_data.append(compressed_comp)
+        compressed_size += len(compressed_comp)
+    return compressed_data, compressed_size
+
+
+def analyze_data(data_set_list, data_set_word):
+    # view data_set as bytes
+    entropy_list, WE, tot_size, entropy_word = [], 0, 0, 0
+    for cmp in data_set_list:
+        tot_size += len(cmp.flatten().tobytes())
+    for cmp in data_set_list:
+        data_set_bytes = np.frombuffer(cmp.flatten().tobytes(), dtype=np.byte)
+        # entropy of the compressed data
+        entropy = compute_entropy(data_set_bytes)
+        entropy_list.append(entropy)
+        WE += entropy * (len(data_set_bytes) / tot_size)
+    entropy_word = compute_entropy(data_set_word)
+    return entropy_list, WE, entropy_word
+
+
+def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=None, m=4, chuck_no=-1):
+    if not given_decomp:
+        all_4, len_4 = find_all_combinations(possible_sum(m), m)
+    else:
+        all_4, len_4 = given_decomp, len(given_decomp)
+    # view data_set as bytes
+    data_set_bytes = data_set.view(np.byte)
+    len_bytes = len(data_set_bytes)
+    # 2D byte array of m x len(data_set) bytes for easy access
+    comps = np.zeros((m, len(data_set)), dtype=np.byte)
+    for i in range(m):
+        comps[i] = data_set_bytes[i:len_bytes:m]
+    # create new decomposed data set
+    stat_array = []
+    for decomp in all_4:
+        stats = {'dataset name': dataset_name, 'original size': len_bytes, 'type width': m,
+                 'Dimension': len(data_set), 'decomposition': tuple_to_string(decomp), 'chunk no': chuck_no}
+        comp_list = []
+        for cur_comp in decomp:
+            cur_comp_data =np.zeros((len(cur_comp), len(data_set)), dtype=np.byte)
+            for i in range(len(cur_comp)):
+                cur_comp_data[i] = comps[cur_comp[i]]
+            comp_list.append(cur_comp_data)
+        # concatenate comp_list list
+        reordered_full_data = np.concatenate(comp_list, axis=0)
+        # for every compression tool, compress the data
+        for comp_name, comp_tool in comp_tool_dict.items():
+            full_compressed, full_comp_size = compress_data([data_set], comp_tool)
+            c_data, decomp_compressed_size = compress_data(comp_list, comp_tool)
+            c_reordered_date, reordered_compressed_size = compress_data([reordered_full_data], comp_tool)
+            stats[f'decomposed {comp_name} compressed size (B)'] = decomp_compressed_size
+            stats[f'reordered {comp_name} compressed size (B)'] = reordered_compressed_size
+            stats[f'standard {comp_name} compressed size (B)'] = full_comp_size
+            print(f'decomp: {tuple_to_string(decomp)} : {comp_name} compression ratio: {len_bytes/full_comp_size}, decomposed compression ratio: {len_bytes/decomp_compressed_size},'
+                  f' reordered compression ratio: {len_bytes/reordered_compressed_size}')
+        # calculate entropy
+        entropy_list, WE, entropy_word = analyze_data(comp_list, data_set)
+        stats['WE'] = WE
+        stats['entropy word'] = entropy_word
+        stats['entropy list'] = list_to_string(entropy_list)
+        stat_array.append(stats)
+    return stat_array
+
+
+chunk_size = -1
+dataset_path = sys.argv[1]
+m = int(sys.argv[2])
+if len(sys.argv) > 3:
+    chunk_size = int(sys.argv[3])
+
+
+dataset_name = dataset_path.split('/')[-1].split('.')[0]
+# open tsv file with df
+data_set = pd.read_csv(dataset_path, sep='\t')
+
+if m == 2:
+    sliced_data = data_set.values[:, 1].astype(np.float16)
+elif m == 4:
+    sliced_data = data_set.values[:, 1].astype(np.float32)
+else:
+    sliced_data = data_set.values[:, 1].astype(np.float64)
+
+if chunk_size == -1:
+    comp_tool_dict = {'zstd' : zstd_comp}
+    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict)
+    # store stats in a csv file
+    stats_df = pd.DataFrame(stats)
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    stats_df.to_csv(f'logs/{dataset_name}_decomposition_stats.csv', index=False)
+
+else:
+    comp_tool_dict = {'zstd' : zstd_comp, 'xor' : encode_xor_floats}
+    no_chunks = len(sliced_data) // chunk_size
+    no_chunks = np.min([100, no_chunks])
+    stats_array = []
+    for i in range(no_chunks):
+        stats = test_decomposition(sliced_data[i*chunk_size:(i+1)*chunk_size], dataset_name, m=m, comp_tool_dict=comp_tool_dict, chuck_no=i)
+        stats_array.extend(stats)
+    # store stats in a csv file
+    stats_df = pd.DataFrame(stats_array)
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    stats_df.to_csv(f'logs/{dataset_name}_decomposition_streaming_stats.csv', index=False)
+#stats = test_decomposition(sliced_data, dataset_name, given_decomp=[((0,), (1, 2), (3,))], m=m, comp_tool_dict=comp_tool_dict)
+
+
+
