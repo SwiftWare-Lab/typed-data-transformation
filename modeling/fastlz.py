@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import as_strided
 import lz4.frame as fastlz
-#import pylzma as fastlz
+import lzma
 import heapq
 from collections import Counter, defaultdict
 
@@ -24,6 +24,12 @@ def fastlz_compress(data):
     compressed = fastlz.compress(data)
     compression_ratio = len(data) / len(compressed)
     return compressed, compression_ratio
+
+def lzma_compression(data):
+    compressed = lzma.compress(data)  # Use lzma.compress directly
+    compression_ratio = len(data) / len(compressed)
+    return compressed, compression_ratio
+
 
 
 def rle_compress(data):
@@ -89,27 +95,13 @@ def huffman_coding(data):
     return compressed_bytes, compression_ratio, huffman_dict
 
 
-
-def decomposition_based_compression2(byte_array, component_sizes):
-    components = split_bytes_into_components(byte_array, component_sizes)
-    compressed_sizes_rle = []
-    total_original_size = len(byte_array)
-    results = []
-
-    for i, comp in enumerate(components):
-        rle_comp, rle_ratio = rle_compress(comp)
-        compressed_sizes_rle.append(len(rle_comp))
-        print(f"Component {i}: Compressed size = {len(rle_comp)}")  # Debugging output
-
-    total_compressed_size_rle = sum(compressed_sizes_rle)
-    print(f"Total compressed size RLE: {total_compressed_size_rle}")  # Sum check
-
-    return results
 def decomposition_based_compression(byte_array, component_sizes):
     components = split_bytes_into_components(byte_array, component_sizes)
     compressed_sizes_fastlz = []
     compressed_sizes_rle = []
     compressed_sizes_huffman = []
+    compressed_sizes_lzma=[]
+
     total_original_size = len(byte_array)
     results = []
 
@@ -123,17 +115,23 @@ def decomposition_based_compression(byte_array, component_sizes):
         rle_comp, rle_ratio = rle_compress(comp)
         compressed_sizes_rle.append(len(rle_comp))
 
-        # Huffman Compression
-        huffman_comp, huffman_ratio, _ = huffman_coding(comp)
-        compressed_sizes_huffman.append(len(huffman_comp))
+        # # Huffman Compression
+        # huffman_comp, huffman_ratio, _ = huffman_coding(comp)
+        # compressed_sizes_huffman.append(len(huffman_comp))
+        #lzma
+
+        compressed_comp, lzma_ratio = lzma_compression(comp)
+        compressed_sizes_lzma.append(len(compressed_comp))
 
     # Compress the whole array with FastLZ, RLE, and Huffman
     compressed_full, full_ratio = fastlz_compress(byte_array)
+    lzma_full, lzma_ratio = lzma_compression(byte_array)
     rle_full, rle_full_ratio = rle_compress(byte_array)
     huffman_full, huffman_full_ratio, _ = huffman_coding(byte_array)  # Adjusted unpacking here
 
     # Calculate total compressed sizes for FastLZ, RLE, and Huffman
     total_compressed_size_fastlz = sum(compressed_sizes_fastlz)
+    total_compressed_size_lzma = sum(compressed_sizes_lzma)
     total_compressed_size_rle = sum(compressed_sizes_rle)
     total_compressed_size_huff = sum(compressed_sizes_huffman)
 
@@ -142,10 +140,12 @@ def decomposition_based_compression(byte_array, component_sizes):
         "Type": "Full Data",
         "Compression Ratio FastLZ": full_ratio,
         "Compressed Size FastLZ": len(compressed_full),
+        "Compression Ratio Lzma": lzma_ratio,
+        "Compressed Size Lzma": len(lzma_full),
         "Compression Ratio RLE": rle_full_ratio,
         "Compressed Size RLE": len(rle_full),
-        "Compression Ratio Huffman": huffman_full_ratio,
-        "Compressed Size Huffman": len(huffman_full)
+        # "Compression Ratio Huffman": huffman_full_ratio,
+        # "Compressed Size Huffman": len(huffman_full)
     })
 
     # Append decomposition ratios
@@ -153,17 +153,20 @@ def decomposition_based_compression(byte_array, component_sizes):
         "Type": "Decompression",
         "Compression Ratio FastLZ": total_original_size / total_compressed_size_fastlz,
         "Compressed Size FastLZ": total_compressed_size_fastlz,
+        "Compression Ratio Lzma": total_original_size / total_compressed_size_lzma,
+        "Compressed Size Lzma": total_compressed_size_lzma,
         "Compression Ratio RLE": total_original_size / total_compressed_size_rle,
         "Compressed Size RLE": total_compressed_size_rle,
-        "Compression Ratio Huffman": total_original_size / total_compressed_size_huff,
-        "Compressed Size Huffman": total_compressed_size_huff
+        # "Compression Ratio Huffman": total_original_size / total_compressed_size_huff,
+        # "Compressed Size Huffman": total_compressed_size_huff
     })
 
     return results
 
 
 def run_and_collect_data():
-    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/32/citytemp_f32.tsv"
+    dataset_path = 'C:\\Users\\jamalids\\Documents\\db\\hst_wfc3_ir_f32.tsv'
+
     ts_data1= pd.read_csv(dataset_path, delimiter='\t', header=None)
    # ts_data1  = ts_data1.iloc [0:2000, :]
     dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
@@ -186,12 +189,12 @@ def run_and_collect_data():
     for config in component_configurations:
         result = decomposition_based_compression(byte_array, config)
         for res in result:
-            res.update({"Configuration": "-".join(map(str, config))})
+            res.update({"Configuration": "_".join(map(str, config))})
         all_results.extend(result)
 
     # Convert results to DataFrame and save to CSV
     df_results = pd.DataFrame(all_results)
-    df_results.to_csv("/home/jamalids/Documents/solar_wind_f32.csv", index=False)
+    df_results.to_csv("C:\\Users\\jamalids\\Documents\\hst_wfc3_ir_f32.csv")
     print("Saved results to compression_results.csv")
 
 if __name__ == "__main__":
