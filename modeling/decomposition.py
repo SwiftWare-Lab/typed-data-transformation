@@ -5,7 +5,7 @@ import itertools
 import pandas as pd
 
 from xor_based import encode_xor_floats
-from utils import tuple_to_string, compute_entropy, list_to_string
+from utils import tuple_to_string, compute_entropy, list_to_string, find_max_consecutive_similar_values
 from compression_tools import zstd_comp,zlib_comp,bz2_comp,snappy_comp,fastlz_compress,rle_compress,huffman_compress
 
 
@@ -77,9 +77,11 @@ def compress_data(data_set_list, compress_method):
     return compressed_data, compressed_size
 
 
+
 def analyze_data(data_set_list, data_set_word):
     # view data_set as bytes
     entropy_list, WE, tot_size, entropy_word = [], 0, 0, 0
+    max_rep_lst, uniq_ratio_lst = [], []
     for cmp in data_set_list:
         tot_size += len(cmp.flatten().tobytes())
     for cmp in data_set_list:
@@ -87,9 +89,12 @@ def analyze_data(data_set_list, data_set_word):
         # entropy of the compressed data
         entropy = compute_entropy(data_set_bytes)
         entropy_list.append(entropy)
+        max_rep = find_max_consecutive_similar_values(data_set_bytes)
+        max_rep_lst.append(max_rep)
+        uniq_ratio_lst.append(len(set(data_set_bytes))/len(data_set_bytes))
         WE += entropy * (len(data_set_bytes) / tot_size)
     entropy_word = compute_entropy(data_set_word)
-    return entropy_list, WE, entropy_word
+    return entropy_list, WE, entropy_word, max_rep_lst, uniq_ratio_lst
 
 
 def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=None, m=4, chuck_no=-1, contig_order=True, out_log_dir=''):
@@ -130,10 +135,12 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             print(f'decomp: {tuple_to_string(decomp)} : {comp_name} compression ratio: {len_bytes/full_comp_size}, decomposed compression ratio: {len_bytes/decomp_compressed_size},'
                   f' reordered compression ratio: {len_bytes/reordered_compressed_size}')
         # calculate entropy
-        entropy_list, WE, entropy_word = analyze_data(comp_list, data_set)
+        entropy_list, WE, entropy_word, rle_max, uniq_ratio = analyze_data(comp_list, data_set)
         stats['WE'] = WE
         stats['entropy word'] = entropy_word
         stats['entropy list'] = list_to_string(entropy_list)
+        stats['max rep'] = list_to_string(rle_max)
+        stats['unique ratio'] = list_to_string(uniq_ratio)
         stat_array.append(stats)
         if out_log_dir != '' and ( ((idx+1) % 20 == 0) or (idx+1) == len(all_4) ):
             # store stats in a csv file
@@ -174,7 +181,7 @@ if chunk_size == -1:
         'zlib' : zlib_comp,
         'bz2' : bz2_comp, 'snappy' : snappy_comp,
         'fastlz' : fastlz_compress, 'rle' : rle_compress,
-        'xor': encode_xor_floats
+        #'xor': encode_xor_floats
                       }
     stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='logs')
 else:

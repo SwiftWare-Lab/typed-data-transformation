@@ -160,3 +160,18 @@ def compute_entropy(data_set):
     # Calculate the entropy using the formula
     entropy = -np.sum(probs * np.log2(probs))
     return entropy
+
+
+
+def find_max_consecutive_similar_values(data_set):
+    # Find the maximum number of consecutive similar values
+    max_consecutive = 1
+    current_consecutive = 1
+    for i in range(1, len(data_set)):
+        if data_set[i] == data_set[i - 1]:
+            current_consecutive += 1
+            if current_consecutive > max_consecutive:
+                max_consecutive = current_consecutive
+        else:
+            current_consecutive = 1
+    return max_consecutive
