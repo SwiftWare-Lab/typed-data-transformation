@@ -9,7 +9,7 @@ def generate_python_command(datasets, script_name, output_csv_path, num_threads=
         # extract dataset name
         dataset_name = dataset.split("/")[-1].split(".")[0]
         output_csv_name = f"output_{dataset_name}.csv"
-        script_content += f"python3 {script_name} --dataset={dataset} --outcsv={os.path.join(output_csv_path, output_csv_name)} --nthreads={num_threads}\n\n"
+        script_content += f"python3 {script_name} --dataset={dataset} --outcsv={os.path.join(output_csv_path, output_csv_name)} --mode={mode}\n\n"
     return script_content
 
 
@@ -25,7 +25,7 @@ def generate_sbatch_header(time, num_tasks, email, memory="64000M", name="Compre
 #SBATCH --mail-user={email}
 #SBATCH --export=ALL
 #SBATCH --cpus-per-task={num_tasks}
-#SBATCH --nodes=1
+#SBATCH --nodes=40
 #SBATCH --mem={memory}
 
                 """
@@ -43,10 +43,10 @@ def arg_parser():
     parser.add_argument('--dataset', dest='dataset_path', default="./data/UCRArchive_2018/", help='Path to the UCR dataset directory.')
     parser.add_argument('--pscript', dest='script_name', default="compress_one_dataset.py", help='Name of the script to run on each dataset.')
     parser.add_argument('--outcsv', dest='out_csv_dir', default="./logs/",  help='where csv log files are stored.')
-    parser.add_argument('--nsbatch', dest='num_scripts', default=5, type=int, help='Number of scripts to run in parallel.')
+    parser.add_argument('--nsbatch', dest='num_scripts', default=1, type=int, help='Number of scripts to run in parallel.')
     parser.add_argument('--output', dest='output_dir', default="./", help='Output directory for the sbatch scripts.')
-    parser.add_argument('--testmode', dest='test_mode', default=False, type=bool, help='Test mode to print the script instead of writing it.')
-    parser.add_argument('--nthreads', dest='num_threads', default=1, type=int, help='Number of threads to use.')
+    parser.add_argument('--mode', dest='mode', default=4, type=int, help='type of data')
+    parser.add_argument('--nthreads', dest='num_threads', default=40, type=int, help='Number of threads to use.')
     parser.add_argument('--email', dest='email', default="jamalids@mcmaster.ca", help='Email to send the job status.')
     return parser
 

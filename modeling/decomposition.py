@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import numpy as np
@@ -145,61 +146,84 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
         if out_log_dir != '' and ( ((idx+1) % 20 == 0) or (idx+1) == len(all_4) ):
             # store stats in a csv file
             stats_df = pd.DataFrame(stat_array)
-            if not os.path.exists(out_log_dir):
-                os.makedirs(out_log_dir)
-            stats_df.to_csv(f'{out_log_dir}/{dataset_name}_decomposition_stats.csv', index=False)
+            # if not os.path.exists(out_log_dir):
+            #     os.makedirs(out_log_dir)
+            stats_df.to_csv(log_file, index=False, header=True)
+           # stats_df.to_csv(f'{out_log_dir}/{dataset_name}_decomposition_stats.csv', index=False)
     return stat_array
 
-
 # use argparser to get the dataset path
+def  run_and_collect_data(dataset_path,m):
+    chunk_size = -1
+    contig_order = False
+    # dataset_path = sys.argv[1]
+    # m = int(sys.argv[2])
+    # if len(sys.argv) > 3:
+    #     chunk_size = int(sys.argv[3])
+    # if len(sys.argv) > 4:
+    #     contig_order = bool(sys.argv[4])
 
-chunk_size = -1
-contig_order = False
-dataset_path = sys.argv[1]
-m = int(sys.argv[2])
-if len(sys.argv) > 3:
-    chunk_size = int(sys.argv[3])
-if len(sys.argv) > 4:
-    contig_order = bool(sys.argv[4])
+    dataset_name = dataset_path.split('/')[-1].split('.')[0]
+    # open tsv file with df
+    data_set = pd.read_csv(dataset_path, sep='\t')
+
+    if m == 2:
+        sliced_data = data_set.values[:, 1].astype(np.float16)
+    elif m == 4:
+        sliced_data = data_set.values[:, 1].astype(np.float32)
+    else:
+        sliced_data = data_set.values[:, 1].astype(np.float64)
+
+    if chunk_size == -1:
+        comp_tool_dict = {
+            'huffman_compress': huffman_compress,
+            'zstd': zstd_comp,
+            'zlib': zlib_comp,
+            'bz2': bz2_comp, 'snappy': snappy_comp,
+            'fastlz': fastlz_compress, 'rle': rle_compress,
+            # 'xor': encode_xor_floats
+        }
+        stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict,
+                                   contig_order=contig_order, out_log_dir='logs')
+    else:
+        comp_tool_dict = {'zstd': zstd_comp, 'zlib': zlib_comp,
+                          'bz2': bz2_comp, 'snappy': snappy_comp,
+                          'xor': encode_xor_floats}
+        no_chunks = len(sliced_data) // chunk_size
+        no_chunks = np.min([100, no_chunks])
+        stats_array = []
+        for i in range(no_chunks):
+            stats = test_decomposition(sliced_data[i * chunk_size:(i + 1) * chunk_size], dataset_name, m=m,
+                                       comp_tool_dict=comp_tool_dict, chuck_no=i, contig_order=contig_order)
+            stats_array.extend(stats)
+        # store stats in a csv file
+        stats_df = pd.DataFrame(stats_array)
+        # if not os.path.exists('logs'):
+        #     os.makedirs('logs')
+        stats_df.to_csv(log_file, index=False, header=True)
+        #stats_df.to_csv(f'logs/{dataset_name}_decomposition_streaming_stats.csv', index=False)
+
+def arg_parser():
+    parser = argparse.ArgumentParser(description='Compress one dataset and store the log.')
+    parser.add_argument('--dataset', dest='dataset_path', help='Path to the UCR dataset tsv/csv.')
+    parser.add_argument('--variant', dest='variant', default="dictionary", help='Variant of the algorithm.')
+    parser.add_argument('--pattern', dest='pattern', default="10*16", help='Pattern to match the files.')
+    parser.add_argument('--outcsv', dest='log_file', default="./log_out.csv", help='Output directory for the sbatch scripts.')
+    parser.add_argument('--nthreads', dest='num_threads', default=40, type=int, help='Number of threads to use.')
+    parser.add_argument('--mode', dest='mode', default=4, type=int, help='type of data')
+    return parser
 
 
-dataset_name = dataset_path.split('/')[-1].split('.')[0]
-# open tsv file with df
-data_set = pd.read_csv(dataset_path, sep='\t')
-
-if m == 2:
-    sliced_data = data_set.values[:, 1].astype(np.float16)
-elif m == 4:
-    sliced_data = data_set.values[:, 1].astype(np.float32)
-else:
-    sliced_data = data_set.values[:, 1].astype(np.float64)
-
-if chunk_size == -1:
-    comp_tool_dict = {
-        'huffman_compress' : huffman_compress,
-        'zstd' : zstd_comp,
-        'zlib' : zlib_comp,
-        'bz2' : bz2_comp, 'snappy' : snappy_comp,
-        'fastlz' : fastlz_compress, 'rle' : rle_compress,
-        #'xor': encode_xor_floats
-                      }
-    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='logs')
-else:
-    comp_tool_dict = {'zstd' : zstd_comp, 'zlib' : zlib_comp,
-                      'bz2' : bz2_comp, 'snappy' : snappy_comp,
-                      'xor' : encode_xor_floats}
-    no_chunks = len(sliced_data) // chunk_size
-    no_chunks = np.min([100, no_chunks])
-    stats_array = []
-    for i in range(no_chunks):
-        stats = test_decomposition(sliced_data[i*chunk_size:(i+1)*chunk_size], dataset_name, m=m, comp_tool_dict=comp_tool_dict, chuck_no=i, contig_order=contig_order)
-        stats_array.extend(stats)
-    # store stats in a csv file
-    stats_df = pd.DataFrame(stats_array)
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-    stats_df.to_csv(f'logs/{dataset_name}_decomposition_streaming_stats.csv', index=False)
-#stats = test_decomposition(sliced_data, dataset_name, given_decomp=[((0,), (1, 2), (3,))], m=m, comp_tool_dict=comp_tool_dict)
-
+if __name__ == "__main__":
+    parser = arg_parser()
+    args = parser.parse_args()
+    dataset_path = args.dataset_path
+    m=args.mode
+    comp_variant = args.variant
+    pattern = args.pattern
+    log_file = args.log_file
+    num_threads = args.num_threads
+    mode = args.mode
+    run_and_collect_data(dataset_path,m)
 
 
