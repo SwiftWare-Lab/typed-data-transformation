@@ -152,7 +152,7 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             stats[f'decomposed row-ordered {comp_name} compressed size (B)'] = decomp_compressed_size_row_based
 
             stats[f'reordered {comp_name} compressed size (B)'] = reordered_compressed_size
-            stats[f'decomposed row-ordered {comp_name} compressed size (B)'] = reordered_compressed_size_row_based
+            stats[f'reordered row-ordered {comp_name} compressed size (B)'] = reordered_compressed_size_row_based
 
             stats[f'standard {comp_name} compressed size (B)'] = full_comp_size
             print(f'decomp: {tuple_to_string(decomp)} : {comp_name} compression ratio: {len_bytes/full_comp_size}, decomposed compression ratio: {len_bytes/decomp_compressed_size},'
