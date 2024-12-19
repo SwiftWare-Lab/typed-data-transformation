@@ -66,17 +66,28 @@ def find_all_combinations(all_possible_consecutive_comp, m, contiguous=True):
     return all_decomposition, all_perm_length
 
 
-def compress_data(data_set_list, compress_method):
+def compress_data(data_set_list, compress_method, order='F'):
     # view data_set as bytes
     compressed_data, compressed_size = [], 0
     for cmp in data_set_list:
         #data_set_bytes = cmp.view(np.byte)
-        data_set_bytes = np.frombuffer(cmp.flatten('F').tobytes(), dtype=np.byte)
+        data_set_bytes = np.frombuffer(cmp.flatten(order).tobytes(), dtype=np.byte)
         compressed_comp = compress_method(data_set_bytes)
         compressed_data.append(compressed_comp)
         compressed_size += len(compressed_comp)
     return compressed_data, compressed_size
 
+
+def transform_data(data_set_list, order='C'):
+    # view data_set as bytes
+    compressed_data = []
+    for cmp in data_set_list:
+        #data_set_bytes = cmp.view(np.byte)
+        data_set_bytes = np.frombuffer(cmp.flatten(order).tobytes(), dtype=np.byte)
+        compressed_data.append(data_set_bytes)
+    # flatten the list
+    compressed_data = np.concatenate(compressed_data, axis=0)
+    return compressed_data
 
 
 def analyze_data(data_set_list, data_set_word):
@@ -124,17 +135,30 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             comp_list.append(cur_comp_data)
             #comp_list_bytes.append(cur_comp_data.flatten('F').tobytes())
         # concatenate comp_list list
-        reordered_full_data = np.concatenate(comp_list, axis=0)
+        #reordered_full_data = np.concatenate(comp_list, axis=0)
+        reordered_full_data_row_based = transform_data(comp_list, order='C')
+        reordered_full_data = transform_data(comp_list, order='F')
+
         # for every compression tool, compress the data
         for comp_name, comp_tool in comp_tool_dict.items():
             full_compressed, full_comp_size = compress_data([data_set], comp_tool)
+
             c_data, decomp_compressed_size = compress_data(comp_list, comp_tool)
+            c_data_row_based, decomp_compressed_size_row_based = compress_data(comp_list, comp_tool, order='C')
+
             c_reordered_date, reordered_compressed_size = compress_data([reordered_full_data], comp_tool)
+            c_data_row, reordered_compressed_size_row_based = compress_data([reordered_full_data_row_based], comp_tool)
+
             stats[f'decomposed {comp_name} compressed size (B)'] = decomp_compressed_size
+            stats[f'decomposed row-ordered {comp_name} compressed size (B)'] = decomp_compressed_size_row_based
+
             stats[f'reordered {comp_name} compressed size (B)'] = reordered_compressed_size
+            stats[f'reordered row-ordered {comp_name} compressed size (B)'] = reordered_compressed_size_row_based
+
             stats[f'standard {comp_name} compressed size (B)'] = full_comp_size
             print(f'decomp: {tuple_to_string(decomp)} : {comp_name} compression ratio: {len_bytes/full_comp_size}, decomposed compression ratio: {len_bytes/decomp_compressed_size},'
-                  f' reordered compression ratio: {len_bytes/reordered_compressed_size}')
+                    f' decomposed row-based compression ratio: {len_bytes/decomp_compressed_size_row_based}, reordered compression ratio: {len_bytes/reordered_compressed_size}, '
+                  f' reordered row-based compression ratio: {len_bytes/reordered_compressed_size_row_based}')
         # calculate entropy
         entropy_list, WE, entropy_word, rle_max, uniq_ratio = analyze_data(comp_list, data_set)
         stats['WE'] = WE
@@ -148,9 +172,10 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             stats_df = pd.DataFrame(stat_array)
             # if not os.path.exists(out_log_dir):
             #     os.makedirs(out_log_dir)
+            # stats_df.to_csv(f'{out_log_dir}/{dataset_name}_decomposition_stats.csv', index=False)
             stats_df.to_csv(log_file, index=False, header=True)
-           # stats_df.to_csv(f'{out_log_dir}/{dataset_name}_decomposition_stats.csv', index=False)
     return stat_array
+
 
 # use argparser to get the dataset path
 def  run_and_collect_data(dataset_path,m):
