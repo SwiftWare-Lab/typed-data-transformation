@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # File path
-file_path = '/home/jamalids/Documents/fastlz/entropy/combined_32L_data.csv'
+file_path = '/home/jamalids/Documents/WE/64-High-Entropy/combined_64H_data.csv'
 
 # Load the dataset
 df = pd.read_csv(file_path)
@@ -17,7 +17,7 @@ unique_datasets = df['dataset'].unique()
 num_datasets = len(unique_datasets)
 
 # Set the number of rows and columns for subplots
-nrows, ncols = 2,1
+nrows, ncols = 3,2
 fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 20), sharex=True)
 axes = axes.flatten()  # Flatten the axes array for easier indexing
 
@@ -65,5 +65,5 @@ for i, (dataset, ax) in enumerate(zip(unique_datasets, axes)):
         handles_entropy, labels_entropy = ax2.get_legend_handles_labels()
 
 
-plt.savefig("/home/jamalids/Documents/fastlz/entropy/entropy-zstd.png")
+plt.savefig("/home/jamalids/Documents/WE/64-High-Entropy/entropy-zstd.png")
 plt.show()

@@ -73,7 +73,7 @@ def decomposition_based_compression(byte_array, component_sizes):
 
     return components, combined_compressed_data
 
-def plot_entropy_profiles(dataset_name, full_data_entropy, components_entropy, window_size=256, save_fig=False):
+def plot_entropy_profiles(dataset_name, full_data_entropy, components_entropy, window_size=256, save_fig=True):
     """Plot entropy profiles for full data and each component."""
     num_components = len(components_entropy)
 
@@ -98,14 +98,51 @@ def plot_entropy_profiles(dataset_name, full_data_entropy, components_entropy, w
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     if save_fig:
-        fig_filename = f'{dataset_name}_entropy_profiles.png'
+        fig_filename = f'home/jamalids/Documents/{dataset_name}_entropy_profiles.png'
         plt.savefig(fig_filename)
         print(f"Entropy plot saved as {fig_filename}")
     else:
         plt.show()
 
+def plot_entropy_distances(dataset_name, components_entropy, window_size=256, save_fig=True):
+    """Plot the distances between entropy profiles of each component."""
+    num_components = len(components_entropy)
+    if num_components < 2:
+        print("Not enough components to calculate distances.")
+        return
+
+    # Calculate pairwise distances between components
+    distance_dict = {}
+    for i in range(num_components):
+        for j in range(i+1, num_components):
+            # Example: Using absolute difference (Manhattan distance) per window
+            distance = np.abs(np.array(components_entropy[i]) - np.array(components_entropy[j]))
+            distance_dict[f'Component {i+1} vs Component {j+1}'] = distance
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.title(f'Entropy Distance Profiles (Window Size = {window_size}) for {dataset_name}')
+
+    for label, distance in distance_dict.items():
+        plt.plot(distance, label=label)
+
+    plt.xlabel('Window Index')
+    plt.ylabel('Entropy Distance (bits)')
+    plt.legend(loc='upper right')
+    plt.grid(True)
+
+    plt.tight_layout()
+
+    if save_fig:
+        fig_filename = f'home/jamalids/Documents/{dataset_name}_entropy_distances.png'
+        plt.savefig(fig_filename)
+        print(f"Entropy distance plot saved as {fig_filename}")
+    else:
+
+        plt.show()
+
 def run_and_collect_data():
-    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/32/tpch_lineitem_f32.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/64/astro_mhd_f64.tsv"
     datasets = [dataset_path]
 
     for dataset_path in datasets:
@@ -114,9 +151,9 @@ def run_and_collect_data():
         print(f"Processing dataset: {dataset_name}")
 
         group = ts_data1.drop(ts_data1.columns[0], axis=1).astype(float).T
-        byte_array = group.to_numpy().astype(np.float32).tobytes()
+        byte_array = group.to_numpy().astype(np.float64).tobytes()
 
-        component_sizes = [1,1, 1,1]
+        component_sizes = [1, 1, 1, 1,1,1,1,1]
         components, combined_compressed_data = decomposition_based_compression(byte_array, component_sizes)
 
         # Entropy analysis
@@ -136,6 +173,9 @@ def run_and_collect_data():
 
         # Plot the entropy profiles
         plot_entropy_profiles(dataset_name, full_data_entropy, components_entropy, window_size=window_size, save_fig=False)
+
+        # Plot the entropy distances
+        plot_entropy_distances(dataset_name, components_entropy, window_size=window_size, save_fig=False)
 
 if __name__ == "__main__":
     run_and_collect_data()

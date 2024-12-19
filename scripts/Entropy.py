@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV file (update the path as needed)
-file_path = "/home/jamalids/Documents/compression-part3/final/final/L_E_RLE.csv"  # Change this to your actual path
+file_path = "/home/jamalids/Documents/WE/64-High-Entropy/combined_64H_data.csv"  # Change this to your actual path
 df = pd.read_csv(file_path)
 
 # Adjusting the plot to add space between the bars of different datasets
@@ -29,6 +29,6 @@ plt.title('Entropies for Datasets with Low Entropy After Removing Repetitive Con
 plt.tight_layout()
 
 # Save the plot
-plt.savefig("Low_Entropy_Only.png")
+plt.savefig("/home/jamalids/Documents/WE/64-High-Entropy/combined_64H_data.png")
 
 plt.show()
