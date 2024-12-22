@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Specify the directories containing the CSV files
-directories = ['/home/jamalids/Documents/2D/data1/Fcbench/logCpp/log-thread/logth32-L']
+directories = ['/home/jamalids/Documents/2D/CR-Ct-DT/bz2-Cpp/logbz32-H']
 
 # List to hold DataFrames
 dataframes = []
@@ -24,13 +24,13 @@ if dataframes:
     combined_df = pd.concat(dataframes, ignore_index=True)
 
     # Save the combined DataFrame with all data to a CSV file
-    all_data_output_path = '/home/jamalids/Documents/2D/data1/Fcbench/logCpp/log-thread/combined_all_data_32L.csv'
+    all_data_output_path = '/home/jamalids/Documents/2D/CR-Ct-DT/bz2-Cpp/combined_all_data.csv'
     combined_df.to_csv(all_data_output_path, index=False)
     print(f'Combined CSV with all data saved to {all_data_output_path}')
 
     # Find the median row for each dataset and RunType
     median_rows = []
-    for (dataset, run_type, component_sizes,ThreadCount), group in combined_df.groupby(['dataset', 'RunType', 'ComponentSizes','ThreadCount']):
+    for (dataset, run_type, component_sizes), group in combined_df.groupby(['dataset', 'RunType', 'ComponentSizes']):
         # Sort the group by TotalTimeCompressed and TotalTimeDecompressed
         sorted_group = group.sort_values(by=['TotalTimeCompressed', 'TotalTimeDecompressed']).reset_index(drop=True)
 
@@ -47,7 +47,7 @@ if dataframes:
     median_rows_df = pd.DataFrame(median_rows)
 
     # Save the final DataFrame with only the median rows to a separate CSV file
-    median_data_output_path = '/home/jamalids/Documents/2D/data1/Fcbench/logCpp/log-thread/combined_median_rows_32L.csv'
+    median_data_output_path = '/home/jamalids/Documents/2D/CR-Ct-DT/bz2-Cpp/combined_median_rows.csv'
     median_rows_df.to_csv(median_data_output_path, index=False)
     print(f'Combined CSV with median rows saved to {median_data_output_path}')
 
@@ -86,7 +86,7 @@ if dataframes:
         max_comp_ratio_df = pd.DataFrame(max_comp_ratio_rows)
 
         # Save the result to a new CSV file
-        max_comp_ratio_output_path = '/home/jamalids/Documents/2D/data1/Fcbench/logCpp/log-thread/max_comp_ratio_parallel_full_32L.csv'
+        max_comp_ratio_output_path = '/home/jamalids/Documents/2D/CR-Ct-DT/bz2-Cpp/max_comp_ratio_parallel_full.csv'
         max_comp_ratio_df.to_csv(max_comp_ratio_output_path, index=False)
 
         print(f'CSV with max compression ratio for parallel and corresponding full RunType saved to {max_comp_ratio_output_path}')

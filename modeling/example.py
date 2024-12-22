@@ -742,7 +742,7 @@ def run_and_collect_data(dataset_path):
     #datasets = [dataset_path]
    # datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dataset_path) for f in filenames if f.endswith('.tsv')]
 
-    dataset_path = "/home/jamalids/Documents/2D/data1/HPC/H/wave_f32.tsv"
+    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/Low-Entropy/32/citytemp_f32.tsv"
     datasets = [dataset_path]
 
     for dataset_path in datasets:
@@ -755,7 +755,7 @@ def run_and_collect_data(dataset_path):
         #ts_data1 = ts_data1.iloc[0:10, 0:3]
         group = ts_data1.drop(ts_data1.columns[0], axis=1)
         group = group.T
-        group = group.iloc[0:1,1:5000]
+        group = group.iloc[0:1,1:50]
         group = group.astype(np.float32).to_numpy().reshape(-1)
 
         ##############################
