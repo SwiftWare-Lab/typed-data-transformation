@@ -37,7 +37,7 @@ plt.rcParams.update({'font.size': tick_fontsize})
 
 # Plot 1: Compression Ratio with logarithmic scale
 axs[0].bar(x, merged_data['CompressionRatio_parallel'], width, label='Decompose+bz2 (Parallel)', color='red', alpha=0.8)
-axs[0].bar(x, merged_data['CompressionRatio_full'], width, label='Standard bz2 (Full)', color='cyan', alpha=0.8)
+axs[0].bar(x, merged_data['CompressionRatio_full'], width, label='Standard bz2 (Full)', color='blue', alpha=0.8)
 axs[0].set_ylabel('log(Compression Ratio)', fontsize=label_fontsize)
 axs[0].set_title('Compression Ratio by Dataset', fontsize=title_fontsize)
 axs[0].set_yscale('log')  # Set the y-axis to logarithmic scale
@@ -45,14 +45,15 @@ axs[0].legend(fontsize=legend_fontsize)
 
 # Plot 2: Compression Throughput
 axs[1].bar(x, merged_data['CompressionThroughput_parallel'], width, label='Decompose+bz2', color='red', alpha=0.8)
-axs[1].bar(x, merged_data['CompressionThroughput_full'], width, label='Standard bz2', color='cyan', alpha=0.8)
+axs[1].bar(x, merged_data['CompressionThroughput_full'], width, label='Standard bz2', color='blue', alpha=0.8)
 axs[1].set_ylabel('Compression Throughput (GB/s)', fontsize=label_fontsize)
 axs[1].set_title('Compression Throughput by Dataset', fontsize=title_fontsize)
 axs[1].legend(fontsize=legend_fontsize)
 
 # Plot 3: Decompression Throughput
 axs[2].bar(x, merged_data['DecompressionThroughput_parallel'], width, label='Decompose+bz2 ', color='red', alpha=0.8)
-axs[2].bar(x, merged_data['DecompressionThroughput_full'], width, label='Standard bz2', color='cyan', alpha=0.8)
+#axs[2].bar(x, merged_data['DecompressionThroughput_full'], width, label='Standard bz2', color='cyan', alpha=0.8)
+axs[2].bar(x, merged_data['DecompressionThroughput_full'], width, label='Standard bz2', color='blue', alpha=0.8)
 axs[2].set_xlabel('Dataset', fontsize=label_fontsize)
 axs[2].set_ylabel('Decompression Throughput (GB/s)', fontsize=label_fontsize)
 axs[2].set_title('Decompression Throughput by Dataset', fontsize=title_fontsize)
