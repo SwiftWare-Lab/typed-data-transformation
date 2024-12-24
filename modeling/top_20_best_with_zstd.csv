@@ -1,0 +1,21 @@
+FastLZ best ratio,decomposition,FastLZ best method,Zstd best ratio,Zstd best method
+1.2932549023933078,"( (3,2,0,1,), )",decomposed row-ordered fastlz compressed ratio,1.8892517515981018,decomposed row-ordered zstd compressed ratio
+1.2932549023933078,"( (3,2,1,0,), )",decomposed row-ordered fastlz compressed ratio,1.8888012956858191,decomposed row-ordered zstd compressed ratio
+1.2932547144520286,"( (3,), (1,2,0,), )",decomposed row-ordered fastlz compressed ratio,1.890149800766866,decomposed row-ordered zstd compressed ratio
+1.2932547144520286,"( (1,0,), (3,2,), )",decomposed row-ordered fastlz compressed ratio,1.8918529702123486,reordered row-ordered zstd compressed ratio
+1.2932547144520286,"( (1,2,), (3,0,), )",decomposed row-ordered fastlz compressed ratio,1.8883955754665893,decomposed row-ordered zstd compressed ratio
+1.2932547144520286,"( (0,2,1,), (3,), )",decomposed row-ordered fastlz compressed ratio,1.8882303460681629,decomposed row-ordered zstd compressed ratio
+1.2932547144520286,"( (3,1,), (0,2,), )",decomposed row-ordered fastlz compressed ratio,1.8880476889418634,reordered row-ordered zstd compressed ratio
+1.2932547144520286,"( (0,1,), (3,2,), )",decomposed row-ordered fastlz compressed ratio,1.891461976460693,reordered row-ordered zstd compressed ratio
+1.2932547144520286,"( (1,), (3,2,0,), )",decomposed row-ordered fastlz compressed ratio,1.8917678161011877,reordered row-ordered zstd compressed ratio
+1.2932547144520286,"( (0,), (3,2,1,), )",decomposed row-ordered fastlz compressed ratio,1.8902958181024363,reordered row-ordered zstd compressed ratio
+1.2932545265108042,"( (0,), (1,2,), (3,), )",decomposed row-ordered fastlz compressed ratio,1.8905824030785512,reordered row-ordered zstd compressed ratio
+1.2932545265108042,"( (1,), (0,2,), (3,), )",decomposed row-ordered fastlz compressed ratio,1.890973033235008,reordered row-ordered zstd compressed ratio
+1.2932545265108042,"( (0,), (1,), (3,2,), )",decomposed row-ordered fastlz compressed ratio,1.891461976460693,reordered row-ordered zstd compressed ratio
+1.293252943850028,"( (1,), (2,3,0,), )",reordered row-ordered fastlz compressed ratio,1.890430972916761,decomposed row-ordered zstd compressed ratio
+1.293252943850028,"( (0,2,3,1,), )",decomposed row-ordered fastlz compressed ratio,1.8835477741100513,decomposed row-ordered zstd compressed ratio
+1.293252943850028,"( (0,), (2,), (3,1,), )",reordered row-ordered fastlz compressed ratio,1.8873705867696053,decomposed row-ordered zstd compressed ratio
+1.293252943850028,"( (1,2,3,0,), )",decomposed row-ordered fastlz compressed ratio,1.8878379182722775,decomposed row-ordered zstd compressed ratio
+1.293252943850028,"( (1,2,), (0,3,), )",decomposed row-ordered fastlz compressed ratio,1.8896474706239303,decomposed row-ordered zstd compressed ratio
+1.293252943850028,"( (1,), (2,), (3,0,), )",reordered row-ordered fastlz compressed ratio,1.889971208497545,decomposed row-ordered zstd compressed ratio
+1.293252943850028,"( (0,2,), (1,3,), )",decomposed row-ordered fastlz compressed ratio,1.8896476818084127,decomposed row-ordered zstd compressed ratio

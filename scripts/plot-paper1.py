@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the data
-file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/citytemp_f32_decomposition_stats.csv"
+file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/turbulence_f32_decomposition_stats.csv"
 data = pd.read_csv(file_path)
 
 # Define Huffman compression methods
@@ -42,7 +42,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the data
-file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/citytemp_f32_decomposition_stats.csv"
+file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/turbulence_f32_decomposition_stats.csv"
 data = pd.read_csv(file_path)
 
 # Define Fast LZ compression methods
@@ -83,7 +83,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the data
-file_path =  "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/citytemp_f32_decomposition_stats.csv"
+file_path =  "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/turbulence_f32_decomposition_stats.csv"
 data = pd.read_csv(file_path)
 
 # Define RLE compression methods
