@@ -453,9 +453,9 @@ def plot_compression_comparison(best_ratio, original_ratio, dataset_name, save_p
 
 def run_analysis():
     # --------------------------- Configuration --------------------------- #
-    dataset_path = "/home/jamalids/Documents/2D/data1/Fcbench/High-Entropy/32/jw_mirimage_f32.tsv"  # Update path as needed
+    dataset_path =  r"C:\Users\jamalids\Downloads\dataset\Low-Entropy\Low-Entropy\32\hdr_night_f32.tsv"  # Update path as needed
     dataset_name = os.path.basename(dataset_path).replace('.tsv', '')
-    save_dir = f"/home/jamalids/Documents/{dataset_name}_analysis"
+    save_dir = r"C:\Users\jamalids\Downloads\{dataset_name}_analysis"
     os.makedirs(save_dir, exist_ok=True)
 
     # Parameters

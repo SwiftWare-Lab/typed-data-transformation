@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load the data
-file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/jw_mirimage_f32_decomposition_stats.csv"
+file_path = r"C:\Users\jamalids\Downloads\dataset\Low-Entropy\Low-Entropy\32\ts_gas_f32.tsv"
 data = pd.read_csv(file_path)
 
 # Define FastLZ and Zstd compression methods
@@ -67,5 +67,31 @@ else:
         # Print the results
         print("Top 20 Best Compression Ratios (FastLZ):")
         print(top_20_best)
+        top_20_best.to_csv("a.csv")
     else:
         print("Error: No valid FastLZ ratio columns to calculate best ratios.")
+###############################################
+# Find the best Zstd method decomposition
+zstd_best_ratios = data[[m.replace(' size (B)', ' ratio') for m in zstd_methods.keys() if m in data.columns]]
+print("Zstd best ratios preview:")
+print(zstd_best_ratios.head())
+
+if not zstd_best_ratios.empty:
+    data['Zstd best ratio'] = zstd_best_ratios.max(axis=1)
+    data['Zstd best method'] = zstd_best_ratios.idxmax(axis=1)
+    print("Successfully calculated 'Zstd best ratio'.")
+
+    # Extract the top 20 rows by best Zstd compression ratio
+    top_20_zstd_best = data.nlargest(20, 'Zstd best ratio')[
+        [
+            'Zstd best ratio',
+            'decomposition'
+        ]
+    ]
+
+    # Print the results
+    print("Top 20 Best Compression Ratios (Zstd):")
+    print(top_20_zstd_best)
+    top_20_zstd_best.to_csv("zstd_best.csv")
+else:
+    print("Error: No valid Zstd ratio columns to calculate best ratios.")
