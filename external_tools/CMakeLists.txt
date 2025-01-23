@@ -8,7 +8,7 @@ add_executable(zstd2-test
 target_link_libraries( zstd2-test
         PRIVATE
         libzstd_static
-        benchmark::benchmark
+        #benchmark::benchmark
         OpenMP::OpenMP_CXX
         argparse
 )
@@ -27,7 +27,7 @@ add_executable(zstd-test
 target_link_libraries( zstd-test
         PRIVATE
         libzstd_static
-        benchmark::benchmark
+        #benchmark::benchmark
         OpenMP::OpenMP_CXX
         argparse
 )
@@ -47,7 +47,7 @@ add_executable(parallel-test
 target_link_libraries( parallel-test
         PRIVATE
         libzstd_static
-        benchmark::benchmark
+        #benchmark::benchmark
         OpenMP::OpenMP_CXX
         argparse
 )
