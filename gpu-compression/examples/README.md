@@ -253,6 +253,12 @@ cmake --build . --parallel 14
 
 
 ## Building on jetson
+Install nvcomp from this link:
+https://developer.download.nvidia.com/compute/nvcomp/redist/nvcomp/linux-sbsa/
+    
+Then run the following command to build the examples:
+
+
 
 ```sh
 cmake .. -DCMAKE_PREFIX_PATH=/home/jetson-micro/Desktop/Kazem/programs/nvcomp-linux-sbsa-4.1.1.1_cuda12-archive/          -DCMAKE_BUILD_TYPE=Release          -DBUILD_GDS_EXAMPLE=ON -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.6/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=80 
