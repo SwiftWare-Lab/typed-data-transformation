@@ -39,7 +39,7 @@ label_mapping = {
     'reordered zlib compressed size (B)': 'Reordered Zlib',
     'standard zlib compressed size (B)': 'Standard Zlib',
 
-   
+
 
     'decomposed snappy compressed size (B)': 'Decomposed Snappy',
     'reordered snappy compressed size (B)': 'Reordered Snappy',
@@ -187,7 +187,7 @@ def plot_entropy(byte_entropies, plot_filename):
 
 def main():
     # Load the data from the CSV file
-    file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/citytemp_f32_present.csv"  # Update this path
+    file_path = "/home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/turbulence_f32_decomposition_stats.csv"  # Update this path
     data = load_data(file_path)
 
     # Debugging: Print column names and first few rows
