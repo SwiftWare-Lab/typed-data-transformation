@@ -3,7 +3,7 @@ import os
 import glob
 
 # Define the folder containing all input CSV files
-input_folder = '//home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/32/'
+input_folder = '//home/jamalids/Documents/2D/CR-Ct-DT/python-results/logs/all/'
 output_directory = os.path.join(input_folder, 'compression_results')
 
 # Create the output directory if it doesn't exist
@@ -88,7 +88,7 @@ for file_path in glob.glob(os.path.join(input_folder, '*.csv')):
             ratio_column = method.replace('compressed size (B)', 'compression ratio')
             if ratio_column in data.columns:
                 # Get the top 5 compression ratios for the current method and variation
-                top_5 = data.nlargest(5, ratio_column)[
+                top_5 = data.nlargest(1, ratio_column)[
                     ['dataset name', 'decomposition', ratio_column]
                 ].copy()
                 for _, row in top_5.iterrows():
@@ -104,7 +104,7 @@ for file_path in glob.glob(os.path.join(input_folder, '*.csv')):
     formatted_top_5_results_df = pd.DataFrame(formatted_top_5_results)
 
     # Save the top 5 results for the current file
-    output_file = os.path.join(output_directory, f"{os.path.basename(file_path).split('.')[0]}_top_5_results.csv")
+    output_file = os.path.join(output_directory, f"{os.path.basename(file_path).split('.')[0]}_top_1_results.csv")
     formatted_top_5_results_df.to_csv(output_file, index=False)
     print(f"Top 5 results for {file_path} saved to: {output_file}")
 
@@ -115,7 +115,7 @@ for file_path in glob.glob(os.path.join(input_folder, '*.csv')):
 combined_results_df = pd.DataFrame(all_datasets_top_5_results)
 
 # Save the combined results to a single CSV file
-combined_output_file = os.path.join(output_directory, "combined_top_5_compression_results.csv")
+combined_output_file = os.path.join(output_directory, "combined_top_1_compression_results.csv")
 combined_results_df.to_csv(combined_output_file, index=False)
 
 print(f"Combined top 5 results saved to: {combined_output_file}")
