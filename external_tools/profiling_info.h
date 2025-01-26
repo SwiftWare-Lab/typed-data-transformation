@@ -17,6 +17,7 @@ struct ProfilingInfo {
   double decompression_throughput = 0.0;
   double total_values = 0.0;
   int thread_count = 0; // Add thread count
+  std::string config_string;
 
   // Constructor with default initialization
   ProfilingInfo(size_t num_components = 0)

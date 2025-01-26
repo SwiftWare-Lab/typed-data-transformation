@@ -93,7 +93,7 @@ add_executable(parallel-test
          zstd_parallel.h
          profiling_info.h
         #lz4_parallel.h
-        #parallel-lz4.cpp
+       # parallel-lz4.cpp
         # snappy_parallel.h
         #  parallel-snappy.cpp
         #  zlib-parallel.h

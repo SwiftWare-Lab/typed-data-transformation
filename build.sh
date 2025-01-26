@@ -1,4 +1,4 @@
-#!/bin/bash
+bash#!/bin/bash
 
 #SBATCH --cpus-per-task=64
 #SBATCH --export=ALL

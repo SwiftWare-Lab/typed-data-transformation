@@ -1,12 +1,6 @@
-//
-// Created by samira on 11/4/24.
-//
-
 #ifndef ZSTD_PARALLEL_H
 #define ZSTD_PARALLEL_H
 
-#endif //ZSTD_PARALLEL_H
-// Created by jamalids on 31/10/24.
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -15,65 +9,31 @@
 #include <chrono>
 #include <cstdint>
 #include <omp.h>
-
-#include "profiling_info.h"
 #include <numeric>
 
+#include "profiling_info.h"
 
-
-
-// Declare  as an external variable
+// Global data (defined elsewhere)
 extern std::vector<uint8_t> globalByteArray;
 
-// Verify if original and reconstructed data match
-bool verifyDataMatch(const std::vector<uint8_t>& original, const std::vector<uint8_t>& reconstructed) {
-    if (original.size() != reconstructed.size()) {
-        std::cerr << "Size mismatch: Original size = " << original.size() << ", Reconstructed size = " << reconstructed.size() << std::endl;
-        return false;
-    }
-
-    for (size_t i = 0; i < original.size(); i++) {
-        if (original[i] != reconstructed[i]) {
-            std::cerr << "Data mismatch at index " << i << ": Original = " << static_cast<int>(original[i]) << ", Reconstructed = " << static_cast<int>(reconstructed[i]) << std::endl;
-            return false;
-        }
-    }
-    return true;
-}
-
-
-
-void splitBytesIntoComponents(const std::vector<uint8_t>& byteArray,
-                              std::vector<std::vector<uint8_t>>& components,
-                              const std::vector<size_t>& componentSizes,int numThreads) {
-  size_t numComponents = componentSizes.size();
-  size_t totalBytes = std::accumulate(componentSizes.begin(), componentSizes.end(), 0);
-  size_t numElements = byteArray.size() / totalBytes;
-
-  // Resize components to hold the split data
-  components.resize(numComponents);
-  for (size_t i = 0; i < numComponents; ++i) {
-    components[i].resize(numElements * componentSizes[i]);
-  }
-
-  // Use OpenMP to parallelize the component processing
-#pragma omp parallel for num_threads(numThreads)
-  for (size_t i = 0; i < numComponents; ++i) {
-    size_t offset = std::accumulate(componentSizes.begin(), componentSizes.begin() + i, 0);
-    for (size_t j = 0; j < numElements; ++j) {
-      std::copy(byteArray.begin() + j * totalBytes + offset,
-                byteArray.begin() + j * totalBytes + offset + componentSizes[i],
-                components[i].begin() + j * componentSizes[i]);
-    }
-  }
-}
-
-
-// Compress with Zstd
-size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& compressedData, int compressionLevel) {
-    size_t const cBuffSize = ZSTD_compressBound(data.size());
+//-----------------------------------------------------------------------------
+// Basic Zstd Compression/Decompression
+//-----------------------------------------------------------------------------
+inline size_t compressWithZstd(
+    const std::vector<uint8_t>& data,
+    std::vector<uint8_t>& compressedData,
+    int compressionLevel = 3
+) {
+    size_t cBuffSize = ZSTD_compressBound(data.size());
     compressedData.resize(cBuffSize);
-    size_t const cSize = ZSTD_compress(compressedData.data(), cBuffSize, data.data(), data.size(), compressionLevel);
+
+    size_t cSize = ZSTD_compress(
+        compressedData.data(),
+        cBuffSize,
+        data.data(),
+        data.size(),
+        compressionLevel
+    );
     if (ZSTD_isError(cSize)) {
         std::cerr << "Zstd compression error: " << ZSTD_getErrorName(cSize) << std::endl;
         return 0;
@@ -82,188 +42,284 @@ size_t compressWithZstd(const std::vector<uint8_t>& data, std::vector<uint8_t>& 
     return cSize;
 }
 
-// Decompress with Zstd
-size_t decompressWithZstd(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, size_t originalSize) {
+inline size_t decompressWithZstd(
+    const std::vector<uint8_t>& compressedData,
+    std::vector<uint8_t>& decompressedData,
+    size_t originalSize
+) {
     decompressedData.resize(originalSize);
-    size_t const dSize = ZSTD_decompress(decompressedData.data(), originalSize, compressedData.data(), compressedData.size());
+    size_t dSize = ZSTD_decompress(
+        decompressedData.data(),
+        originalSize,
+        compressedData.data(),
+        compressedData.size()
+    );
     if (ZSTD_isError(dSize)) {
         std::cerr << "Zstd decompression error: " << ZSTD_getErrorName(dSize) << std::endl;
         return 0;
     }
     return dSize;
 }
-// Full compression without decomposition
-size_t zstdCompression(const std::vector<uint8_t>& data, ProfilingInfo &pi, std::vector<uint8_t>& compressedData) {
 
-    size_t compressedSize = compressWithZstd(data, compressedData, 3);
-
-    pi.type = "Full Compression";
-    return compressedSize;
-}
-
-// Full decompression without decomposition
-void zstdDecompression(const std::vector<uint8_t>& compressedData, std::vector<uint8_t>& decompressedData, ProfilingInfo &pi) {
-
-    decompressWithZstd(compressedData, decompressedData, globalByteArray.size());
-
-    // Verify decompressed data
-   //  if (!verifyDataMatch(globalByteArray, decompressedData)) {
-   //    std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-   // }
-}
-
-void zstdDecomposedSequentialDecompression(const std::vector<std::vector<uint8_t>>& compressedComponents,
-                                           ProfilingInfo &pi,
-                                           const std::vector<size_t>& componentBytes) {
-  size_t totalSize = globalByteArray.size();
-  size_t numComponents = componentBytes.size();
-  size_t totalBytesPerElement = std::accumulate(componentBytes.begin(), componentBytes.end(), 0);
-  size_t floatCount = totalSize / totalBytesPerElement;
-  std::vector<uint8_t> reconstructedData(totalSize);
-
-  size_t baseOffset = 0;
-
-  for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // Temporary buffer for the decompressed component(????????????????????)
-    std::vector<uint8_t> tempComponent(floatCount * componentBytes[compIdx]);
-
-    // Decompress the current component
-    decompressWithZstd(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
-
-    // Reassemble the decompressed data
-    for (size_t i = 0; i < floatCount; ++i) {
-      std::copy(tempComponent.begin() + i * componentBytes[compIdx],
-                tempComponent.begin() + (i + 1) * componentBytes[compIdx],
-                reconstructedData.begin() + i * totalBytesPerElement + baseOffset);
+//-----------------------------------------------------------------------------
+// Reorder in One Pass with a Nested Vector, e.g. {{1,3},{2},{4}}
+// each inner vector is a sub-config specifying 1-based byte indices
+//-----------------------------------------------------------------------------
+inline void splitBytesIntoComponentsNested(
+    const std::vector<uint8_t>& byteArray,
+    std::vector<std::vector<uint8_t>>& outputComponents,
+    const std::vector<std::vector<size_t>>& allComponentSizes,
+    int numThreads
+) {
+    // 1) total bytes per element
+    size_t totalBytesPerElement = 0;
+    for (const auto& group : allComponentSizes) {
+        totalBytesPerElement += group.size();
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
+    // 2) how many "elements"
+    size_t numElements = byteArray.size() / totalBytesPerElement;
 
-    // Record the decompression time for the current component
-    pi.component_times[compIdx] = std::chrono::duration<double>(end - start).count();
+    // 3) Allocate output
+    outputComponents.resize(allComponentSizes.size());
+    for (size_t i = 0; i < allComponentSizes.size(); i++) {
+        // group i will hold (numElements * groupSize) bytes
+        size_t groupSize = allComponentSizes[i].size();
+        outputComponents[i].resize(numElements * groupSize);
+    }
 
-    // Update the base offset for the next component
-    baseOffset += componentBytes[compIdx];
-  }
+    // 4) Reorder in parallel across sub-configs
+#pragma omp parallel for num_threads(numThreads)
+    for (size_t compIdx = 0; compIdx < allComponentSizes.size(); compIdx++) {
+        const auto& groupIndices = allComponentSizes[compIdx];
+        size_t groupSize = groupIndices.size();
 
-  // // Verify decompressed data
-   // if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-   //   std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-   // }
+        for (size_t elem = 0; elem < numElements; elem++) {
+            size_t writePos = elem * groupSize;
+
+            for (size_t sub = 0; sub < groupSize; sub++) {
+                size_t idxInElem = groupIndices[sub] - 1; // 1-based -> 0-based
+                size_t globalIndex = elem * totalBytesPerElement + idxInElem;
+
+                outputComponents[compIdx][writePos + sub] = byteArray[globalIndex];
+            }
+        }
+    }
 }
 
-size_t zstdDecomposedSequential(const std::vector<uint8_t>& data, ProfilingInfo &pi,
-                                std::vector<std::vector<uint8_t>>& compressedComponents,
-                                const std::vector<size_t>& componentSizes) {
-  // Split data into components
-  std::vector<std::vector<uint8_t>> components(componentSizes.size());
-  splitBytesIntoComponents(data, components, componentSizes,1);
-
-  size_t compressedSizeTotal = 0;
-
-  pi.component_times.assign(componentSizes.size(), 0.0);
-
-  // Compress each component sequentially and record the compression time
-  for (size_t i = 0; i < componentSizes.size(); ++i) {
-    auto start = std::chrono::high_resolution_clock::now();
-    compressedSizeTotal += compressWithZstd(components[i], compressedComponents[i], 3);
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.component_times[i] = std::chrono::duration<double>(end - start).count();
-    // std::cout << "Component " << i << ": Original size = " << components[i].size()
-    //       << ", Compressed size = " << compressedComponents[i].size() << std::endl;
-
-  }
-
-  pi.type = "Sequential Decomposition with 8 Components";
-  std::cout << "compressedSizeTotal "<<compressedSizeTotal;
-  return compressedSizeTotal;
+//-----------------------------------------------------------------------------
+// Full (no decomposition) compression
+//-----------------------------------------------------------------------------
+inline size_t zstdCompression(
+    const std::vector<uint8_t>& data,
+    ProfilingInfo &pi,
+    std::vector<uint8_t>& compressedData
+) {
+    size_t cSize = compressWithZstd(data, compressedData, 3);
+    pi.type = "FullCompression";
+    return cSize;
+}
+inline void zstdDecompression(
+    const std::vector<uint8_t>& compressedData,
+    std::vector<uint8_t>& decompressedData,
+    ProfilingInfo &pi
+) {
+    decompressWithZstd(compressedData, decompressedData, globalByteArray.size());
 }
 
-size_t zstdDecomposedParallel(const std::vector<uint8_t>& data, ProfilingInfo &pi,
-                              std::vector<std::vector<uint8_t>>& compressedComponents,
-                              const std::vector<size_t>& componentSizes, int numThreads) {
-  // Split data into components
-  std::vector<std::vector<uint8_t>> components(componentSizes.size());
-  splitBytesIntoComponents(data, components, componentSizes, numThreads);
+//-----------------------------------------------------------------------------
+// Decomposed SEQUENTIAL
+// Reorder entire dataset in ONE pass, then compress each sub-chunk sequentially
+//-----------------------------------------------------------------------------
+inline size_t zstdDecomposedSequential(
+    const std::vector<uint8_t>& data,
+    ProfilingInfo& pi,
+    std::vector<std::vector<uint8_t>>& compressedComponents,
+    const std::vector<std::vector<size_t>>& allComponentSizes
+) {
+    auto startAll = std::chrono::high_resolution_clock::now();
 
- // omp_set_num_threads(numThreads);
+    // 1) Reorder data in one pass
+    std::vector<std::vector<uint8_t>> subChunks;
+    splitBytesIntoComponentsNested(data, subChunks, allComponentSizes, /*numThreads=*/1);
 
-  size_t compressedSizeTotal = 0;
+    // 2) Compress each chunk sequentially
+    compressedComponents.resize(subChunks.size());
 
-  pi.component_times.assign(componentSizes.size(), 0.0);
+    size_t totalCompressedSize = 0;
+    for (size_t i = 0; i < subChunks.size(); i++) {
+        auto startOne = std::chrono::high_resolution_clock::now();
 
-// #pragma omp parallel  for num_threads(numThreads)
-#pragma omp parallel for schedule(dynamic) num_threads(numThreads)
-  for (size_t i = 0; i < componentSizes.size(); ++i) {
-    auto start = std::chrono::high_resolution_clock::now();
-    compressedSizeTotal += compressWithZstd(components[i], compressedComponents[i], 3);
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.component_times[i] = std::chrono::duration<double>(end - start).count();
-  }
-  pi.type = "Parallel Decomposition with 8 Components";
-  return compressedSizeTotal;
+        size_t cSize = compressWithZstd(subChunks[i], compressedComponents[i], 3);
+        totalCompressedSize += cSize;
+
+        auto endOne = std::chrono::high_resolution_clock::now();
+        double compTime = std::chrono::duration<double>(endOne - startOne).count();
+        pi.component_times.push_back(compTime);
+    }
+
+    // record total time
+    auto endAll = std::chrono::high_resolution_clock::now();
+    pi.total_time_compressed = std::chrono::duration<double>(endAll - startAll).count();
+
+    // compute ratio
+    if (totalCompressedSize == 0) {
+        pi.com_ratio = 0.0;
+    } else {
+        pi.com_ratio = static_cast<double>(data.size()) / static_cast<double>(totalCompressedSize);
+    }
+
+    return totalCompressedSize;
 }
 
-
-
-std::vector<uint8_t> zstdDecomposedParallelDecompression(
+inline void zstdDecomposedSequentialDecompression(
     const std::vector<std::vector<uint8_t>>& compressedComponents,
     ProfilingInfo& pi,
-    const std::vector<size_t>& componentBytes,
-    int numThreads) {
-  size_t totalSize = globalByteArray.size(); // Size of the original data
-  size_t numComponents = componentBytes.size();
-  size_t totalBytesPerElement = std::accumulate(componentBytes.begin(), componentBytes.end(), 0);
-  size_t floatCount = totalSize / totalBytesPerElement;
-  std::vector<uint8_t> reconstructedData(totalSize);
+    const std::vector<std::vector<size_t>>& allComponentSizes
+) {
+    auto startAll = std::chrono::high_resolution_clock::now();
 
-  pi.component_times.resize(numComponents);
-  omp_set_num_threads(numThreads);
+    // 1) figure out how big each chunk was from reorder
+    // We replicate the logic from "splitBytesIntoComponentsNested" to deduce sizes
+    size_t totalBytesPerElement = 0;
+    for (auto & group : allComponentSizes) {
+        totalBytesPerElement += group.size();
+    }
+    size_t numElements = globalByteArray.size() / totalBytesPerElement;
 
-#pragma omp parallel for
-  for (size_t compIdx = 0; compIdx < numComponents; ++compIdx) {
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // Temporary buffer for the decompressed component
-    std::vector<uint8_t> tempComponent(floatCount * componentBytes[compIdx]);
-
-    // Decompress the current component
-    decompressWithZstd(compressedComponents[compIdx], tempComponent, floatCount * componentBytes[compIdx]);
-
-    // Calculate the base offset for this component
-    size_t baseOffset = std::accumulate(componentBytes.begin(), componentBytes.begin() + compIdx, 0);
-
-    // Reassemble the decompressed data with unrolling
-    size_t comByteComp = componentBytes[compIdx];
-
-#pragma omp parallel for schedule(static, 100000)
-    for (size_t i = 0; i < floatCount; ++i) {
-      size_t baseIndex = i * totalBytesPerElement + baseOffset;
-      size_t tempIndex = i * comByteComp;
-
-#pragma omp simd
-      for (size_t j = 0; j < comByteComp; ++j) {
-        reconstructedData[baseIndex + j] = tempComponent[tempIndex + j];
-      }
+    std::vector<size_t> chunkSizes;
+    chunkSizes.reserve(allComponentSizes.size());
+    for (auto & group : allComponentSizes) {
+        chunkSizes.push_back(numElements * group.size());
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
-    pi.component_times[compIdx] = std::chrono::duration<double>(end - start).count();
-  }
+    // 2) Decompress each chunk sequentially
+    for (size_t i = 0; i < compressedComponents.size(); i++) {
+        auto startOne = std::chrono::high_resolution_clock::now();
 
-  // // Verify decompressed data
-  // if (!verifyDataMatch(globalByteArray, reconstructedData)) {
-  //   std::cerr << "Error: Decompressed data doesn't match the original." << std::endl;
-  // }
+        std::vector<uint8_t> temp;
+        decompressWithZstd(compressedComponents[i], temp, chunkSizes[i]);
+        // If needed, do an *inverse reorder* to assemble back into a single array
 
-  return reconstructedData;
+        auto endOne = std::chrono::high_resolution_clock::now();
+        double decTime = std::chrono::duration<double>(endOne - startOne).count();
+        pi.component_times.push_back(decTime);
+    }
+
+    auto endAll = std::chrono::high_resolution_clock::now();
+    pi.total_time_decompressed = std::chrono::duration<double>(endAll - startAll).count();
 }
 
+//-----------------------------------------------------------------------------
+// Decomposed PARALLEL
+// Reorder entire dataset in ONE pass, then compress each sub-chunk in parallel
+//-----------------------------------------------------------------------------
+inline size_t zstdDecomposedParallel(
+    const std::vector<uint8_t>& data,
+    ProfilingInfo& pi,
+    std::vector<std::vector<uint8_t>>& compressedComponents,
+    const std::vector<std::vector<size_t>>& allComponentSizes,
+    int numThreads
+) {
+    auto startAll = std::chrono::high_resolution_clock::now();
 
-double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
-  return static_cast<double>(originalSize) / static_cast<double>(compressedSize);
+    // 1) Reorder data in one pass (in parallel if you want)
+    std::vector<std::vector<uint8_t>> subChunks;
+    splitBytesIntoComponentsNested(data, subChunks, allComponentSizes, /*numThreads=*/1);
+
+    // 2) Compress each chunk in parallel
+    compressedComponents.resize(subChunks.size());
+    omp_set_num_threads(numThreads);
+
+    size_t totalCompressedSize = 0;
+
+#pragma omp parallel for reduction(+:totalCompressedSize)
+    for (int i = 0; i < (int)subChunks.size(); i++) {
+        auto startOne = std::chrono::high_resolution_clock::now();
+
+        std::vector<uint8_t> compData;
+        size_t cSize = compressWithZstd(subChunks[i], compData, 3);
+        compressedComponents[i] = std::move(compData);
+        totalCompressedSize += cSize;
+
+        auto endOne = std::chrono::high_resolution_clock::now();
+        double compTime = std::chrono::duration<double>(endOne - startOne).count();
+
+        // store each component's time
+#pragma omp critical
+        {
+            pi.component_times.push_back(compTime);
+        }
+    }
+
+    // total time
+    auto endAll = std::chrono::high_resolution_clock::now();
+    pi.total_time_compressed = std::chrono::duration<double>(endAll - startAll).count();
+
+    // compute ratio
+    if (totalCompressedSize == 0) {
+        pi.com_ratio = 0.0;
+    } else {
+        pi.com_ratio = double(data.size()) / double(totalCompressedSize);
+    }
+    return totalCompressedSize;
 }
 
+inline std::vector<uint8_t> zstdDecomposedParallelDecompression(
+    const std::vector<std::vector<uint8_t>>& compressedComponents,
+    ProfilingInfo& pi,
+    const std::vector<std::vector<size_t>>& allComponentSizes,
+    int numThreads
+) {
+    auto startAll = std::chrono::high_resolution_clock::now();
 
+    // figure out how large each chunk was
+    size_t totalBytesPerElement = 0;
+    for (auto & group : allComponentSizes) {
+        totalBytesPerElement += group.size();
+    }
+    size_t numElements = globalByteArray.size() / totalBytesPerElement;
+
+    std::vector<size_t> chunkSizes;
+    chunkSizes.reserve(allComponentSizes.size());
+    for (auto & group : allComponentSizes) {
+        chunkSizes.push_back(numElements * group.size());
+    }
+
+    // We'll do a dummy final array
+    std::vector<uint8_t> finalReconstructed(globalByteArray.size());
+
+    // Decompress in parallel
+    omp_set_num_threads(numThreads);
+
+#pragma omp parallel for
+    for (int i = 0; i < (int)compressedComponents.size(); i++) {
+        auto startOne = std::chrono::high_resolution_clock::now();
+        std::vector<uint8_t> temp;
+        decompressWithZstd(compressedComponents[i], temp, chunkSizes[i]);
+        // If needed, do inverse reorder to fill finalReconstructed
+
+        auto endOne = std::chrono::high_resolution_clock::now();
+        double decTime = std::chrono::duration<double>(endOne - startOne).count();
+
+#pragma omp critical
+        {
+            pi.component_times.push_back(decTime);
+        }
+    }
+
+    auto endAll = std::chrono::high_resolution_clock::now();
+    pi.total_time_decompressed = std::chrono::duration<double>(endAll - startAll).count();
+    return finalReconstructed;
+}
+
+//-----------------------------------------------------------------------------
+// Compute Overall Compression Ratio
+//-----------------------------------------------------------------------------
+inline double calculateCompressionRatio(size_t originalSize, size_t compressedSize) {
+    return (compressedSize == 0)
+        ? 0.0
+        : static_cast<double>(originalSize) / static_cast<double>(compressedSize);
+}
+
+#endif // ZSTD_PARALLEL_H
