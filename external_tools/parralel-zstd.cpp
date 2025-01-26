@@ -20,10 +20,65 @@ std::vector<uint8_t> globalByteArray;
 // Map to store dataset names and their multiple possible configurations
 std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
   {"acs_wht_f32", {  // Multiple configurations for a single dataset
-          {{1, 3}, {2}, {4}} ,    // First configuration
-          {{1, 2}, {3}, {4}} ,
+          {{1,2}, {3}, {4}} ,    // First configuration
+          {{1, 2,3}, {4}} ,
             // Second configuration
   }},
+{"g24_78_usb2_f32", {  // Multiple configurations for a single dataset
+            {{1}, {2,3}, {4}} ,    // First configuration
+            {{1, 2,3}, {4}} ,
+              // Second configuration
+    }},
+{"jw_mirimage_f32", {  // Multiple configurations for a single dataset
+                {{1,2}, {3}, {4}} ,    // First configuration
+            {{1, 2,3}, {4}},
+                // Second configuration
+      }},
+{"spitzer_irac_f32", {  // Multiple configurations for a single dataset
+                  {{1,2}, {3}, {4}} ,    // First configuration
+              {{1, 2,3}, {4}},
+                  // Second configuration
+        }},
+{"turbulence_f32", {  // Multiple configurations for a single dataset
+                    {{1,2}, {3}, {4}} ,    // First configuration
+                {{1, 2,3}, {4}},
+                    // Second configuration
+          }},
+{"wave_f32", {  // Multiple configurations for a single dataset
+                      {{1,2}, {3}, {4}} ,    // First configuration
+                  {{1, 2,3}, {4}},
+                      // Second configuration
+            }},
+{"hdr_night_f32", {  // Multiple configurations for a single dataset
+                        {{1,4}, {2}, {3}} ,    // First configuration
+                    {{1}, {2},{3}, {4}},
+                    {{1,4},{2,3}},
+
+              }},
+{"ts_gas_f32", { {{1,2},{3}, {4}},  }},
+{"solar_wind_f32", {  {{1},{4}, {2}, {3}} ,    // First configuration
+                      {{1}, {2,3}, {4}}, }},
+{"tpch_lineitem_f32", {  {{1,2,3}, {4}, } ,    // First configuration
+                    {{1,2},{3}, {4}}, }},
+{"tpcds_web_f32", {  {{1,2,3}, {4}, } ,    // First configuration
+                  {{1},{2,3}, {4}}, }},
+{"tpcds_store_f32", {  {{1,2,3}, {4}, } ,    // First configuration
+                  {{1},{2,3}, {4}}, }},
+{"tpcds_catalog_f32", {  {{1,2,3}, {4}, } ,    // First configuration
+                {{1},{2,3}, {4}}, }},
+{"citytemp_f32", {  {{1,4}, {2,3}} ,    // First configuration
+                      {{1}, {2},{3}, {4}},
+                          {{1,2},{3},{4}}}},
+{"hst_wfc3_ir_f32", {     // First configuration
+                    {{1}, {2},{3}, {4}},
+                        {{1,2},{3},{4}}}},
+{"hst_wfc3_uvis_f32", {     // First configuration
+                      {{1}, {2},{3}, {4}},
+                          {{1,2},{3},{4}}}},
+{"rsim_f32", {     // First configuration
+                        {{1,2,3}, {4}},
+                            {{1,2},{3},{4}}}},
+
   {"default", {               // Default fallback with one configuration
           {{1}, {2}, {3}, {4}}
   }}
@@ -308,8 +363,8 @@ int main(int argc, char* argv[]) {
         return ss.str();
     };
 
-    std::vector<int> threadSizesList = {4, 8};
-    int iterations = 2;
+    std::vector<int> threadSizesList = { 8};
+    int iterations = 1;
 
     std::vector<ProfilingInfo> pi_array;
 
