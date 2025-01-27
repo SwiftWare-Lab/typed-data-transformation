@@ -6,3 +6,5 @@ fpzip
 python-snappy==0.6.1
 zstandard 
 lz4
+dahuffman
+fastlz

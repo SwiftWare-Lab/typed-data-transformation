@@ -24,9 +24,9 @@ def generate_sbatch_header(time, num_tasks, email, memory="64000M", name="Compre
 #SBATCH --mail-type=end    # email me when the job finishes
 #SBATCH --mail-user={email}
 #SBATCH --export=ALL
-#SBATCH --cpus-per-task={num_tasks}
-#SBATCH --nodes=40
-#SBATCH --mem={memory}
+#SBATCH --cpus-per-task=40
+#SBATCH --nodes=1
+
 
                 """
 
@@ -47,6 +47,7 @@ def arg_parser():
     parser.add_argument('--output', dest='output_dir', default="./", help='Output directory for the sbatch scripts.')
     parser.add_argument('--mode', dest='mode', default=4, type=int, help='type of data')
     parser.add_argument('--nthreads', dest='num_threads', default=40, type=int, help='Number of threads to use.')
+    parser.add_argument('--testmode', dest='test_mode', default=False, type=bool,help='Test mode to print the script instead of writing it.')  
     parser.add_argument('--email', dest='email', default="jamalids@mcmaster.ca", help='Email to send the job status.')
     return parser
 
@@ -82,26 +83,30 @@ if __name__ == "__main__":
     script_name = args.script_name
     num_scripts = args.num_scripts
     output_dir = args.output_dir
-    test_mode = args.test_mode
+    mode = args.mode
     csv_output_dir = args.out_csv_dir
     num_threads = args.num_threads
     email = args.email
 
-
+    test_mode = args.test_mode
 
     # get the list of all tsv file in ucr_path recursively
     datasets = [os.path.join(dp, f) for dp, dn, filenames in os.walk(ucr_path) for f in filenames if f.endswith('.tsv')]
     dataset_groups = partition_by_size_files(datasets, num_scripts)
     for i, dataset_group in enumerate(dataset_groups):
+        if not dataset_group:
+            continue
+
         sbatch_script_ucr_content = ""
-        sbatch_script_ucr_content += generate_sbatch_header("05:00:00", num_threads, "samira@mcmaster.ca")
+        first_dataset_name = os.path.splitext(os.path.basename(dataset_group[0]))[0]
+        sbatch_script_ucr_content += generate_sbatch_header("23:00:00", num_threads, "samira@mcmaster.ca")
         sbatch_script_ucr_content += generate_module_loads(["StdEnv", "python/3.10"])
 
 
         sbatch_script_ucr_content += generate_python_command(dataset_group, script_name, csv_output_dir)
 
         # Write the shell script
-        sbatch_script_name = f"run_ucr_datasets_{i}.sh"
+        sbatch_script_name = f"{first_dataset_name}_z1.sh"
         if not test_mode:
             with open(os.path.join(output_dir, sbatch_script_name), "w") as shell_script:
                 shell_script.write(sbatch_script_ucr_content)

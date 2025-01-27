@@ -1,5 +1,5 @@
 import numpy as np
-import zstd
+import zstandard as zstd 
 import zlib
 import bz2
 import snappy
