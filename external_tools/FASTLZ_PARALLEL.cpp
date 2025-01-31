@@ -7,7 +7,6 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include <zstd.h>
 #include <chrono>
 #include <cstdint>
 #include <omp.h>
@@ -15,136 +14,145 @@
 #include <vector>
 #include <cxxopts.hpp>
 #include <cmath>
-#include "zstd_parallel.h"
+
+// NOTE: Include FastLZ-based parallel header
+#include "FASTLZ_PARALLEL.h"
+
 std::vector<uint8_t> globalByteArray;
+
 // Map to store dataset names and their multiple possible configurations
 std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
-  {"acs_wht_f32", {  // Multiple configurations for a single dataset
-          {{1,2}, {3}, {4}} ,    // First configuration
+  {"acs_wht_f32", {
+          {{1,2}, {3}, {4}} ,
           {{1, 2,3}, {4}} ,
-            // Second configuration
-  }},
-{"g24_78_usb2_f32", {  // Multiple configurations for a single dataset
-            {{1}, {2,3}, {4}} ,    // First configuration
-            {{1, 2,3}, {4}} ,
-              // Second configuration
-    }},
-{"jw_mirimage_f32", {  // Multiple configurations for a single dataset
-                {{1,2}, {3}, {4}} ,    // First configuration
-            {{1, 2,3}, {4}},
-                // Second configuration
-      }},
-{"spitzer_irac_f32", {  // Multiple configurations for a single dataset
-                  {{1,2}, {3}, {4}} ,    // First configuration
-              {{1, 2,3}, {4}},
-                  // Second configuration
-        }},
-{"turbulence_f32", {  // Multiple configurations for a single dataset
-                    {{1,2}, {3}, {4}} ,    // First configuration
-                {{1, 2,3}, {4}},
-                    // Second configuration
-          }},
-{"wave_f32", {  // Multiple configurations for a single dataset
-                      {{1,2}, {3}, {4}} ,    // First configuration
-                  {{1, 2,3}, {4}},
-                      // Second configuration
-            }},
-{"hdr_night_f32", {  // Multiple configurations for a single dataset
-                        {{1,4}, {2}, {3}} ,    // First configuration
-                    {{1}, {2},{3}, {4}},
-                    {{1,4},{2,3}},
-
-              }},
-{"ts_gas_f32", { {{1,2},{3}, {4}},  }},
-{"solar_wind_f32", {  {{1},{4}, {2}, {3}} ,    // First configuration
-                      {{1}, {2,3}, {4}}, }},
-{"tpch_lineitem_f32", {  {{1,2,3}, {4}, } ,    // First configuration
-                    {{1,2},{3}, {4}}, }},
-{"tpcds_web_f32", {  {{1,2,3}, {4}, } ,    // First configuration
-                  {{1},{2,3}, {4}}, }},
-{"tpcds_store_f32", {  {{1,2,3}, {4}, } ,    // First configuration
-                  {{1},{2,3}, {4}}, }},
-{"tpcds_catalog_f32", {  {{1,2,3}, {4}, } ,    // First configuration
-                {{1},{2,3}, {4}}, }},
-{"citytemp_f32", {  {{1,4}, {2,3}} ,    // First configuration
-                      {{1}, {2},{3}, {4}},
-                          {{1,2},{3},{4}}}},
-{"hst_wfc3_ir_f32", {     // First configuration
-                    {{1}, {2},{3}, {4}},
-                        {{1,2},{3},{4}}}},
-{"hst_wfc3_uvis_f32", {     // First configuration
-                      {{1}, {2},{3}, {4}},
-                          {{1,2},{3},{4}}}},
-{"rsim_f32", {     // First configuration
-                        {{1,2,3}, {4}},
-                            {{1,2},{3},{4}}}},
-{"astro_mhd_f64", {     // First configuration
-                          {{1,2,3,4,5,6},{7},{8}},
-                             {{1,2,3,4,5},{6},{7},{8}}}},
-{"astro_pt_f64", {     // First configuration
-                            {{1,2,3,4,5,6},{7},{8}},
-                               {{1,2,3,4,5},{6},{7},{8}}}},
-{"astro_pt_f64", {     // First configuration
-                              {{1,2,3,4,5,6},{7},{8}},
-                                 {{1,2,3,4,5},{6},{7},{8}}}},
-{"jane_street_f64", {     // First configuration
-                                {{1,2,3,4,5,6},{7},{8}},
-                                   {{3,2,5,6,4,1},{7},{8}}}},
-{"msg_bt_f64", {     // First configuration
-                                  {{1,2,3,4,5},{6},{7},{8}},
-                                     {{3,2,1,4,5,6},{7},{8}},
-                                     {{3,2,1,4,5},{6},{7},{8}}
-}},
-{"num_brain_f64", {     // First configuration
-                                    {{1,2,3,4,5,6},{7},{8}},
-                                       {{3,2,4,5,1,6},{7},{8}},
-
-}},
-{"num_control_f64", {     // First configuration
-                                      {{1,2,3,4,5,6},{7},{8}},
-                                         {{4,5},{6,3},{1,2},{7},{8}},
-                                     {{4,5,6,3,1,2},{7},{8}},
 
   }},
-{"nyc_taxi2015_f64", {     // First configuration
-                                        {{7,4,6},{5},{3,2,1,8}},
-{{7,4,6,5},{3,2,1,8}},
-                                           {{7,4,6},{5},{3,2,1},{8}},
-                                       {{7,4},{6},{5},{3,2},{1},{8}},
-
-    }},
-
-{"phone_gyro_f64", {     // First configuration
-                                          {{4,6},{5},{3,2,1,7},{8}},
-                                             {{4,6},{1},{3,2},{5},{7},{8}},
-                                         {{6,4,3,2,1,7},{5},{8}},
-
-      }},
-
-{"tpch_order_f64", {
-                                               {{3,2,4,1},{7},{6,5},{8}},
-                                           {{3,2,4,1,7},{6,5},{8}},
-
-        }},
-{"tpcxbb_store_f64", {
-                                               {{4,2,3},{1},{5},{7},{6},{8}},
-                                               {{4,2,3,1},{5},{7,6},{8}},
-                                               {{4,2,3,1,5},{7,6},{8}},
-
-          }},
-{"tpcxbb_web_f64", {
-                                                 {{4,2,3},{1},{5},{7},{6},{8}},
-                                                 {{4,2,3,1},{5},{7,6},{8}},
-                                                 {{4,2,3,1,5},{7,6},{8}},
-
-            }},
-{"wesad_chest_f64", {
-                                                   {{7,5},{6},{8,4,1},{3,2}},
-                                                   {{7,5},{6},{8,4},{1},{3,2}},
-                                                   {{7,5},{6},{8,4,1,3,2}},
-
-              }},
-  {"default", {               // Default fallback with one configuration
+  {"g24_78_usb2_f32", {
+          {{1}, {2,3}, {4}},
+          {{1, 2,3}, {4}},
+  }},
+  {"jw_mirimage_f32", {
+          {{1,2}, {3}, {4}},
+          {{1, 2,3}, {4}},
+  }},
+  {"spitzer_irac_f32", {
+          {{1,2}, {3}, {4}},
+          {{1, 2,3}, {4}},
+  }},
+  {"turbulence_f32", {
+          {{1,2}, {3}, {4}},
+          {{1, 2,3}, {4}},
+  }},
+  {"wave_f32", {
+          {{1,2}, {3}, {4}},
+          {{1, 2,3}, {4}},
+  }},
+  {"hdr_night_f32", {
+          {{1,4}, {2}, {3}},
+          {{1}, {2},{3}, {4}},
+          {{1,4},{2,3}},
+  }},
+  {"ts_gas_f32", {
+          {{1,2},{3}, {4}},
+  }},
+  {"solar_wind_f32", {
+          {{1},{4}, {2}, {3}},
+          {{1}, {2,3}, {4}},
+  }},
+  {"tpch_lineitem_f32", {
+          {{1,2,3}, {4},},
+          {{1,2},{3}, {4}},
+  }},
+  {"tpcds_web_f32", {
+          {{1,2,3}, {4},},
+          {{1},{2,3}, {4}},
+  }},
+  {"tpcds_store_f32", {
+          {{1,2,3}, {4},},
+          {{1},{2,3}, {4}},
+  }},
+  {"tpcds_catalog_f32", {
+          {{1,2,3}, {4},},
+          {{1},{2,3}, {4}},
+  }},
+  {"citytemp_f32", {
+          {{1,4}, {2,3}},
+          {{1}, {2},{3}, {4}},
+          {{1,2},{3},{4}}
+  }},
+  {"hst_wfc3_ir_f32", {
+          {{1}, {2},{3}, {4}},
+          {{1,2},{3},{4}}
+  }},
+  {"hst_wfc3_uvis_f32", {
+          {{1}, {2},{3}, {4}},
+          {{1,2},{3},{4}}
+  }},
+  {"rsim_f32", {
+          {{1,2,3}, {4}},
+          {{1,2},{3},{4}}
+  }},
+  {"astro_mhd_f64", {
+          {{1,2,3,4,5,6},{7},{8}},
+          {{1,2,3,4,5},{6},{7},{8}}
+  }},
+  {"astro_pt_f64", {
+          {{1,2,3,4,5,6},{7},{8}},
+          {{1,2,3,4,5},{6},{7},{8}}
+  }},
+  {"astro_pt_f64", {
+          {{1,2,3,4,5,6},{7},{8}},
+          {{1,2,3,4,5},{6},{7},{8}}
+  }},
+  {"jane_street_f64", {
+          {{1,2,3,4,5,6},{7},{8}},
+          {{3,2,5,6,4,1},{7},{8}}
+  }},
+  {"msg_bt_f64", {
+          {{1,2,3,4,5},{6},{7},{8}},
+          {{3,2,1,4,5,6},{7},{8}},
+          {{3,2,1,4,5},{6},{7},{8}}
+  }},
+  {"num_brain_f64", {
+          {{1,2,3,4,5,6},{7},{8}},
+          {{3,2,4,5,1,6},{7},{8}},
+  }},
+  {"num_control_f64", {
+          {{1,2,3,4,5,6},{7},{8}},
+          {{4,5},{6,3},{1,2},{7},{8}},
+          {{4,5,6,3,1,2},{7},{8}},
+  }},
+  {"nyc_taxi2015_f64", {
+          {{7,4,6},{5},{3,2,1,8}},
+          {{7,4,6,5},{3,2,1,8}},
+          {{7,4,6},{5},{3,2,1},{8}},
+          {{7,4},{6},{5},{3,2},{1},{8}},
+  }},
+  {"phone_gyro_f64", {
+          {{4,6},{5},{3,2,1,7},{8}},
+          {{4,6},{1},{3,2},{5},{7},{8}},
+          {{6,4,3,2,1,7},{5},{8}},
+  }},
+  {"tpch_order_f64", {
+          {{3,2,4,1},{7},{6,5},{8}},
+          {{3,2,4,1,7},{6,5},{8}},
+  }},
+  {"tpcxbb_store_f64", {
+          {{4,2,3},{1},{5},{7},{6},{8}},
+          {{4,2,3,1},{5},{7,6},{8}},
+          {{4,2,3,1,5},{7,6},{8}},
+  }},
+  {"tpcxbb_web_f64", {
+          {{4,2,3},{1},{5},{7},{6},{8}},
+          {{4,2,3,1},{5},{7,6},{8}},
+          {{4,2,3,1,5},{7,6},{8}},
+  }},
+  {"wesad_chest_f64", {
+          {{7,5},{6},{8,4,1},{3,2}},
+          {{7,5},{6},{8,4},{1},{3,2}},
+          {{7,5},{6},{8,4,1,3,2}},
+  }},
+  {"default", {
           {{1}, {2}, {3}, {4}}
   }}
 };
@@ -191,9 +199,7 @@ std::string configToString1(const std::vector<std::vector<size_t>>& config) {
   return ss.str();
 }
 
-
-
-//////////////////////////////////////
+//---------------------------------------
 std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath) {
   std::vector<float> floatArray;
   std::ifstream file(filePath);
@@ -208,7 +214,6 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
       // Skip the first column value
       std::getline(ss, value, '\t');
 
-
       while (std::getline(ss, value, '\t')) {
         floatArray.push_back(std::stof(value));
       }
@@ -222,7 +227,7 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
   return {floatArray, rowCount};
 }
 
-//double64
+// double64
 std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& filePath) {
   std::vector<double> doubleArray;  // Use double for 64-bit floating-point
   std::ifstream file(filePath);
@@ -236,7 +241,6 @@ std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& f
 
       // Skip the first column value
       std::getline(ss, value, '\t');
-
 
       while (std::getline(ss, value, '\t')) {
         doubleArray.push_back(std::stod(value));  // Convert to double
@@ -262,24 +266,19 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
   return byteArray;
 }
 
-
-
-
 std::vector<float> convertBytesToFloat(const std::vector<uint8_t>& byteArray) {
   if (byteArray.size() % 4 != 0) {
     throw std::runtime_error("Byte array size is not a multiple of 4.");
   }
-
   std::vector<float> floatArray(byteArray.size() / 4);
-
   for (size_t i = 0; i < floatArray.size(); i++) {
     const uint8_t* bytePtr = &byteArray[i * 4];
     float* floatPtr = reinterpret_cast<float*>(const_cast<uint8_t*>(bytePtr));
     floatArray[i] = *floatPtr;
   }
-
   return floatArray;
 }
+
 std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray) {
   std::vector<uint8_t> byteArray(doubleArray.size() * 8);  // Each double is 8 bytes
   for (size_t i = 0; i < doubleArray.size(); i++) {
@@ -298,20 +297,12 @@ std::vector<double> convertBytesToDouble(const std::vector<uint8_t>& byteArray) 
   if (byteArray.size() % 8 != 0) {
     throw std::runtime_error("Byte array size is not a multiple of 8.");
   }
-
-  // Prepare a vector of doubles to hold the result
   std::vector<double> doubleArray(byteArray.size() / 8);
-
-  // Iterate through the byteArray in chunks of 8 bytes
   for (size_t i = 0; i < doubleArray.size(); i++) {
-    // Get a pointer to the bytes for this double
     const uint8_t* bytePtr = &byteArray[i * 8];
-
-    // Reinterpret the bytes as a double and assign to the doubleArray
     const double* doublePtr = reinterpret_cast<const double*>(bytePtr);
     doubleArray[i] = *doublePtr;
   }
-
   return doubleArray;
 }
 
@@ -337,6 +328,7 @@ bool areVectorsEqual(const std::vector<float>& a, const std::vector<float>& b, f
   }
   return true;
 }
+
 bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<double>& b, float epsilon = 1e-5) {
   if (a.size() != b.size()) {
     return false;
@@ -348,9 +340,10 @@ bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<doubl
   }
   return true;
 }
+
 int main(int argc, char* argv[]) {
     // 1. Parse command-line arguments
-    cxxopts::Options options("DataCompressor", "Compress datasets and profile the compression");
+    cxxopts::Options options("DataCompressorFastLZ", "Compress datasets and profile the compression (FastLZ version)");
     options.add_options()
         ("d,dataset", "Path to the dataset file", cxxopts::value<std::string>())
         ("o,outcsv",  "Output CSV file path",     cxxopts::value<std::string>())
@@ -411,7 +404,7 @@ int main(int argc, char* argv[]) {
     // 3. Fetch All Configuration Sets
     auto componentConfigurationsList = getComponentConfigurationsForDataset(datasetName);
 
-    // (NEW) Helper for string conversion
+
     auto configToString = [&](const std::vector<std::vector<size_t>>& config){
         std::stringstream ss;
         ss << "{ ";
@@ -428,8 +421,8 @@ int main(int argc, char* argv[]) {
         return ss.str();
     };
 
-    std::vector<int> threadSizesList = { 8};
-    int iterations = 1;
+    std::vector<int> threadSizesList = { 2,4,8,12,16 };
+    int iterations = 20;
 
     std::vector<ProfilingInfo> pi_array;
 
@@ -440,7 +433,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // (NEW) We add an extra column for the config string
+
     file << "Index,DatasetName,Threads,ConfigString,RunType,CompressionRatio,"
          << "TotalTimeCompressed,TotalTimeDecompressed,"
          << "CompressionThroughput,DecompressionThroughput,TotalValues\n";
@@ -466,20 +459,22 @@ int main(int argc, char* argv[]) {
             for (int iter = 0; iter < iterations; iter++) {
                 std::cout << "    Iteration #" << (iter + 1) << "...\n";
 
-                // 7.a) Full
+                //  Full
                 {
                     ProfilingInfo pi_full;
-                    // (NEW) store config string
                     pi_full.config_string = configStr;
 
                     std::vector<uint8_t> compressedData, decompressedData;
+
+                    // Compress
                     auto start = std::chrono::high_resolution_clock::now();
-                    double compressedSize = zstdCompression(globalByteArray, pi_full, compressedData);
+                    double compressedSize = fastlzCompression(globalByteArray, pi_full, compressedData);
                     auto end   = std::chrono::high_resolution_clock::now();
                     pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
+                    // Decompress
                     start = std::chrono::high_resolution_clock::now();
-                    zstdDecompression(compressedData, decompressedData, pi_full);
+                    fastlzDecompression(compressedData, decompressedData, pi_full);
                     end   = std::chrono::high_resolution_clock::now();
                     pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
@@ -501,29 +496,29 @@ int main(int argc, char* argv[]) {
                               << " Tdecompress=" << pi_full.total_time_decompressed << "\n";
                 }
 
-                // 7.b) Seq
+                //  Seq (Decomposed Sequential) with FastLZ
                 {
                     ProfilingInfo pi_seq;
-                    pi_seq.config_string = configStr; // store config
+                    pi_seq.config_string = configStr;
                     std::vector<std::vector<uint8_t>> compressedComponents;
 
                     auto start = std::chrono::high_resolution_clock::now();
-                    double compressedSize = zstdDecomposedSequential(
+                    double compressedSize = fastlzDecomposedSequential(
                                                 globalByteArray,
                                                 pi_seq,
                                                 compressedComponents,
                                                 componentConfig
                                             );
-                    auto end   = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
                     pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
                     start = std::chrono::high_resolution_clock::now();
-                    zstdDecomposedSequentialDecompression(
+                    fastlzDecomposedSequentialDecompression(
                         compressedComponents,
                         pi_seq,
                         componentConfig
                     );
-                    end   = std::chrono::high_resolution_clock::now();
+                    end = std::chrono::high_resolution_clock::now();
                     pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
                     pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
@@ -544,31 +539,31 @@ int main(int argc, char* argv[]) {
                               << " Tdecompress=" << pi_seq.total_time_decompressed << "\n";
                 }
 
-                // 7.c) Parallel
+                //  Parallel (Decomposed Parallel) with FastLZ
                 {
                     ProfilingInfo pi_parallel;
                     pi_parallel.config_string = configStr;
                     std::vector<std::vector<uint8_t>> compressedComponents;
 
                     auto start = std::chrono::high_resolution_clock::now();
-                    double compressedSize = zstdDecomposedParallel(
+                    double compressedSize = fastlzDecomposedParallel(
                                                 globalByteArray,
                                                 pi_parallel,
                                                 compressedComponents,
                                                 componentConfig,
                                                 threads
                                             );
-                    auto end   = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
                     pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
                     start = std::chrono::high_resolution_clock::now();
-                    zstdDecomposedParallelDecompression(
+                    fastlzDecomposedParallelDecompression(
                         compressedComponents,
                         pi_parallel,
                         componentConfig,
                         threads
                     );
-                    end   = std::chrono::high_resolution_clock::now();
+                    end = std::chrono::high_resolution_clock::now();
                     pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
                     pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
@@ -593,13 +588,12 @@ int main(int argc, char* argv[]) {
         } // threadSizesList
     } // componentConfigurationsList
 
-    // 8. Write profiling data to CSV
-    // (NEW) We added "ConfigString" as a column
+    //  profiling data to CSV
     for (const auto& pi : pi_array) {
         file << recordIndex++ << ","
              << datasetName << ","
              << pi.thread_count << ","
-             << pi.config_string << ","    // <-- the new column
+             << pi.config_string << ","
              << pi.type << ","
              << pi.com_ratio << ","
              << pi.total_time_compressed << ","
