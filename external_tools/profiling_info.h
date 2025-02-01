@@ -10,6 +10,8 @@
 struct ProfilingInfo {
   double com_ratio = 0.0;
   double total_time_compressed = 0.0;
+  double split_time = 0.0;
+  double compress_time=0.0;
   double total_time_decompressed = 0.0;
   std::string type;
   std::vector<double> component_times; // Store times for each component
@@ -30,7 +32,9 @@ struct ProfilingInfo {
          << type << ","
          << com_ratio << ","
          << total_time_compressed << ","
-         << total_time_decompressed << ",";
+         << total_time_decompressed << ","
+         << split_time << ","
+         << compress_time << ",";
 
     // Append component times dynamically
     for (size_t i = 0; i < component_times.size(); ++i) {

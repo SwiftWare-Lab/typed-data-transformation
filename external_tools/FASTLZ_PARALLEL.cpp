@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
     };
 
     std::vector<int> threadSizesList = { 2,4,8,12,16 };
-    int iterations = 20;
+    int iterations = 1;
 
     std::vector<ProfilingInfo> pi_array;
 
@@ -436,7 +436,7 @@ int main(int argc, char* argv[]) {
 
     file << "Index,DatasetName,Threads,ConfigString,RunType,CompressionRatio,"
          << "TotalTimeCompressed,TotalTimeDecompressed,"
-         << "CompressionThroughput,DecompressionThroughput,TotalValues\n";
+         << "CompressionThroughput,DecompressionThroughput,TotalValues,split_time,compress_time\n";
 
     int recordIndex = 1;
 
@@ -546,15 +546,22 @@ int main(int argc, char* argv[]) {
                     std::vector<std::vector<uint8_t>> compressedComponents;
 
                     auto start = std::chrono::high_resolution_clock::now();
-                    double compressedSize = fastlzDecomposedParallel(
+
+                  double compressedSize = fastlzFusedDecomposedParallel(
                                                 globalByteArray,
                                                 pi_parallel,
                                                 compressedComponents,
                                                 componentConfig,
                                                 threads
                                             );
+                  // Then retrieve the split and compression times from the profiling structure
+
+
                     auto end = std::chrono::high_resolution_clock::now();
                     pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
+                  double split_time   = pi_parallel.split_time;
+                  double compress_time = pi_parallel.compress_time;
+
 
                     start = std::chrono::high_resolution_clock::now();
                     fastlzDecomposedParallelDecompression(
@@ -577,10 +584,15 @@ int main(int argc, char* argv[]) {
                     pi_parallel.total_values             = rowCount;
                     pi_parallel.type                     = "Parallel";
                     pi_parallel.thread_count             = threads;
+                    pi_parallel.split_time   = split_time;
+                    pi_parallel.compress_time = compress_time;
+
                     pi_array.push_back(pi_parallel);
 
                     std::cout << "      Par ratio=" << pi_parallel.com_ratio
                               << " Tcompress=" << pi_parallel.total_time_compressed
+                  << " split_time=" << pi_parallel.split_time
+                  << " compress_time=" <<  pi_parallel.compress_time
                               << " Tdecompress=" << pi_parallel.total_time_decompressed << "\n";
                 }
 
@@ -598,9 +610,12 @@ int main(int argc, char* argv[]) {
              << pi.com_ratio << ","
              << pi.total_time_compressed << ","
              << pi.total_time_decompressed << ","
+
              << pi.compression_throughput << ","
              << pi.decompression_throughput << ","
-             << pi.total_values << "\n";
+             << pi.total_values <<","
+               << pi.split_time << ","
+            << pi.compress_time << "\n";
     }
 
     file.close();
