@@ -156,7 +156,26 @@ std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComp
           {{1}, {2}, {3}, {4}}
   }}
 };
+/////////////////////////chunking////////////////////
+// --- Helper: Split a vector into N nearly equal chunks ---
+std::vector<std::vector<uint8_t>> splitIntoChunks(const std::vector<uint8_t>& data, int numChunks) {
+  std::vector<std::vector<uint8_t>> chunks;
+  size_t totalSize = data.size();
+  size_t chunkSize = totalSize / numChunks;
+  size_t remainder = totalSize % numChunks;
+  size_t offset = 0;
 
+  for (int i = 0; i < numChunks; i++) {
+    // Distribute the remainder among the first few chunks.
+    size_t currentSize = chunkSize + (i < remainder ? 1 : 0);
+    std::vector<uint8_t> chunk(data.begin() + offset, data.begin() + offset + currentSize);
+    chunks.push_back(std::move(chunk));
+    offset += currentSize;
+  }
+  return chunks;
+}
+
+////////////////////////////////////////////////////
 // Function to get all configurations for a dataset
 std::vector<std::vector<std::vector<size_t>>> getComponentConfigurationsForDataset(const std::string& datasetName) {
   auto it = datasetComponentMap.find(datasetName);
@@ -341,32 +360,63 @@ bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<doubl
   return true;
 }
 
-int main(int argc, char* argv[]) {
-    // 1. Parse command-line arguments
-    cxxopts::Options options("DataCompressorFastLZ", "Compress datasets and profile the compression (FastLZ version)");
-    options.add_options()
-        ("d,dataset", "Path to the dataset file", cxxopts::value<std::string>())
-        ("o,outcsv",  "Output CSV file path",     cxxopts::value<std::string>())
-        ("t,threads", "Number of threads to use", cxxopts::value<int>()->default_value("10"))
-        ("b,bits",    "Floating-point precision (32 or 64 bits)", cxxopts::value<int>()->default_value("64"))
-        ("h,help",    "Print help");
+// ----------------------------------------------------------------------------
+// Helper: Block a vector into blocks of a given blockSize (in bytes)
+// ----------------------------------------------------------------------------
+std::vector<std::vector<uint8_t>> blockData(const std::vector<uint8_t>& data, size_t blockSize) {
+  std::vector<std::vector<uint8_t>> blocks;
+  size_t totalSize = data.size();
+  size_t numBlocks = (totalSize + blockSize - 1) / blockSize; // ceiling division
+  blocks.reserve(numBlocks);
+  for (size_t i = 0; i < totalSize; i += blockSize) {
+    size_t end = std::min(i + blockSize, totalSize);
+    blocks.push_back(std::vector<uint8_t>(data.begin() + i, data.begin() + end));
+  }
+  return blocks;
+}
+// ----------------------------------------------------------------------------
+// Helper: Block each decomposed component (same idea as blockData)
+// ----------------------------------------------------------------------------
+std::vector<std::vector<std::vector<uint8_t>>> blockComponents(
+    const std::vector<std::vector<uint8_t>>& components, size_t blockSize)
+{
+  // For each component, split into blocks.
+  std::vector<std::vector<std::vector<uint8_t>>> blockedComponents;
+  blockedComponents.resize(components.size());
+  for (size_t comp = 0; comp < components.size(); comp++) {
+    blockedComponents[comp] = blockData(components[comp], blockSize);
+  }
+  return blockedComponents;
+}
 
+
+/////////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char* argv[]) {
+    // 1. Parse command-line arguments using cxxopts.
+    cxxopts::Options options("DataCompressorFastLZ",
+                             "Compress datasets and profile the compression (FastLZ version)");
+    options.add_options()
+        ("d,dataset",   "Path to the dataset file", cxxopts::value<std::string>())
+        ("o,outcsv",    "Output CSV file path",     cxxopts::value<std::string>())
+        ("t,threads",   "Number of threads to use", cxxopts::value<int>()->default_value("10"))
+        ("b,bits",      "Floating-point precision (32 or 64 bits)", cxxopts::value<int>()->default_value("64"))
+        // The blocksize argument is no longer used because we run a set of block sizes.
+        ("h,help",      "Print help");
     auto result = options.parse(argc, argv);
     if (result.count("help")) {
         std::cout << options.help() << std::endl;
         return 0;
     }
-
     std::string datasetPath = result["dataset"].as<std::string>();
     std::string outputCSV   = result["outcsv"].as<std::string>();
     int numThreads          = result["threads"].as<int>();
     int precisionBits       = result["bits"].as<int>();
 
-    // 2. Load Dataset (Float32 or Float64) into globalByteArray
+    // 2. Load dataset into globalByteArray.
     size_t rowCount;
     std::string datasetName = extractDatasetName(datasetPath);
     std::cout << "Dataset Name: " << datasetName << std::endl;
-
     if (precisionBits == 64) {
         auto [doubleArray, rows] = loadTSVDatasetdouble(datasetPath);
         if (doubleArray.empty()) {
@@ -375,10 +425,8 @@ int main(int argc, char* argv[]) {
         }
         globalByteArray = convertDoubleToBytes(doubleArray);
         rowCount = rows;
-        std::cout << "Loaded " << rows << " rows (64-bit) with "
-                  << doubleArray.size() << " total values.\n";
-    }
-    else if (precisionBits == 32) {
+        std::cout << "Loaded " << rows << " rows (64-bit) with " << doubleArray.size() << " total values.\n";
+    } else if (precisionBits == 32) {
         auto [floatArray, rows] = loadTSVDataset(datasetPath);
         if (floatArray.empty()) {
             std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
@@ -386,236 +434,199 @@ int main(int argc, char* argv[]) {
         }
         globalByteArray = convertFloatToBytes(floatArray);
         rowCount = rows;
-        std::cout << "Loaded " << rows << " rows (32-bit) with "
-                  << floatArray.size() << " total values.\n";
-
-        if (areVectorsEqual(floatArray, convertBytesToFloat(globalByteArray))) {
-            std::cout << "Reconstruction successful! Arrays are equal.\n";
-        } else {
-            std::cerr << "Reconstruction failed! Arrays differ.\n";
-        }
-    }
-    else {
-        std::cerr << "Unsupported floating-point precision: " << precisionBits
-                  << ". Use 32 or 64." << std::endl;
+        std::cout << "Loaded " << rows << " rows (32-bit) with " << floatArray.size() << " total values.\n";
+    } else {
+        std::cerr << "Unsupported floating-point precision: " << precisionBits << ". Use 32 or 64." << std::endl;
         return 1;
     }
 
-    // 3. Fetch All Configuration Sets
-    auto componentConfigurationsList = getComponentConfigurationsForDataset(datasetName);
+    // Determine the total data size.
+    size_t totalBytes = globalByteArray.size();
 
+    // For uniform CSV output we will create per-block columns up to the maximum number of blocks.
+    // Here we use the smallest block size (20K) to determine the maximum number of blocks.
+    const size_t minBlockSize = 20 * 1024; // 20K (20 * 1024 bytes)
+    size_t maxBlocks = (totalBytes + minBlockSize - 1) / minBlockSize;
 
-    auto configToString = [&](const std::vector<std::vector<size_t>>& config){
-        std::stringstream ss;
-        ss << "{ ";
-        for (size_t i = 0; i < config.size(); i++) {
-            ss << "[";
-            for (size_t j = 0; j < config[i].size(); j++) {
-                ss << config[i][j];
-                if (j + 1 < config[i].size()) ss << " ";
-            }
-            ss << "]";
-            if (i + 1 < config.size()) ss << ", ";
-        }
-        ss << " }";
-        return ss.str();
+    // List of block sizes to test (expressed as multiples of 1024 bytes)
+    std::vector<size_t> blockSizes = {
+        20 * 1024,      // 20K
+        40 * 1024,      // 40K
+        60 * 1024,      // 60K
+        65 *1024,
+        80 * 1024,      // 80K
+        100 * 1024,     // 100K
+        1000 * 1024,    // 1000K
+        10000 * 1024,   // 10000K
+        100000 * 1024   // 100000K
     };
 
-    std::vector<int> threadSizesList = { 2,4,8,12,16 };
-    int iterations = 1;
-
-    std::vector<ProfilingInfo> pi_array;
-
-    // 4. Prepare CSV Output
+    // Open CSV output file.
     std::ofstream file(outputCSV);
     if (!file) {
         std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
         return 1;
     }
 
-
-    file << "Index,DatasetName,Threads,ConfigString,RunType,CompressionRatio,"
-         << "TotalTimeCompressed,TotalTimeDecompressed,"
-         << "CompressionThroughput,DecompressionThroughput,TotalValues,split_time,compress_time\n";
+    // CSV header.
+    // Note: "BlockSize" (the block size used in the experiment) and overall "CompressionRatio" are included.
+    // Additionally, for each potential block (up to maxBlocks), we add columns for:
+    //   BlockCompTime, BlockDecompTime, BlockCompressedSize, and BlockCompRatio.
+    file << "Index;DatasetName;Threads;BlockSize;ConfigString;RunType;CompressionRatio;"
+         << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput;TotalValues";
+    for (size_t i = 0; i < maxBlocks; i++) {
+        file  << ";BlockCompRatio_" << (i + 1)
+             << ";BlockCompTime_" << (i + 1)
+             << ";BlockDecompTime_" << (i + 1)
+             << ";BlockCompressedSize_" << (i + 1)
+           ;
+    }
+    file << "\n";
 
     int recordIndex = 1;
 
-    // 5. Loop Over Each Configuration (Nested Vector)
-    for (const auto& componentConfig : componentConfigurationsList) {
-        // Convert config to string once
-        std::string configStr = configToString1(componentConfig);
+    // ------------------------------
+    // A. FULL COMPRESSION WITH BLOCKING - PARALLEL (for various block sizes)
+    // ------------------------------
+    for (size_t bs : blockSizes) {
+        std::cout << "Testing with block size = " << bs << " bytes." << std::endl;
+        // Partition data into blocks using the current block size.
+        std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
+        size_t totalCompressedSize = 0;
+        double totalCompTime = 0.0, totalDecompTime = 0.0;
+        std::vector<std::vector<uint8_t>> compressedBlocks(fullBlocks.size());
+        std::vector<std::vector<uint8_t>> decompressedBlocks(fullBlocks.size());
+        std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
+        std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
+        std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
 
-        std::cout << "\nConfig with " << componentConfig.size() << " sub-config(s): " << configStr << "\n";
-        for (size_t subIdx = 0; subIdx < componentConfig.size(); ++subIdx) {
-            std::cout << "  Sub-configuration " << subIdx << ": ";
-            for (auto s : componentConfig[subIdx]) {
-                std::cout << s << " ";
+        omp_set_num_threads(numThreads);
+        auto compStartOverall = std::chrono::high_resolution_clock::now();
+        #pragma omp parallel for reduction(+:totalCompressedSize)
+        for (int i = 0; i < (int)fullBlocks.size(); i++) {
+            auto start = std::chrono::high_resolution_clock::now();
+            size_t cSize = compressWithFastLZ(fullBlocks[i], compressedBlocks[i]);
+            auto end = std::chrono::high_resolution_clock::now();
+            blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
+            blockCompressedSizes[i] = cSize; // Save the compressed size for this block.
+            totalCompressedSize += cSize;
+        }
+        auto compEndOverall = std::chrono::high_resolution_clock::now();
+        totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
+
+        double decompStartOverall = omp_get_wtime();
+        #pragma omp parallel for
+        for (int i = 0; i < (int)compressedBlocks.size(); i++) {
+            double start = omp_get_wtime();
+            decompressWithFastLZ(compressedBlocks[i], decompressedBlocks[i], fullBlocks[i].size());
+            double end = omp_get_wtime();
+            blockDecompTimes[i] = end - start;
+        }
+        double decompEndOverall = omp_get_wtime();
+        totalDecompTime = decompEndOverall - decompStartOverall;
+
+        double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+        auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
+
+        // Write CSV row for the parallel, blocking experiment.
+        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
+             << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+             << compThroughput << ";" << decompThroughput << ";" << rowCount;
+        // Write per-block times, compressed sizes, and compression ratios.
+        for (size_t i = 0; i < maxBlocks; i++) {
+            if (i < fullBlocks.size()) {
+                // Compute the per-block compression ratio.
+                double blockRatio = (blockCompressedSizes[i] != 0) ? (double(fullBlocks[i].size()) / blockCompressedSizes[i]) : 0.0;
+                file << ";" << blockCompTimes[i] << ";" << blockDecompTimes[i] << ";" << blockCompressedSizes[i] << ";" << blockRatio;
+            } else {
+                file << ";N/A;N/A;N/A;N/A";
             }
-            std::cout << std::endl;
+        }
+        file << "\n";
+    }
+
+    // ------------------------------
+    // C. FULL COMPRESSION WITH BLOCKING - SEQUENTIAL (for various block sizes)
+    // ------------------------------
+    for (size_t bs : blockSizes) {
+        std::cout << "Testing sequential blocking with block size = " << bs << " bytes." << std::endl;
+        std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
+        size_t totalCompressedSize = 0;
+        double totalCompTime = 0.0, totalDecompTime = 0.0;
+        std::vector<std::vector<uint8_t>> compressedBlocks(fullBlocks.size());
+        std::vector<std::vector<uint8_t>> decompressedBlocks(fullBlocks.size());
+        std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
+        std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
+        std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
+
+        // Sequential compression
+        for (size_t i = 0; i < fullBlocks.size(); i++) {
+            auto start = std::chrono::high_resolution_clock::now();
+            size_t cSize = compressWithFastLZ(fullBlocks[i], compressedBlocks[i]);
+            auto end = std::chrono::high_resolution_clock::now();
+            blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
+            blockCompressedSizes[i] = cSize;
+            totalCompTime += blockCompTimes[i];
+            totalCompressedSize += cSize;
         }
 
-        for (int threads : threadSizesList) {
-            std::cout << "\n  Using " << threads << " threads...\n";
-            for (int iter = 0; iter < iterations; iter++) {
-                std::cout << "    Iteration #" << (iter + 1) << "...\n";
+        // Sequential decompression
+        for (size_t i = 0; i < compressedBlocks.size(); i++) {
+            auto start = std::chrono::high_resolution_clock::now();
+            decompressWithFastLZ(compressedBlocks[i], decompressedBlocks[i], fullBlocks[i].size());
+            auto end = std::chrono::high_resolution_clock::now();
+            blockDecompTimes[i] = std::chrono::duration<double>(end - start).count();
+            totalDecompTime += blockDecompTimes[i];
+        }
 
-                //  Full
-                {
-                    ProfilingInfo pi_full;
-                    pi_full.config_string = configStr;
+        double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+        auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
 
-                    std::vector<uint8_t> compressedData, decompressedData;
+        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
+             << "Full_Block_Sequential" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+             << compThroughput << ";" << decompThroughput << ";" << rowCount;
+        for (size_t i = 0; i < maxBlocks; i++) {
+            if (i < fullBlocks.size()) {
+                double blockRatio = (blockCompressedSizes[i] != 0) ? (double(fullBlocks[i].size()) / blockCompressedSizes[i]) : 0.0;
+                file << ";" << blockCompTimes[i] << ";" << blockDecompTimes[i] << ";" << blockCompressedSizes[i] << ";" << blockRatio;
+            } else {
+                file << ";N/A;N/A;N/A;N/A";
+            }
+        }
+        file << "\n";
+    }
 
-                    // Compress
-                    auto start = std::chrono::high_resolution_clock::now();
-                    double compressedSize = fastlzCompression(globalByteArray, pi_full, compressedData);
-                    auto end   = std::chrono::high_resolution_clock::now();
-                    pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
+    // ------------------------------
+    // B. FULL COMPRESSION WITHOUT BLOCKING (non-blocking)
+    // ------------------------------
+    {
+        ProfilingInfo pi_full;
+        pi_full.type = "Full";
+        std::vector<uint8_t> compressedData, decompressedData;
 
-                    // Decompress
-                    start = std::chrono::high_resolution_clock::now();
-                    fastlzDecompression(compressedData, decompressedData, pi_full);
-                    end   = std::chrono::high_resolution_clock::now();
-                    pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+        auto start = std::chrono::high_resolution_clock::now();
+        double compressedSize = fastlzCompression(globalByteArray, pi_full, compressedData);
+        auto end = std::chrono::high_resolution_clock::now();
+        pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
 
-                    pi_full.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-                    auto [compThroughput, decompThroughput] =
-                        calculateCompDecomThroughput(globalByteArray.size(),
-                                                     pi_full.total_time_compressed,
-                                                     pi_full.total_time_decompressed);
+        start = std::chrono::high_resolution_clock::now();
+        fastlzDecompression(compressedData, decompressedData, pi_full);
+        end = std::chrono::high_resolution_clock::now();
+        pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
 
-                    pi_full.compression_throughput   = compThroughput;
-                    pi_full.decompression_throughput = decompThroughput;
-                    pi_full.total_values             = rowCount;
-                    pi_full.type                     = "Full";
-                    pi_full.thread_count             = threads;
-                    pi_array.push_back(pi_full);
+        double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
+        auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes,
+                                                   pi_full.total_time_compressed,
+                                                   pi_full.total_time_decompressed);
 
-                    std::cout << "      Full ratio=" << pi_full.com_ratio
-                              << " Tcompress=" << pi_full.total_time_compressed
-                              << " Tdecompress=" << pi_full.total_time_decompressed << "\n";
-                }
-
-                //  Seq (Decomposed Sequential) with FastLZ
-                {
-                    ProfilingInfo pi_seq;
-                    pi_seq.config_string = configStr;
-                    std::vector<std::vector<uint8_t>> compressedComponents;
-
-                    auto start = std::chrono::high_resolution_clock::now();
-                    double compressedSize = fastlzDecomposedSequential(
-                                                globalByteArray,
-                                                pi_seq,
-                                                compressedComponents,
-                                                componentConfig
-                                            );
-                    auto end = std::chrono::high_resolution_clock::now();
-                    pi_seq.total_time_compressed = std::chrono::duration<double>(end - start).count();
-
-                    start = std::chrono::high_resolution_clock::now();
-                    fastlzDecomposedSequentialDecompression(
-                        compressedComponents,
-                        pi_seq,
-                        componentConfig
-                    );
-                    end = std::chrono::high_resolution_clock::now();
-                    pi_seq.total_time_decompressed = std::chrono::duration<double>(end - start).count();
-
-                    pi_seq.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-                    auto [compThroughput, decompThroughput] =
-                        calculateCompDecomThroughput(globalByteArray.size(),
-                                                     pi_seq.total_time_compressed,
-                                                     pi_seq.total_time_decompressed);
-
-                    pi_seq.compression_throughput   = compThroughput;
-                    pi_seq.decompression_throughput = decompThroughput;
-                    pi_seq.total_values             = rowCount;
-                    pi_seq.type                     = "Sequential";
-                    pi_seq.thread_count             = threads;
-                    pi_array.push_back(pi_seq);
-
-                    std::cout << "      Seq ratio=" << pi_seq.com_ratio
-                              << " Tcompress=" << pi_seq.total_time_compressed
-                              << " Tdecompress=" << pi_seq.total_time_decompressed << "\n";
-                }
-
-                //  Parallel (Decomposed Parallel) with FastLZ
-                {
-                    ProfilingInfo pi_parallel;
-                    pi_parallel.config_string = configStr;
-                    std::vector<std::vector<uint8_t>> compressedComponents;
-
-                    auto start = std::chrono::high_resolution_clock::now();
-
-                  double compressedSize = fastlzFusedDecomposedParallel(
-                                                globalByteArray,
-                                                pi_parallel,
-                                                compressedComponents,
-                                                componentConfig,
-                                                threads
-                                            );
-                  // Then retrieve the split and compression times from the profiling structure
-
-
-                    auto end = std::chrono::high_resolution_clock::now();
-                    pi_parallel.total_time_compressed = std::chrono::duration<double>(end - start).count();
-                  double split_time   = pi_parallel.split_time;
-                  double compress_time = pi_parallel.compress_time;
-
-
-                    start = std::chrono::high_resolution_clock::now();
-                    fastlzDecomposedParallelDecompression(
-                        compressedComponents,
-                        pi_parallel,
-                        componentConfig,
-                        threads
-                    );
-                    end = std::chrono::high_resolution_clock::now();
-                    pi_parallel.total_time_decompressed = std::chrono::duration<double>(end - start).count();
-
-                    pi_parallel.com_ratio = calculateCompressionRatio(globalByteArray.size(), compressedSize);
-                    auto [compThroughput, decompThroughput] =
-                        calculateCompDecomThroughput(globalByteArray.size(),
-                                                     pi_parallel.total_time_compressed,
-                                                     pi_parallel.total_time_decompressed);
-
-                    pi_parallel.compression_throughput   = compThroughput;
-                    pi_parallel.decompression_throughput = decompThroughput;
-                    pi_parallel.total_values             = rowCount;
-                    pi_parallel.type                     = "Parallel";
-                    pi_parallel.thread_count             = threads;
-                    pi_parallel.split_time   = split_time;
-                    pi_parallel.compress_time = compress_time;
-
-                    pi_array.push_back(pi_parallel);
-
-                    std::cout << "      Par ratio=" << pi_parallel.com_ratio
-                              << " Tcompress=" << pi_parallel.total_time_compressed
-                  << " split_time=" << pi_parallel.split_time
-                  << " compress_time=" <<  pi_parallel.compress_time
-                              << " Tdecompress=" << pi_parallel.total_time_decompressed << "\n";
-                }
-
-            } // iteration
-        } // threadSizesList
-    } // componentConfigurationsList
-
-    //  profiling data to CSV
-    for (const auto& pi : pi_array) {
-        file << recordIndex++ << ","
-             << datasetName << ","
-             << pi.thread_count << ","
-             << pi.config_string << ","
-             << pi.type << ","
-             << pi.com_ratio << ","
-             << pi.total_time_compressed << ","
-             << pi.total_time_decompressed << ","
-
-             << pi.compression_throughput << ","
-             << pi.decompression_throughput << ","
-             << pi.total_values <<","
-               << pi.split_time << ","
-            << pi.compress_time << "\n";
+        // For non-blocking experiments, mark BlockSize and all per-block fields as "N/A".
+        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+             << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";" << pi_full.total_time_decompressed << ";"
+             << compThroughput << ";" << decompThroughput << ";" << rowCount;
+        for (size_t i = 0; i < maxBlocks; i++) {
+            file << ";N/A;N/A;N/A;N/A";
+        }
+        file << "\n";
     }
 
     file.close();
