@@ -24,7 +24,7 @@ std::vector<uint8_t> globalByteArray;
 std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
   {"acs_wht_f32", {
           {{1,2}, {3}, {4}} ,
-          {{1, 2,3}, {4}} ,
+          // {{1, 2,3}, {4}} ,
 
   }},
   {"g24_78_usb2_f32", {
@@ -445,20 +445,24 @@ int main(int argc, char* argv[]) {
 
     // For uniform CSV output we will create per-block columns up to the maximum number of blocks.
     // Here we use the smallest block size (20K) to determine the maximum number of blocks.
-    const size_t minBlockSize = 20 * 1024; // 20K (20 * 1024 bytes)
+   // const size_t minBlockSize = 0.5 * 1024; // 20K (20 * 1024 bytes)
+  const size_t minBlockSize = 1024; // 20K (20 * 1024 bytes)
     size_t maxBlocks = (totalBytes + minBlockSize - 1) / minBlockSize;
 
     // List of block sizes to test (expressed as multiples of 1024 bytes)
     std::vector<size_t> blockSizes = {
-        20 * 1024,      // 20K
-        40 * 1024,      // 40K
-        60 * 1024,      // 60K
-        65 *1024,
-        80 * 1024,      // 80K
-        100 * 1024,     // 100K
-        1000 * 1024,    // 1000K
-        10000 * 1024,   // 10000K
-        100000 * 1024   // 100000K
+        // 1024,
+        // 20 * 1024,      // 20K
+        // 40 * 1024,      // 40K
+        // 60 * 1024,      // 60K
+          65 *1024,
+          80 * 1024,      // 80K
+          100 * 1024,     // 100K
+          1000 * 1024,    // 1000K
+         10000 * 1024,   // 10000K
+       100000 * 1024 ,  // 100000K
+225000000
+
     };
 
     // Open CSV output file.
@@ -474,127 +478,143 @@ int main(int argc, char* argv[]) {
     //   BlockCompTime, BlockDecompTime, BlockCompressedSize, and BlockCompRatio.
     file << "Index;DatasetName;Threads;BlockSize;ConfigString;RunType;CompressionRatio;"
          << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput;TotalValues";
-    for (size_t i = 0; i < maxBlocks; i++) {
-        file  << ";BlockCompRatio_" << (i + 1)
-             << ";BlockCompTime_" << (i + 1)
-             << ";BlockDecompTime_" << (i + 1)
-             << ";BlockCompressedSize_" << (i + 1)
-           ;
-    }
+    // for (size_t i = 0; i < maxBlocks; i++) {
+    //     file  << ";BlockCompRatio_" << (i + 1)
+    //          << ";BlockCompTime_" << (i + 1)
+    //          << ";BlockDecompTime_" << (i + 1)
+    //          << ";BlockCompressedSize_" << (i + 1)
+    //        ;
+    // }
     file << "\n";
 
     int recordIndex = 1;
 
     // ------------------------------
-    // A. FULL COMPRESSION WITH BLOCKING - PARALLEL (for various block sizes)
-    // ------------------------------
-    for (size_t bs : blockSizes) {
-        std::cout << "Testing with block size = " << bs << " bytes." << std::endl;
-        // Partition data into blocks using the current block size.
-        std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
-        size_t totalCompressedSize = 0;
-        double totalCompTime = 0.0, totalDecompTime = 0.0;
-        std::vector<std::vector<uint8_t>> compressedBlocks(fullBlocks.size());
-        std::vector<std::vector<uint8_t>> decompressedBlocks(fullBlocks.size());
-        std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
-        std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
-        std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
+// A. FULL COMPRESSION WITH BLOCKING - PARALLEL (for various block sizes)
+// ------------------------------
+for (size_t bs : blockSizes) {
+    std::cout << "Testing with block size = " << bs << " bytes." << std::endl;
+    // Partition the global data into full blocks using the current block size.
+    std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
+    size_t totalCompressedSize = 0;
+    double totalCompTime = 0.0, totalDecompTime = 0.0;
+    std::vector<std::vector<uint8_t>> compressedBlocks(fullBlocks.size());
+    std::vector<std::vector<uint8_t>> decompressedBlocks(fullBlocks.size());
+    std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
+    std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
+    std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
+    ProfilingInfo pi_parallel;
+    // For these runs, configuration string is not applicable; you may change "N/A" to configStr if needed.
+    pi_parallel.config_string = "N/A";
 
-        omp_set_num_threads(numThreads);
-        auto compStartOverall = std::chrono::high_resolution_clock::now();
-        #pragma omp parallel for reduction(+:totalCompressedSize)
-        for (int i = 0; i < (int)fullBlocks.size(); i++) {
-            auto start = std::chrono::high_resolution_clock::now();
-            size_t cSize = compressWithFastLZ(fullBlocks[i], compressedBlocks[i]);
-            auto end = std::chrono::high_resolution_clock::now();
-            blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
-            blockCompressedSizes[i] = cSize; // Save the compressed size for this block.
-            totalCompressedSize += cSize;
-        }
-        auto compEndOverall = std::chrono::high_resolution_clock::now();
-        totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
-
-        double decompStartOverall = omp_get_wtime();
-        #pragma omp parallel for
-        for (int i = 0; i < (int)compressedBlocks.size(); i++) {
-            double start = omp_get_wtime();
-            decompressWithFastLZ(compressedBlocks[i], decompressedBlocks[i], fullBlocks[i].size());
-            double end = omp_get_wtime();
-            blockDecompTimes[i] = end - start;
-        }
-        double decompEndOverall = omp_get_wtime();
-        totalDecompTime = decompEndOverall - decompStartOverall;
-
-        double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
-        auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-
-        // Write CSV row for the parallel, blocking experiment.
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
-             << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-             << compThroughput << ";" << decompThroughput << ";" << rowCount;
-        // Write per-block times, compressed sizes, and compression ratios.
-        for (size_t i = 0; i < maxBlocks; i++) {
-            if (i < fullBlocks.size()) {
-                // Compute the per-block compression ratio.
-                double blockRatio = (blockCompressedSizes[i] != 0) ? (double(fullBlocks[i].size()) / blockCompressedSizes[i]) : 0.0;
-                file << ";" << blockCompTimes[i] << ";" << blockDecompTimes[i] << ";" << blockCompressedSizes[i] << ";" << blockRatio;
-            } else {
-                file << ";N/A;N/A;N/A;N/A";
-            }
-        }
-        file << "\n";
+    omp_set_num_threads(numThreads);
+    // Parallel compression loop.
+    auto compStartOverall = std::chrono::high_resolution_clock::now();
+#pragma omp parallel for reduction(+: totalCompressedSize)
+    for (int i = 0; i < (int)fullBlocks.size(); i++) {
+        auto start = std::chrono::high_resolution_clock::now();
+        // Compress the i-th block using the simple FastLZ compression.
+        size_t cSize = compressWithFastLZ(fullBlocks[i], compressedBlocks[i]);
+        auto end = std::chrono::high_resolution_clock::now();
+        blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
+        blockCompressedSizes[i] = cSize;
+        totalCompressedSize += cSize;
     }
+    auto compEndOverall = std::chrono::high_resolution_clock::now();
+    totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
+
+    // Parallel decompression loop.
+    double decompStartOverall = omp_get_wtime();
+#pragma omp parallel for
+    for (int i = 0; i < (int)compressedBlocks.size(); i++) {
+        auto start = omp_get_wtime();
+        // Decompress the i-th compressed block.
+        decompressWithFastLZ(compressedBlocks[i], decompressedBlocks[i], fullBlocks[i].size());
+        auto end = omp_get_wtime();
+        blockDecompTimes[i] = end - start;
+    }
+    double decompEndOverall = omp_get_wtime();
+    totalDecompTime = decompEndOverall - decompStartOverall;
+
+    // Reassemble the full reconstructed data by concatenating all decompressed blocks.
+    std::vector<uint8_t> reconstructedData;
+    for (const auto &block : decompressedBlocks) {
+        reconstructedData.insert(reconstructedData.end(), block.begin(), block.end());
+    }
+
+    // Check if the full reconstructed data matches the original data.
+    if (reconstructedData == globalByteArray) {
+        std::cout << "[INFO] Reconstructed full data matches the original data (PARALLEL)." << std::endl;
+    } else {
+        std::cerr << "[ERROR] Reconstructed full data does NOT match the original data (PARALLEL)." << std::endl;
+    }
+
+    double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+    auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
+
+    // Write CSV row for the parallel, blocking experiment.
+    file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
+         << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+         << compThroughput << ";" << decompThroughput << ";" << rowCount;
+    file << "\n";
+}
 
     // ------------------------------
     // C. FULL COMPRESSION WITH BLOCKING - SEQUENTIAL (for various block sizes)
     // ------------------------------
     for (size_t bs : blockSizes) {
-        std::cout << "Testing sequential blocking with block size = " << bs << " bytes." << std::endl;
-        std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
-        size_t totalCompressedSize = 0;
-        double totalCompTime = 0.0, totalDecompTime = 0.0;
-        std::vector<std::vector<uint8_t>> compressedBlocks(fullBlocks.size());
-        std::vector<std::vector<uint8_t>> decompressedBlocks(fullBlocks.size());
-        std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
-        std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
-        std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
+    std::cout << "Testing sequential blocking with block size = " << bs << " bytes." << std::endl;
+    // Partition the global data into blocks using the current block size.
+    std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
+    size_t totalCompressedSize = 0;
+    double totalCompTime = 0.0, totalDecompTime = 0.0;
+    std::vector<std::vector<uint8_t>> compressedBlocks(fullBlocks.size());
+    std::vector<std::vector<uint8_t>> decompressedBlocks(fullBlocks.size());
+    std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
+    std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
+    std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
 
-        // Sequential compression
-        for (size_t i = 0; i < fullBlocks.size(); i++) {
-            auto start = std::chrono::high_resolution_clock::now();
-            size_t cSize = compressWithFastLZ(fullBlocks[i], compressedBlocks[i]);
-            auto end = std::chrono::high_resolution_clock::now();
-            blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
-            blockCompressedSizes[i] = cSize;
-            totalCompTime += blockCompTimes[i];
-            totalCompressedSize += cSize;
-        }
-
-        // Sequential decompression
-        for (size_t i = 0; i < compressedBlocks.size(); i++) {
-            auto start = std::chrono::high_resolution_clock::now();
-            decompressWithFastLZ(compressedBlocks[i], decompressedBlocks[i], fullBlocks[i].size());
-            auto end = std::chrono::high_resolution_clock::now();
-            blockDecompTimes[i] = std::chrono::duration<double>(end - start).count();
-            totalDecompTime += blockDecompTimes[i];
-        }
-
-        double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
-        auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
-             << "Full_Block_Sequential" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-             << compThroughput << ";" << decompThroughput << ";" << rowCount;
-        for (size_t i = 0; i < maxBlocks; i++) {
-            if (i < fullBlocks.size()) {
-                double blockRatio = (blockCompressedSizes[i] != 0) ? (double(fullBlocks[i].size()) / blockCompressedSizes[i]) : 0.0;
-                file << ";" << blockCompTimes[i] << ";" << blockDecompTimes[i] << ";" << blockCompressedSizes[i] << ";" << blockRatio;
-            } else {
-                file << ";N/A;N/A;N/A;N/A";
-            }
-        }
-        file << "\n";
+    // Sequential compression for each block.
+    for (size_t i = 0; i < fullBlocks.size(); i++) {
+        auto start = std::chrono::high_resolution_clock::now();
+        size_t cSize = compressWithFastLZ(fullBlocks[i], compressedBlocks[i]);
+        auto end = std::chrono::high_resolution_clock::now();
+        blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
+        blockCompressedSizes[i] = cSize;
+        totalCompTime += blockCompTimes[i];
+        totalCompressedSize += cSize;
     }
+
+    // Sequential decompression for each block.
+    for (size_t i = 0; i < compressedBlocks.size(); i++) {
+        auto start = std::chrono::high_resolution_clock::now();
+        decompressWithFastLZ(compressedBlocks[i], decompressedBlocks[i], fullBlocks[i].size());
+        auto end = std::chrono::high_resolution_clock::now();
+        blockDecompTimes[i] = std::chrono::duration<double>(end - start).count();
+        totalDecompTime += blockDecompTimes[i];
+    }
+
+    // Reassemble the full reconstructed data from decompressed blocks.
+    std::vector<uint8_t> reconstructed;
+    for (const auto &block : decompressedBlocks) {
+        reconstructed.insert(reconstructed.end(), block.begin(), block.end());
+    }
+
+    // Check if the reconstructed data matches the original global data.
+    if (reconstructed == globalByteArray) {
+        std::cout << "[INFO] Reconstructed data matches the original data." << std::endl;
+    } else {
+        std::cerr << "[ERROR] Reconstructed data does NOT match the original data." << std::endl;
+    }
+
+    double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+    auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
+
+    file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
+         << "Full_Block_Sequential" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+         << compThroughput << ";" << decompThroughput << ";" << rowCount;
+    file << "\n";
+}
 
     // ------------------------------
     // B. FULL COMPRESSION WITHOUT BLOCKING (non-blocking)
@@ -623,13 +643,123 @@ int main(int argc, char* argv[]) {
         file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
              << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";" << pi_full.total_time_decompressed << ";"
              << compThroughput << ";" << decompThroughput << ";" << rowCount;
-        for (size_t i = 0; i < maxBlocks; i++) {
-            file << ";N/A;N/A;N/A;N/A";
-        }
+        // for (size_t i = 0; i < maxBlocks; i++) {
+        //     file << ";N/A;N/A;N/A;N/A";
+        // }
         file << "\n";
     }
 
-    file.close();
-    std::cout << "Profiling results saved to " << outputCSV << "\n";
-    return 0;
+
+// ------------------------------
+// A.Decompose COMPRESSION WITH BLOCKING - PARALLEL (for various block sizes)
+// ------------------------------
+auto componentConfigurationsList = getComponentConfigurationsForDataset(datasetName);
+
+for (const auto& componentConfig : componentConfigurationsList) {
+  // Convert config to string once.
+  std::string configStr = configToString1(componentConfig);
+
+  std::cout << "\nConfig with " << componentConfig.size() << " sub-config(s): " << configStr << "\n";
+  for (size_t subIdx = 0; subIdx < componentConfig.size(); ++subIdx) {
+    std::cout << "  Sub-configuration " << subIdx << ": ";
+    for (auto s : componentConfig[subIdx]) {
+      std::cout << s << " ";
+    }
+    std::cout << std::endl;
+  }
+
+  for (size_t bs : blockSizes) {
+    std::cout << "Testing with block size = " << bs << " bytes." << std::endl;
+    // Partition the global data into full blocks using the current block size.
+    std::vector<std::vector<uint8_t>> fullBlocks = blockData(globalByteArray, bs);
+    size_t totalCompressedSize = 0;
+    double totalCompTime = 0.0, totalDecompTime = 0.0;
+    std::vector<std::vector<std::vector<uint8_t>>> compressedBlocks(fullBlocks.size());
+    std::vector<double> blockCompTimes(fullBlocks.size(), 0.0);
+    std::vector<double> blockDecompTimes(fullBlocks.size(), 0.0);
+    std::vector<size_t> blockCompressedSizes(fullBlocks.size(), 0);
+    ProfilingInfo pi_parallel;
+    pi_parallel.config_string = configStr;
+
+    omp_set_num_threads(numThreads);
+    auto compStartOverall = std::chrono::high_resolution_clock::now();
+#pragma omp parallel for reduction(+:totalCompressedSize)
+    for (int i = 0; i < (int)fullBlocks.size(); i++) {
+      auto start = std::chrono::high_resolution_clock::now();
+      // Compress the i-th block using the fused decomposed parallel routine.
+      double cSize = fastlzFusedDecomposedParallel(fullBlocks[i], pi_parallel, compressedBlocks[i], componentConfig, 4);
+      auto end = std::chrono::high_resolution_clock::now();
+      blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
+      blockCompressedSizes[i] = cSize;
+      totalCompressedSize += cSize;
+    }
+    auto compEndOverall = std::chrono::high_resolution_clock::now();
+    totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
+
+    // Container to store each decompressed block.
+    std::vector<std::vector<uint8_t>> allDecompressedBlocks(fullBlocks.size());
+
+    double decompStartOverall = omp_get_wtime();
+#pragma omp parallel for
+    for (int i = 0; i < (int)compressedBlocks.size(); i++) {
+      double start = omp_get_wtime();
+
+      // Use the fused decompression routine to decompress and reassemble the i-th block.
+      std::vector<uint8_t> decompressedBlock = fastlzDecomposedParallelDecompression(
+                          compressedBlocks[i],
+                          pi_parallel,
+                          componentConfig,
+                          4,
+                          fullBlocks[i].size()   // Pass the original block size for accurate reconstruction.
+                      );
+      double end = omp_get_wtime();
+      blockDecompTimes[i] = end - start;
+
+      // Save the decompressed block.
+      allDecompressedBlocks[i] = std::move(decompressedBlock);
+
+      // Compare this decompressed block to the corresponding original block.
+      bool match = (allDecompressedBlocks[i] == fullBlocks[i]);
+      #pragma omp critical
+      {
+          if(match)
+              std::cout << "[INFO] Block " << i << " decompressed correctly." << std::endl;
+          else
+              std::cerr << "[ERROR] Block " << i << " decompression mismatch." << std::endl;
+      }
+    }
+    double decompEndOverall = omp_get_wtime();
+    totalDecompTime = decompEndOverall - decompStartOverall;
+
+    // Reassemble the full reconstructed data by concatenating all decompressed blocks.
+    std::vector<uint8_t> fullReconstructed;
+    for (const auto &block : allDecompressedBlocks) {
+      fullReconstructed.insert(fullReconstructed.end(), block.begin(), block.end());
+    }
+
+    // Verify that the full reconstructed data matches the original global data.
+    if (fullReconstructed == globalByteArray) {
+      std::cout << "[INFO] Full reconstructed data matches the original data." << std::endl;
+    } else {
+      std::cerr << "[ERROR] Full reconstructed data does NOT match the original data." << std::endl;
+    }
+
+    double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+    auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
+
+    // Write CSV row for the parallel, blocking experiment.
+    file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
+         << "Decompose_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+         << compThroughput << ";" << decompThroughput << ";" << rowCount;
+    file << "\n";
+  }
+}
+
+
+
+file.close();
+std::cout << "Profiling results saved to " << outputCSV << "\n";
+return 0;
+
+
 }
