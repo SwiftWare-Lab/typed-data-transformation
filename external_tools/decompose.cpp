@@ -1,7 +1,10 @@
 //
-// Created by jamalids on 04/11/24.
+// Created by jamalids on 06/02/25.
 //
 
+#include "decompose.h"
+// Created by jamalids on 04/11/24.
+//
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -11,12 +14,13 @@
 #include <cstdint>
 #include <omp.h>
 #include <cstring>
-#include <vector>
-#include <cxxopts.hpp>
+#include <map>
 #include <cmath>
+#include <cxxopts.hpp>
 
-// NOTE: Include FastLZ-based parallel header
-#include "FASTLZ_PARALLEL.h"
+// NOTE: Include your updated FastLZ-based parallel header.
+// Ensure that this header includes the new functions for the reverse-order (decompose then chunk) approach.
+#include "decompose.h"
 
 std::vector<uint8_t> globalByteArray;
 
@@ -24,139 +28,134 @@ std::vector<uint8_t> globalByteArray;
 std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
   {"acs_wht_f32", {
           {{1,2}, {3}, {4}} ,
-          // {{1, 2,3}, {4}} ,
-
+          // {{1, 2,3}, {4}},
   }},
   {"g24_78_usb2_f32", {
           {{1}, {2,3}, {4}},
-          {{1, 2,3}, {4}},
+          {{1,2,3}, {4}},
   }},
   {"jw_mirimage_f32", {
           {{1,2}, {3}, {4}},
-          {{1, 2,3}, {4}},
+          {{1,2,3}, {4}},
   }},
   {"spitzer_irac_f32", {
           {{1,2}, {3}, {4}},
-          {{1, 2,3}, {4}},
+          {{1,2,3}, {4}},
   }},
   {"turbulence_f32", {
           {{1,2}, {3}, {4}},
-          {{1, 2,3}, {4}},
+          {{1,2,3}, {4}},
   }},
   {"wave_f32", {
           {{1,2}, {3}, {4}},
-          {{1, 2,3}, {4}},
+          {{1,2,3}, {4}},
   }},
   {"hdr_night_f32", {
           {{1,4}, {2}, {3}},
-          {{1}, {2},{3}, {4}},
-          {{1,4},{2,3}},
+          {{1}, {2}, {3}, {4}},
+          {{1,4}, {2,3}},
   }},
   {"ts_gas_f32", {
-          {{1,2},{3}, {4}},
+          {{1,2}, {3}, {4}},
   }},
   {"solar_wind_f32", {
-          {{1},{4}, {2}, {3}},
+          {{1}, {4}, {2}, {3}},
           {{1}, {2,3}, {4}},
   }},
   {"tpch_lineitem_f32", {
-          {{1,2,3}, {4},},
-          {{1,2},{3}, {4}},
+          {{1,2,3}, {4}},
+          {{1,2}, {3}, {4}},
   }},
   {"tpcds_web_f32", {
-          {{1,2,3}, {4},},
-          {{1},{2,3}, {4}},
+          {{1,2,3}, {4}},
+          {{1}, {2,3}, {4}},
   }},
   {"tpcds_store_f32", {
-          {{1,2,3}, {4},},
-          {{1},{2,3}, {4}},
+          {{1,2,3}, {4}},
+          {{1}, {2,3}, {4}},
   }},
   {"tpcds_catalog_f32", {
-          {{1,2,3}, {4},},
-          {{1},{2,3}, {4}},
+          {{1,2,3}, {4}},
+          {{1}, {2,3}, {4}},
   }},
   {"citytemp_f32", {
           {{1,4}, {2,3}},
-          {{1}, {2},{3}, {4}},
-          {{1,2},{3},{4}}
+          {{1}, {2}, {3}, {4}},
+          {{1,2}, {3}, {4}}
   }},
   {"hst_wfc3_ir_f32", {
-          {{1}, {2},{3}, {4}},
-          {{1,2},{3},{4}}
+          {{1}, {2}, {3}, {4}},
+          {{1,2}, {3}, {4}}
   }},
   {"hst_wfc3_uvis_f32", {
-          {{1}, {2},{3}, {4}},
-          {{1,2},{3},{4}}
+          {{1}, {2}, {3}, {4}},
+          {{1,2}, {3}, {4}}
   }},
   {"rsim_f32", {
           {{1,2,3}, {4}},
-          {{1,2},{3},{4}}
+          {{1,2}, {3}, {4}}
   }},
   {"astro_mhd_f64", {
-          {{1,2,3,4,5,6},{7},{8}},
-          {{1,2,3,4,5},{6},{7},{8}}
+          {{1,2,3,4,5,6}, {7}, {8}},
+          {{1,2,3,4,5}, {6}, {7}, {8}}
   }},
   {"astro_pt_f64", {
-          {{1,2,3,4,5,6},{7},{8}},
-          {{1,2,3,4,5},{6},{7},{8}}
-  }},
-  {"astro_pt_f64", {
-          {{1,2,3,4,5,6},{7},{8}},
-          {{1,2,3,4,5},{6},{7},{8}}
+          {{1,2,3,4,5,6}, {7}, {8}},
+          {{1,2,3,4,5}, {6}, {7}, {8}}
   }},
   {"jane_street_f64", {
-          {{1,2,3,4,5,6},{7},{8}},
-          {{3,2,5,6,4,1},{7},{8}}
+          {{1,2,3,4,5,6}, {7}, {8}},
+          {{3,2,5,6,4,1}, {7}, {8}}
   }},
   {"msg_bt_f64", {
-          {{1,2,3,4,5},{6},{7},{8}},
-          {{3,2,1,4,5,6},{7},{8}},
-          {{3,2,1,4,5},{6},{7},{8}}
+          {{1,2,3,4,5}, {6}, {7}, {8}},
+          {{3,2,1,4,5,6}, {7}, {8}},
+          {{3,2,1,4,5}, {6}, {7}, {8}}
   }},
   {"num_brain_f64", {
-          {{1,2,3,4,5,6},{7},{8}},
-          {{3,2,4,5,1,6},{7},{8}},
+          {{1,2,3,4,5,6}, {7}, {8}},
+          {{3,2,4,5,1,6}, {7}, {8}},
   }},
   {"num_control_f64", {
-          {{1,2,3,4,5,6},{7},{8}},
-          {{4,5},{6,3},{1,2},{7},{8}},
-          {{4,5,6,3,1,2},{7},{8}},
+          {{1,2,3,4,5,6}, {7}, {8}},
+          {{4,5}, {6,3}, {1,2}, {7}, {8}},
+          {{4,5,6,3,1,2}, {7}, {8}},
   }},
   {"nyc_taxi2015_f64", {
-          {{7,4,6},{5},{3,2,1,8}},
-          {{7,4,6,5},{3,2,1,8}},
-          {{7,4,6},{5},{3,2,1},{8}},
-          {{7,4},{6},{5},{3,2},{1},{8}},
+          {{7,4,6}, {5}, {3,2,1,8}},
+          {{7,4,6,5}, {3,2,1,8}},
+          {{7,4,6}, {5}, {3,2,1}, {8}},
+          {{7,4}, {6}, {5}, {3,2}, {1}, {8}},
   }},
   {"phone_gyro_f64", {
-          {{4,6},{5},{3,2,1,7},{8}},
-          {{4,6},{1},{3,2},{5},{7},{8}},
-          {{6,4,3,2,1,7},{5},{8}},
+          {{4,6}, {5}, {3,2,1,7}, {8}},
+          {{4,6}, {1}, {3,2}, {5}, {7}, {8}},
+          {{6,4,3,2,1,7}, {5}, {8}},
   }},
   {"tpch_order_f64", {
-          {{3,2,4,1},{7},{6,5},{8}},
-          {{3,2,4,1,7},{6,5},{8}},
+          {{3,2,4,1}, {7}, {6,5}, {8}},
+          {{3,2,4,1,7}, {6,5}, {8}},
   }},
   {"tpcxbb_store_f64", {
-          {{4,2,3},{1},{5},{7},{6},{8}},
-          {{4,2,3,1},{5},{7,6},{8}},
-          {{4,2,3,1,5},{7,6},{8}},
+          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
+          {{4,2,3,1}, {5}, {7,6}, {8}},
+          {{4,2,3,1,5}, {7,6}, {8}},
   }},
   {"tpcxbb_web_f64", {
-          {{4,2,3},{1},{5},{7},{6},{8}},
-          {{4,2,3,1},{5},{7,6},{8}},
-          {{4,2,3,1,5},{7,6},{8}},
+          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
+          {{4,2,3,1}, {5}, {7,6}, {8}},
+          {{4,2,3,1,5}, {7,6}, {8}},
   }},
   {"wesad_chest_f64", {
-          {{7,5},{6},{8,4,1},{3,2}},
-          {{7,5},{6},{8,4},{1},{3,2}},
-          {{7,5},{6},{8,4,1,3,2}},
+          {{7,5}, {6}, {8,4,1}, {3,2}},
+          {{7,5}, {6}, {8,4}, {1}, {3,2}},
+          {{7,5}, {6}, {8,4,1,3,2}},
   }},
   {"default", {
           {{1}, {2}, {3}, {4}}
   }}
 };
-/////////////////////////chunking////////////////////
+
 // --- Helper: Split a vector into N nearly equal chunks ---
 std::vector<std::vector<uint8_t>> splitIntoChunks(const std::vector<uint8_t>& data, int numChunks) {
   std::vector<std::vector<uint8_t>> chunks;
@@ -164,9 +163,7 @@ std::vector<std::vector<uint8_t>> splitIntoChunks(const std::vector<uint8_t>& da
   size_t chunkSize = totalSize / numChunks;
   size_t remainder = totalSize % numChunks;
   size_t offset = 0;
-
   for (int i = 0; i < numChunks; i++) {
-    // Distribute the remainder among the first few chunks.
     size_t currentSize = chunkSize + (i < remainder ? 1 : 0);
     std::vector<uint8_t> chunk(data.begin() + offset, data.begin() + offset + currentSize);
     chunks.push_back(chunk);
@@ -175,25 +172,19 @@ std::vector<std::vector<uint8_t>> splitIntoChunks(const std::vector<uint8_t>& da
   return chunks;
 }
 
-////////////////////////////////////////////////////
 // Function to get all configurations for a dataset
 std::vector<std::vector<std::vector<size_t>>> getComponentConfigurationsForDataset(const std::string& datasetName) {
   auto it = datasetComponentMap.find(datasetName);
   if (it != datasetComponentMap.end()) {
-    return it->second; // Return all configurations for the dataset
+    return it->second;
   }
-  return datasetComponentMap["default"]; // Return default configurations if not found
+  return datasetComponentMap["default"];
 }
 
 std::string extractDatasetName(const std::string& filePath) {
-  // Find the last occurrence of '/' or '\\' for cross-platform support
   size_t lastSlashPos = filePath.find_last_of("/\\");
-  // Get the substring after the last slash
   std::string fileName = (lastSlashPos == std::string::npos) ? filePath : filePath.substr(lastSlashPos + 1);
-
-  // Find the last occurrence of '.' to remove the extension
   size_t lastDotPos = fileName.find_last_of('.');
-  // Get the substring before the last dot
   return (lastDotPos == std::string::npos) ? fileName : fileName.substr(0, lastDotPos);
 }
 
@@ -204,35 +195,30 @@ std::string configToString1(const std::vector<std::vector<size_t>>& config) {
     ss << "[";
     for (size_t j = 0; j < config[i].size(); ++j) {
       ss << config[i][j];
-      if (j + 1 < config[i].size()) {
-        ss << " "; // space within a single sub-config
-      }
+      if (j + 1 < config[i].size())
+        ss << " ";
     }
     ss << "]";
-    // Use "- " between sub-configs, not a comma
-    if (i + 1 < config.size()) {
+    if (i + 1 < config.size())
       ss << "- ";
-    }
   }
   ss << " }";
   return ss.str();
 }
 
-//---------------------------------------
+// ----------------------------------------------------------------------------
+// Dataset loading functions (for TSV files)
+// ----------------------------------------------------------------------------
 std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath) {
   std::vector<float> floatArray;
   std::ifstream file(filePath);
   std::string line;
   size_t rowCount = 0;
-
   if (file.is_open()) {
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string value;
-
-      // Skip the first column value
-      std::getline(ss, value, '\t');
-
+      std::getline(ss, value, '\t'); // skip first column
       while (std::getline(ss, value, '\t')) {
         floatArray.push_back(std::stof(value));
       }
@@ -242,27 +228,21 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
   } else {
     std::cerr << "Unable to open file: " << filePath << std::endl;
   }
-
   return {floatArray, rowCount};
 }
 
-// double64
 std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& filePath) {
-  std::vector<double> doubleArray;  // Use double for 64-bit floating-point
+  std::vector<double> doubleArray;
   std::ifstream file(filePath);
   std::string line;
   size_t rowCount = 0;
-
   if (file.is_open()) {
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string value;
-
-      // Skip the first column value
-      std::getline(ss, value, '\t');
-
+      std::getline(ss, value, '\t'); // skip first column
       while (std::getline(ss, value, '\t')) {
-        doubleArray.push_back(std::stod(value));  // Convert to double
+        doubleArray.push_back(std::stod(value));
       }
       rowCount++;
     }
@@ -270,7 +250,6 @@ std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& f
   } else {
     std::cerr << "Unable to open file: " << filePath << std::endl;
   }
-
   return {doubleArray, rowCount};
 }
 
@@ -286,9 +265,8 @@ std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
 }
 
 std::vector<float> convertBytesToFloat(const std::vector<uint8_t>& byteArray) {
-  if (byteArray.size() % 4 != 0) {
+  if (byteArray.size() % 4 != 0)
     throw std::runtime_error("Byte array size is not a multiple of 4.");
-  }
   std::vector<float> floatArray(byteArray.size() / 4);
   for (size_t i = 0; i < floatArray.size(); i++) {
     const uint8_t* bytePtr = &byteArray[i * 4];
@@ -299,12 +277,10 @@ std::vector<float> convertBytesToFloat(const std::vector<uint8_t>& byteArray) {
 }
 
 std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray) {
-  std::vector<uint8_t> byteArray(doubleArray.size() * 8);  // Each double is 8 bytes
+  std::vector<uint8_t> byteArray(doubleArray.size() * 8);
   for (size_t i = 0; i < doubleArray.size(); i++) {
-    // Get a pointer to the bytes of the double
     uint8_t* doubleBytes = reinterpret_cast<uint8_t*>(const_cast<double*>(&doubleArray[i]));
     for (size_t j = 0; j < 8; j++) {
-      // Copy each byte of the double into the correct position in the byteArray
       byteArray[i * 8 + j] = doubleBytes[j];
     }
   }
@@ -312,10 +288,8 @@ std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray
 }
 
 std::vector<double> convertBytesToDouble(const std::vector<uint8_t>& byteArray) {
-  // Each double is 8 bytes, so the size of the byteArray must be a multiple of 8
-  if (byteArray.size() % 8 != 0) {
+  if (byteArray.size() % 8 != 0)
     throw std::runtime_error("Byte array size is not a multiple of 8.");
-  }
   std::vector<double> doubleArray(byteArray.size() / 8);
   for (size_t i = 0; i < doubleArray.size(); i++) {
     const uint8_t* bytePtr = &byteArray[i * 8];
@@ -326,36 +300,24 @@ std::vector<double> convertBytesToDouble(const std::vector<uint8_t>& byteArray) 
 }
 
 std::pair<double, double> calculateCompDecomThroughput(size_t originalSize, double compressedTime, double decompressedTime) {
-  // Convert originalSize from bytes to gigabytes
   double originalSizeGB = static_cast<double>(originalSize) / 1e9;
-
-  // Calculate throughput in GB/s
   double compressionThroughput = originalSizeGB / static_cast<double>(compressedTime);
   double decompressionThroughput = originalSizeGB / static_cast<double>(decompressedTime);
-
   return {compressionThroughput, decompressionThroughput};
 }
 
 bool areVectorsEqual(const std::vector<float>& a, const std::vector<float>& b, float epsilon = 1e-5) {
-  if (a.size() != b.size()) {
-    return false;
-  }
+  if (a.size() != b.size()) return false;
   for (size_t i = 0; i < a.size(); i++) {
-    if (std::fabs(a[i] - b[i]) > 0) { // Compare with tolerance for floating-point values
-      return false;
-    }
+    if (std::fabs(a[i] - b[i]) > epsilon) return false;
   }
   return true;
 }
 
 bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<double>& b, float epsilon = 1e-5) {
-  if (a.size() != b.size()) {
-    return false;
-  }
+  if (a.size() != b.size()) return false;
   for (size_t i = 0; i < a.size(); i++) {
-    if (std::fabs(a[i] - b[i]) > 0) { // Compare with tolerance for floating-point values
-      return false;
-    }
+    if (std::fabs(a[i] - b[i]) > epsilon) return false;
   }
   return true;
 }
@@ -366,7 +328,7 @@ bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<doubl
 std::vector<std::vector<uint8_t>> blockData(const std::vector<uint8_t>& data, size_t blockSize) {
   std::vector<std::vector<uint8_t>> blocks;
   size_t totalSize = data.size();
-  size_t numBlocks = (totalSize + blockSize - 1) / blockSize; // ceiling division
+  size_t numBlocks = (totalSize + blockSize - 1) / blockSize;
   blocks.reserve(numBlocks);
   for (size_t i = 0; i < totalSize; i += blockSize) {
     size_t end = std::min(i + blockSize, totalSize);
@@ -375,10 +337,8 @@ std::vector<std::vector<uint8_t>> blockData(const std::vector<uint8_t>& data, si
   return blocks;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
-
   cxxopts::Options options("DataCompressorFastLZ",
                            "Compress datasets and profile the compression (FastLZ version)");
   options.add_options()
@@ -395,14 +355,14 @@ int main(int argc, char* argv[]) {
 
   std::string datasetPath = result["dataset"].as<std::string>();
   std::string outputCSV   = result["outcsv"].as<std::string>();
-  int userThreads         = result["threads"].as<int>(); // user-specified or default
+  int userThreads         = result["threads"].as<int>();
   int precisionBits       = result["bits"].as<int>();
 
-  //  list of thread
-  std::vector<int> threadList = {1, 10, userThreads};
+  // List of threads to test.
+  std::vector<int> threadList = { userThreads};
 
-  // How many times to run
-  int runCount = 5;
+  // Number of runs.
+  int runCount = 1;
 
   // 2. Load dataset
   size_t rowCount;
@@ -431,25 +391,20 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Determine the total data size.
+  // Determine total data size.
   size_t totalBytes = globalByteArray.size();
 
-  // const size_t minBlockSize = 1024;
-  // size_t maxBlocks = (totalBytes + minBlockSize - 1) / minBlockSize;
-
-  // List of block sizes to test (your existing array).
+  // List of block sizes (in bytes) to test.
   std::vector<size_t> blockSizes = {
-
     100 * 1024,
     1000 * 1024,
     10000 * 1024,
     100000 * 1024,
     600 * 1024,
     640 * 1024,
-
   };
 
-  // Open CSV output file
+  // Open CSV output file.
   std::ofstream file(outputCSV);
   if (!file) {
     std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
@@ -462,7 +417,7 @@ int main(int argc, char* argv[]) {
   int recordIndex = 1;
 
   // ----------------------------------------------------------------------
-    // (1) Over a list of threads, (2) Over the number of runs (runCount).
+  // Loop over thread counts and run iterations.
   // ----------------------------------------------------------------------
   for (int currentThreads : threadList) {
     for (int run = 1; run <= runCount; run++) {
@@ -471,8 +426,8 @@ int main(int argc, char* argv[]) {
                 << " with " << currentThreads << " threads.\n";
 
       int numThreads = currentThreads;
+      /////////////////////////////////////////////
 
-      // ------------------------------
       // A. FULL COMPRESSION WITH BLOCKING - PARALLEL
       // ------------------------------
       for (size_t bs : blockSizes) {
@@ -494,7 +449,7 @@ int main(int argc, char* argv[]) {
 
         // Parallel Compression
         auto compStartOverall = std::chrono::high_resolution_clock::now();
-    #pragma omp parallel for
+#pragma omp parallel for
         for (int i = 0; i < static_cast<int>(numBlocks); i++) {
           size_t start = i * bs;
           size_t end = std::min(start + bs, totalSize);
@@ -507,7 +462,7 @@ int main(int argc, char* argv[]) {
 
           blockCompTimes[i] = std::chrono::duration<double>(endTime - startTime).count();
           blockCompressedSizes[i] = cSize;
-    #pragma omp atomic
+#pragma omp atomic
           totalCompressedSize += cSize;
         }
         auto compEndOverall = std::chrono::high_resolution_clock::now();
@@ -516,7 +471,7 @@ int main(int argc, char* argv[]) {
         // Parallel Decompression
         std::vector<uint8_t> finalReconstructed(totalSize, 0);
         double decompStartOverall = omp_get_wtime();
-    #pragma omp parallel for
+#pragma omp parallel for
         for (int i = 0; i < static_cast<int>(numBlocks); i++) {
           size_t start = i * bs;
           size_t end = std::min(start + bs, totalSize);
@@ -543,7 +498,7 @@ int main(int argc, char* argv[]) {
 
         // Write CSV
         file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
-             << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+             << "Chunked_parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
       }
 
@@ -622,7 +577,7 @@ int main(int argc, char* argv[]) {
           omp_set_num_threads(numThreads);
 
           auto compStartOverall = std::chrono::high_resolution_clock::now();
-      #pragma omp parallel for
+#pragma omp parallel for
           for (int i = 0; i < static_cast<int>(numBlocks); i++) {
             auto start = std::chrono::high_resolution_clock::now();
             double cSize = fastlzFusedDecomposedParallel(
@@ -639,7 +594,7 @@ int main(int argc, char* argv[]) {
 
           std::vector<uint8_t> fullReconstructed(totalSize);
           double decompStartOverall = omp_get_wtime();
-      #pragma omp parallel for
+#pragma omp parallel for
           for (int i = 0; i < static_cast<int>(numBlocks); i++) {
             double start = omp_get_wtime();
             uint8_t* dest = fullReconstructed.data() + i * bs;
@@ -663,106 +618,80 @@ int main(int argc, char* argv[]) {
               totalBytes, totalCompTime, totalDecompTime);
 
           file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
-               << "Decompose_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-               << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
-        }
-      }
-      // ------------------------------
-      // A.Decompose COMPRESSION WITH BLOCKING - PARALLEL (1)
-      // ------------------------------
-
-      for (const auto& componentConfig : componentConfigurationsList) {
-        std::string configStr = configToString1(componentConfig);
-        std::cout << "\nConfig with " << componentConfig.size()
-                  << " sub-config(s): " << configStr << "\n";
-        for (size_t subIdx = 0; subIdx < componentConfig.size(); ++subIdx) {
-          std::cout << "  Sub-configuration " << subIdx << ": ";
-          for (const auto& s : componentConfig[subIdx]) {
-            std::cout << s << " ";
-          }
-          std::cout << std::endl;
-        }
-
-        for (size_t bs : blockSizes) {
-          std::cout << "Testing with block size = " << bs << " bytes." << std::endl;
-
-          size_t totalSize = globalByteArray.size();
-          size_t numBlocks = (totalSize + bs - 1) / bs;
-
-          struct BlockView {
-            const uint8_t* data;
-            size_t size;
-          };
-          std::vector<BlockView> fullBlocks;
-          fullBlocks.reserve(numBlocks);
-          for (size_t i = 0; i < numBlocks; i++) {
-            size_t start = i * bs;
-            size_t end = std::min(start + bs, totalSize);
-            fullBlocks.push_back({ globalByteArray.data() + start, end - start });
-          }
-
-          size_t totalCompressedSize = 0;
-          double totalCompTime = 0.0, totalDecompTime = 0.0;
-          std::vector<std::vector<std::vector<uint8_t>>> compressedBlocks(numBlocks);
-          std::vector<double> blockCompTimes(numBlocks, 0.0);
-          std::vector<double> blockDecompTimes(numBlocks, 0.0);
-          std::vector<size_t> blockCompressedSizes(numBlocks, 0);
-          ProfilingInfo pi_parallel;
-          pi_parallel.config_string = configStr;
-
-          omp_set_num_threads(numThreads);
-
-          auto compStartOverall = std::chrono::high_resolution_clock::now();
-      #pragma omp parallel for
-          for (int i = 0; i < static_cast<int>(numBlocks); i++) {
-            auto start = std::chrono::high_resolution_clock::now();
-            double cSize = fastlzFusedDecomposedParallel(
-                fullBlocks[i].data, fullBlocks[i].size,
-                pi_parallel, compressedBlocks[i],
-                componentConfig, 1);
-            auto end = std::chrono::high_resolution_clock::now();
-            blockCompTimes[i] = std::chrono::duration<double>(end - start).count();
-            blockCompressedSizes[i] = cSize;
-            totalCompressedSize += cSize;
-          }
-          auto compEndOverall = std::chrono::high_resolution_clock::now();
-          totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
-
-          std::vector<uint8_t> fullReconstructed(totalSize);
-          double decompStartOverall = omp_get_wtime();
-      #pragma omp parallel for
-          for (int i = 0; i < static_cast<int>(numBlocks); i++) {
-            double start = omp_get_wtime();
-            uint8_t* dest = fullReconstructed.data() + i * bs;
-            fastlzDecomposedParallelDecompression(
-                compressedBlocks[i], pi_parallel, componentConfig,
-                1, fullBlocks[i].size, dest);
-            double end = omp_get_wtime();
-            blockDecompTimes[i] = end - start;
-          }
-          double decompEndOverall = omp_get_wtime();
-          totalDecompTime = decompEndOverall - decompStartOverall;
-
-          if (fullReconstructed == globalByteArray) {
-            std::cout << "[INFO] Full reconstructed data matches the original data." << std::endl;
-          } else {
-            std::cerr << "[ERROR] Full reconstructed data does NOT match the original data." << std::endl;
-          }
-
-          double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
-          auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
-              totalBytes, totalCompTime, totalDecompTime);
-
-          file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
-               << "Decompose_Block_Parallel_1" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+               << "chunked_decomposed_parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
                << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
         }
       }
 
+
+        // ------------------------------
+        // C. DECOMPOSE THEN CHUNK COMPRESSION - PARALLEL
+        // (Reversed order: first decompose full data, then chunk each component using the block size as chunk size)
+        // ------------------------------
+        //auto componentConfigurationsList = getComponentConfigurationsForDataset(datasetName);
+        for (const auto& componentConfig : componentConfigurationsList) {
+          std::string configStr = configToString1(componentConfig);
+          std::cout << "\nConfig with " << componentConfig.size()
+                    << " sub-config(s): " << configStr << "\n";
+          for (size_t bs : blockSizes) {
+            std::cout << "Testing with chunk block size = " << bs << " bytes." << std::endl;
+
+            size_t totalSize = globalByteArray.size();
+            ProfilingInfo pi_chunk;
+            pi_chunk.config_string = configStr;
+
+            // Compressed output will be a 3D vector: per component, per chunk, per compressed data.
+            std::vector<std::vector<std::vector<uint8_t>>> compressedBlocks;
+
+            omp_set_num_threads(numThreads);
+            double compStartOverall = omp_get_wtime();
+            // Call the new function that first decomposes and then chunks/compresses.
+            size_t totalCompressedSize = fastlzDecomposedThenChunkedParallelCompression(
+                globalByteArray.data(), globalByteArray.size(),
+                pi_chunk,
+                compressedBlocks,
+                componentConfig,
+                numThreads,
+                bs  // use the block size as the chunk block size
+            );
+            double compEndOverall = omp_get_wtime();
+            pi_chunk.total_time_compressed = compEndOverall - compStartOverall;
+
+            // Now decompress using the corresponding new function.
+            std::vector<uint8_t> finalReconstructed(totalSize);
+            double decompStartOverall = omp_get_wtime();
+            fastlzDecomposedThenChunkedParallelDecompression(
+                compressedBlocks,
+                pi_chunk,
+                componentConfig,
+                numThreads,
+                globalByteArray.size(),  // original full data size
+                bs,                      // the same chunk block size used during compression
+                finalReconstructed.data()
+            );
+            double decompEndOverall = omp_get_wtime();
+            pi_chunk.total_time_decompressed = decompEndOverall - decompStartOverall;
+
+            if (finalReconstructed == globalByteArray)
+              std::cout << "[INFO] Final reconstructed data matches the original data." << std::endl;
+            else
+              std::cerr << "[ERROR] Final reconstructed data does NOT match the original data." << std::endl;
+
+            double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
+            auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
+                totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
+
+            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
+                 << "Decompose_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
+                 << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+          }
+        }
+      }
     }
+
+    file.close();
+    std::cout << "Profiling results saved to " << outputCSV << "\n";
+    return 0;
   }
 
-  file.close();
-  std::cout << "Profiling results saved to " << outputCSV << "\n";
-  return 0;
-}
+

@@ -17,8 +17,8 @@ module load gcc/13.3
 module load cmake/3.27.7
 
 # Define directories
-DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"  # Dataset folder
-RESULTS_DIR="/home/jamalids/Documents/results"  # Output folder
+DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"  # Dataset folder
+RESULTS_DIR="/home/jamalids/Documents/results1"  # Output folder
 EXECUTABLE="./build/external_tools/parallel-test"  # Path to the compiled executable
 
 # Ensure results directory exists
@@ -50,7 +50,7 @@ for dataset in "$DATASET_DIR"/*; do
         start_time=$(date +%s.%N)
 
         # Run the C++ program on each dataset
-        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 24 --bits 64
+        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 32
 
         end_time=$(date +%s.%N)
         elapsed_time=$(echo "$end_time - $start_time" | bc)
