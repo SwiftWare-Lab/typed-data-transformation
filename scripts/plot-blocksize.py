@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,105 +9,135 @@ from matplotlib.ticker import FuncFormatter
 matplotlib.use("Agg")
 
 # ------------------------------
-# Load and Prepare Data
+# Specify the folder containing your CSV files.
 # ------------------------------
-file_path = "/home/jamalids/Documents/jw_mirimage_f32.csv"
+folder_path = "/home/jamalids/Documents/results1"
 
-# Attempt to reload the CSV with a more flexible approach
-df = pd.read_csv(file_path, delimiter=",", engine="python")
+# List all CSV files in the folder (include full paths).
+dataset_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith(".csv")]
 
-# Display the first few rows to check the structure
-df.head()
+if not dataset_files:
+    print("No CSV files found in the specified folder.")
+    exit()
 
-# Print column names to verify they match what you expect.
-print("Columns in CSV:", df.columns)
+for file_path in dataset_files:
+    # Extract the dataset name (without extension)
+    dataset_name = os.path.splitext(os.path.basename(file_path))[0]
+    print(f"\nProcessing dataset: {dataset_name}")
 
-# Exclude rows where BlockSize is "[0]" (or "N/A" if that is how it is marked) and drop any missing values.
-df_numeric = df[df["BlockSize"] != "{ [0] }"].copy()
-df_numeric = df_numeric.dropna(
-    subset=["BlockSize", "TotalTimeCompressed", "TotalTimeDecompressed", "ConfigString", "CompressionRatio"]
-)
+    # ------------------------------
+    # Load and Prepare Data
+    # ------------------------------
+    df = pd.read_csv(file_path, delimiter=";", engine="python")
+    print("Columns in CSV:", df.columns)
 
-# Convert BlockSize and relevant columns to numeric values.
-df_numeric["BlockSize"] = pd.to_numeric(df_numeric["BlockSize"], errors="coerce")
-df_numeric["TotalTimeCompressed"] = pd.to_numeric(df_numeric["TotalTimeCompressed"], errors="coerce")
-df_numeric["TotalTimeDecompressed"] = pd.to_numeric(df_numeric["TotalTimeDecompressed"], errors="coerce")
-df_numeric["CompressionRatio"] = pd.to_numeric(df_numeric["CompressionRatio"], errors="coerce")
+    # Force ConfigString to a string and strip extra spaces.
+    df["ConfigString"] = df["ConfigString"].astype(str).str.strip()
 
-# Drop any rows that might have become NaN after conversion.
-df_numeric = df_numeric.dropna(subset=["BlockSize", "TotalTimeCompressed", "TotalTimeDecompressed", "CompressionRatio"])
+    # Replace missing string values ("nan" and "None") with "{ [0] }"
+    df.loc[df["ConfigString"].isin(["nan", "None"]), "ConfigString"] = "{ [0] }"
 
-# ------------------------------
-# Do NOT remove "Full" from RunType.
-# ------------------------------
-run_types = df_numeric["RunType"].unique()
+    # Replace "Full" RunType BlockSize with TotalValues * 4 (assuming float32)
+    df.loc[df["RunType"] == "Full", "BlockSize"] = df["TotalValues"] * 4
 
-# ------------------------------
-# Create a categorical mapping for BlockSize.
-# ------------------------------
-unique_block_sizes = sorted(df_numeric["BlockSize"].unique())
-categories = [str(int(x)) for x in unique_block_sizes]
-mapping = {size: i for i, size in enumerate(unique_block_sizes)}
+    # Convert relevant columns to numeric values
+    df["BlockSize"] = pd.to_numeric(df["BlockSize"], errors="coerce")
+    df["TotalTimeCompressed"] = pd.to_numeric(df["TotalTimeCompressed"], errors="coerce")
+    df["TotalTimeDecompressed"] = pd.to_numeric(df["TotalTimeDecompressed"], errors="coerce")
+    df["CompressionRatio"] = pd.to_numeric(df["CompressionRatio"], errors="coerce")
 
-# ------------------------------
-# Group data by RunType and ConfigString.
-# ------------------------------
-df_numeric["RunType1"] = df_numeric["RunType"].astype(str) + " " + df_numeric["ConfigString"].astype(str)
-grouped = df_numeric.groupby("RunType1")
+    # ------------------------------
+    # Ensure "Full" appears in all block size categories
+    # ------------------------------
+    unique_block_sizes = sorted(df["BlockSize"].dropna().unique())  # Remove NaN before mapping
 
-# ------------------------------
-# Plot: Compression Time vs Block Size (categorical x-axis)
-# ------------------------------
-plt.figure(figsize=(10, 6))
-for label, group in grouped:
-    x = group["BlockSize"].apply(lambda s: mapping[s]).values
-    y = group["TotalTimeCompressed"].values
-    plt.plot(x, y, marker="o", linestyle="-", label=label)
+    # Get all "Full" rows
+    full_rows = df[df["RunType"] == "Full"]
 
-plt.xlabel("Block Size (bytes)")
-plt.ylabel("Compression Time (seconds)")
-plt.title("Compression Time vs Block Size")
-plt.legend()
-plt.grid(True)
-plt.xticks(np.arange(len(categories)), categories)
-plt.tight_layout()
-plt.savefig("/home/jamalids/Documents/compression_time_vs_block_size.png")
-plt.show()
+    # Duplicate "Full" rows for every block size to make it appear across all sizes
+    full_expanded = pd.concat(
+        [full_rows.assign(BlockSize=bs) for bs in unique_block_sizes],
+        ignore_index=True
+    )
 
-# ------------------------------
-# Plot: Decompression Time vs Block Size (categorical x-axis)
-# ------------------------------
-plt.figure(figsize=(10, 6))
-for label, group in grouped:
-    x = group["BlockSize"].apply(lambda s: mapping[s]).values
-    y = group["TotalTimeDecompressed"].values
-    plt.plot(x, y, marker="o", linestyle="-", label=label)
+    # Append the expanded "Full" rows back to the dataset
+    df = pd.concat([df, full_expanded], ignore_index=True)
 
-plt.xlabel("Block Size (bytes)")
-plt.ylabel("Decompression Time (seconds)")
-plt.title("Decompression Time vs Block Size")
-plt.legend()
-plt.grid(True)
-plt.xticks(np.arange(len(categories)), categories)
-plt.tight_layout()
-plt.savefig("/home/jamalids/Documents/decompression_time_vs_block_size.png")
-plt.show()
+    # ------------------------------
+    # Prepare Grouping and Categories
+    # ------------------------------
+    categories = [str(int(x)) for x in unique_block_sizes]
+    mapping = {size: i for i, size in enumerate(unique_block_sizes)}
 
-# ------------------------------
-# Plot: Compression Ratio vs Block Size (categorical x-axis)
-# ------------------------------
-plt.figure(figsize=(10, 6))
-for label, group in grouped:
-    x = group["BlockSize"].apply(lambda s: mapping[s]).values
-    y = group["CompressionRatio"].values
-    plt.plot(x, y, marker="o", linestyle="-", label=label)
+    # Create a combined grouping field from RunType and ConfigString
+    df["RunType1"] = df["RunType"].astype(str) + " " + df["ConfigString"].astype(str)
+    grouped = df.groupby("RunType1")
 
-plt.xlabel("Block Size (bytes)")
-plt.ylabel("Compression Ratio")
-plt.title("Compression Ratio vs Block Size")
-plt.legend()
-plt.grid(True)
-plt.xticks(np.arange(len(categories)), categories)
-plt.tight_layout()
-plt.savefig("/home/jamalids/Documents/compression_ratio_vs_block_size.png")
-plt.show()
+    # ------------------------------
+    # Define a function to plot safely
+    # ------------------------------
+    def safe_plot(df_group, x_col, y_col, title, xlabel, ylabel, filename):
+        """ Ensure x and y values have the same shape before plotting. """
+        plt.figure(figsize=(10, 6))
+        for label, group in df_group:
+            valid_data = group.dropna(subset=[x_col, y_col])  # Drop NaN values
+            if valid_data.empty:
+                continue  # Skip empty groups
+
+            x = valid_data[x_col].map(mapping).dropna().values  # Ensure valid x values
+            y = valid_data[y_col].values
+
+            if len(x) == len(y) and len(x) > 0:  # Ensure matching dimensions
+                plt.plot(x, y, marker="o", linestyle="-", label=label)
+
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.legend()
+        plt.grid(True)
+        plt.xticks(np.arange(len(categories)), categories)
+        plt.tight_layout()
+
+        plt.savefig(filename)
+        plt.close()
+
+    # ------------------------------
+    # Plot 1: Compression Time vs Block Size
+    # ------------------------------
+    safe_plot(
+        grouped,
+        "BlockSize",
+        "TotalTimeCompressed",
+        f"Compression Time vs Block Size ({dataset_name})",
+        "Block Size (bytes)",
+        "Compression Time (seconds)",
+        os.path.join(folder_path, f"{dataset_name}_compression_time_vs_block_size.png"),
+    )
+
+    # ------------------------------
+    # Plot 2: Decompression Time vs Block Size
+    # ------------------------------
+    safe_plot(
+        grouped,
+        "BlockSize",
+        "TotalTimeDecompressed",
+        f"Decompression Time vs Block Size ({dataset_name})",
+        "Block Size (bytes)",
+        "Decompression Time (seconds)",
+        os.path.join(folder_path, f"{dataset_name}_decompression_time_vs_block_size.png"),
+    )
+
+    # ------------------------------
+    # Plot 3: Compression Ratio vs Block Size
+    # ------------------------------
+    safe_plot(
+        grouped,
+        "BlockSize",
+        "CompressionRatio",
+        f"Compression Ratio vs Block Size ({dataset_name})",
+        "Block Size (bytes)",
+        "Compression Ratio",
+        os.path.join(folder_path, f"{dataset_name}_compression_ratio_vs_block_size.png"),
+    )
+
+    print(f"Plots for dataset '{dataset_name}' saved successfully.\n")
