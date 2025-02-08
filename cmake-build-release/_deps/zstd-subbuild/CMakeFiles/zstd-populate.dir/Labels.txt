@@ -1,0 +1,14 @@
+# Target labels
+ zstd-populate
+# Source files and their labels
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/CMakeFiles/zstd-populate
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/CMakeFiles/zstd-populate.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/CMakeFiles/zstd-populate-complete.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-build.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-configure.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-download.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-install.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-mkdir.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-patch.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-test.rule
+/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-update.rule

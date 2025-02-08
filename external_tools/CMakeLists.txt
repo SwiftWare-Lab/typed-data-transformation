@@ -85,27 +85,29 @@ if(NOT bzip2_POPULATED)
             ${bzip2_SOURCE_DIR}/compress.c
             ${bzip2_SOURCE_DIR}/decompress.c
             ${bzip2_SOURCE_DIR}/bzlib.c
+            zstd_parallel.h
     )
     target_include_directories(bzip2 PRIVATE ${bzip2_SOURCE_DIR})
 endif()
 add_executable(parallel-test
-        #parralel-zstd.cpp
-        #zstd_parallel.h
+       #parralel-zstd.cpp
+        zstd_parallel.h
         profiling_info.h
 #        FASTLZ_PARALLEL.h
 #        FASTLZ_PARALLEL.cpp
         decompose.h
         decompose.cpp
-        #lz4_parallel.h
+        lz4_parallel.h
         # parallel-lz4.cpp
-        # snappy_parallel.h
+         snappy_parallel.h
         #  parallel-snappy.cpp
-        #  zlib-parallel.h
+        zlib-parallel.h
         #  zlib-parallel.cpp
         # bz2_parallel.h
         # parallel-bzip2.cpp
 )
-add_library(fastlz STATIC fastlz.c)
+add_library(fastlz STATIC fastlz.c
+)
 target_link_libraries(parallel-test PRIVATE fastlz)
 target_link_libraries(parallel-test
         PRIVATE

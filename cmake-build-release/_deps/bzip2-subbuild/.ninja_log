@@ -1,0 +1,37 @@
+# ninja log v6
+5716	5718	1738973936394469825	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-patch	85fc545ac8dd5229
+0	5715	1738973930677453002	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-update	5f81c3c7badd7169
+0	5715	1738973930677453002	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-update	5f81c3c7badd7169
+5718	5720	1738973936396469831	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-configure	773db0442cdfa3d9
+0	3	1738941925694603384	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-mkdir	3ba7fed6a9b8a34c
+5720	5722	1738973936398469837	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-build	fe783cd17ddecc03
+5722	5724	1738973936400469843	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-install	d21a1251374f37a0
+5722	5724	1738973936400469843	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-install	d21a1251374f37a0
+3	11937	1738941937627632110	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-download	f8153b531ec1b201
+5726	5728	1738973936405469857	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-done	97f40960bf8c0180
+5716	5718	1738973936394469825	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-patch	85fc545ac8dd5229
+0	3	1738941925694603384	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-mkdir	3ba7fed6a9b8a34c
+5720	5722	1738973936398469837	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-build	fe783cd17ddecc03
+5724	5726	1738973936402469848	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-test	d5c6a198714b0640
+5726	5728	1738973936405469857	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-done	97f40960bf8c0180
+5724	5726	1738973936402469848	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-test	d5c6a198714b0640
+3	11937	1738941937627632110	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-download	f8153b531ec1b201
+5718	5720	1738973936396469831	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-configure	773db0442cdfa3d9
+5726	5728	1738973936405469857	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/CMakeFiles/bzip2-populate-complete	97f40960bf8c0180
+5726	5728	1738973936405469857	CMakeFiles/bzip2-populate-complete	97f40960bf8c0180
+0	5433	1738975721211170222	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-update	5f81c3c7badd7169
+0	5433	1738975721211170222	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-update	5f81c3c7badd7169
+5433	5435	1738975726646187326	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-patch	85fc545ac8dd5229
+5433	5435	1738975726646187326	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-patch	85fc545ac8dd5229
+5435	5437	1738975726648187333	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-configure	773db0442cdfa3d9
+5435	5437	1738975726648187333	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-configure	773db0442cdfa3d9
+5437	5439	1738975726650187339	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-build	fe783cd17ddecc03
+5437	5439	1738975726650187339	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-build	fe783cd17ddecc03
+5439	5441	1738975726652187345	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-install	d21a1251374f37a0
+5439	5441	1738975726652187345	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-install	d21a1251374f37a0
+5441	5443	1738975726654187352	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-test	d5c6a198714b0640
+5441	5443	1738975726654187352	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-test	d5c6a198714b0640
+5443	5446	1738975726656187358	CMakeFiles/bzip2-populate-complete	97f40960bf8c0180
+5443	5446	1738975726656187358	bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-done	97f40960bf8c0180
+5443	5446	1738975726656187358	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/CMakeFiles/bzip2-populate-complete	97f40960bf8c0180
+5443	5446	1738975726656187358	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/bzip2-subbuild/bzip2-populate-prefix/src/bzip2-populate-stamp/bzip2-populate-done	97f40960bf8c0180

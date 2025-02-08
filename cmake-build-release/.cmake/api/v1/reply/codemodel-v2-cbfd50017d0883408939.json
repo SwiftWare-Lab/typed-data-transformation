@@ -1,0 +1,552 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						4,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "_deps/zstd-build",
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.zstd-build-Release-44d6174c7142c816c0ea.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "cmake-build-release/_deps/zstd-src/build/cmake",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "_deps/zstd-build/lib",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.zstd-build.lib-Release-4bbc00bd90e53ebf77ad.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 2,
+					"source" : "cmake-build-release/_deps/zstd-src/build/cmake/lib",
+					"targetIndexes" : 
+					[
+						6,
+						11
+					]
+				},
+				{
+					"build" : "_deps/zstd-build/programs",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.zstd-build.programs-Release-8e3fb4ad387706424da7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 3,
+					"source" : "cmake-build-release/_deps/zstd-src/build/cmake/programs",
+					"targetIndexes" : 
+					[
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21
+					]
+				},
+				{
+					"build" : "_deps/argparse-build",
+					"jsonFile" : "directory-_deps.argparse-build-Release-988939b27f456e421745.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12.4"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : "cmake-build-release/_deps/argparse-src"
+				},
+				{
+					"build" : "external_tools",
+					"childIndexes" : 
+					[
+						6,
+						9,
+						10,
+						11
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-external_tools-Release-6e3803bc9dcdff3e28ca.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 5,
+					"source" : "external_tools",
+					"targetIndexes" : 
+					[
+						2,
+						5,
+						9
+					]
+				},
+				{
+					"build" : "_deps/cxxopts-build",
+					"childIndexes" : 
+					[
+						7,
+						8
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.cxxopts-build-Release-f9808de58dd421620ffc.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 6,
+					"source" : "cmake-build-release/_deps/cxxopts-src"
+				},
+				{
+					"build" : "_deps/cxxopts-build/src",
+					"jsonFile" : "directory-_deps.cxxopts-build.src-Release-1d512539d153fa64c8f1.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 6,
+					"source" : "cmake-build-release/_deps/cxxopts-src/src",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "_deps/cxxopts-build/test",
+					"jsonFile" : "directory-_deps.cxxopts-build.test-Release-f7eaf69185d128066f04.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 6,
+					"source" : "cmake-build-release/_deps/cxxopts-src/test"
+				},
+				{
+					"build" : "_deps/lz4-build",
+					"jsonFile" : "directory-_deps.lz4-build-Release-45a07d2d59e5731d7998.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 7,
+					"source" : "cmake-build-release/_deps/lz4-src/build/cmake",
+					"targetIndexes" : 
+					[
+						7,
+						8
+					]
+				},
+				{
+					"build" : "_deps/snappy-build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.snappy-build-Release-9ecc6ad4ff9e07f63bcf.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.1"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 8,
+					"source" : "cmake-build-release/_deps/snappy-src",
+					"targetIndexes" : 
+					[
+						10
+					]
+				},
+				{
+					"build" : "_deps/benchmark-build",
+					"childIndexes" : 
+					[
+						12
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.benchmark-build-Release-c3b394783c5e8d95c2b8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 9,
+					"source" : "cmake-build-release/_deps/benchmark-src"
+				},
+				{
+					"build" : "_deps/benchmark-build/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.benchmark-build.src-Release-1d1bd4925001755473a5.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"parentIndex" : 11,
+					"projectIndex" : 9,
+					"source" : "cmake-build-release/_deps/benchmark-src/src",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						4,
+						5
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "big-data"
+				},
+				{
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "zstd",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "libzstd",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						6,
+						11
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "programs",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20,
+						21
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						4
+					],
+					"name" : "argparse",
+					"parentIndex" : 0
+				},
+				{
+					"childIndexes" : 
+					[
+						6,
+						7,
+						8,
+						9
+					],
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "zstd-test-project",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2,
+						5,
+						9
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						6,
+						7,
+						8
+					],
+					"name" : "cxxopts",
+					"parentIndex" : 5,
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						9
+					],
+					"name" : "LZ4",
+					"parentIndex" : 5,
+					"targetIndexes" : 
+					[
+						7,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						10
+					],
+					"name" : "Snappy",
+					"parentIndex" : 5,
+					"targetIndexes" : 
+					[
+						10
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						11,
+						12
+					],
+					"name" : "benchmark",
+					"parentIndex" : 5,
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 12,
+					"id" : "benchmark::@2fa91c1ea4e05cbc4511",
+					"jsonFile" : "target-benchmark-Release-2bff1f1b2cd503e9e480.json",
+					"name" : "benchmark",
+					"projectIndex" : 9
+				},
+				{
+					"directoryIndex" : 12,
+					"id" : "benchmark_main::@2fa91c1ea4e05cbc4511",
+					"jsonFile" : "target-benchmark_main-Release-de98a90160d056453197.json",
+					"name" : "benchmark_main",
+					"projectIndex" : 9
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "bzip2::@3f6ce898b1de8331a83a",
+					"jsonFile" : "target-bzip2-Release-9e8fa4cad948022eaefc.json",
+					"name" : "bzip2",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "clean-all::@ca7a33be7e8493a29717",
+					"jsonFile" : "target-clean-all-Release-f572230533c7a967cc36.json",
+					"name" : "clean-all",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "example::@044f4dd5febfa9f5d2c7",
+					"jsonFile" : "target-example-Release-724d0a73785cea0adf1f.json",
+					"name" : "example",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "fastlz::@3f6ce898b1de8331a83a",
+					"jsonFile" : "target-fastlz-Release-47b8924c27cc3b5995eb.json",
+					"name" : "fastlz",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "libzstd_static::@ce257b546cf505c1d048",
+					"jsonFile" : "target-libzstd_static-Release-0f9d6b63bec3dabdbd77.json",
+					"name" : "libzstd_static",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "lz4_static::@03b7b87d260a5b4d527f",
+					"jsonFile" : "target-lz4_static-Release-7d3e7a23144b1d81e77c.json",
+					"name" : "lz4_static",
+					"projectIndex" : 7
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "lz4cli::@03b7b87d260a5b4d527f",
+					"jsonFile" : "target-lz4cli-Release-c38e409f33f566e6454e.json",
+					"name" : "lz4cli",
+					"projectIndex" : 7
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "parallel-test::@3f6ce898b1de8331a83a",
+					"jsonFile" : "target-parallel-test-Release-b06f52cbb8fb4cd8dfe2.json",
+					"name" : "parallel-test",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 10,
+					"id" : "snappy::@61fc479c67254a1c1d91",
+					"jsonFile" : "target-snappy-Release-370bc13d9b74ebcd9b1c.json",
+					"name" : "snappy",
+					"projectIndex" : 8
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "uninstall::@ce257b546cf505c1d048",
+					"jsonFile" : "target-uninstall-Release-bc6a93011a7eeb373e77.json",
+					"name" : "uninstall",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "unzstd::@18563dce6c7680baa1af",
+					"jsonFile" : "target-unzstd-Release-4637719f77bde1dfe3d7.json",
+					"name" : "unzstd",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "unzstd.1::@18563dce6c7680baa1af",
+					"jsonFile" : "target-unzstd.1-Release-8e096dabe332f6aba520.json",
+					"name" : "unzstd.1",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstd::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstd-Release-abd4ec437ba180e77eba.json",
+					"name" : "zstd",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstd-frugal::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstd-frugal-Release-7490ef0e6c18f3e79e82.json",
+					"name" : "zstd-frugal",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstd.1::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstd.1-Release-fc122002a23161be3194.json",
+					"name" : "zstd.1",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstdcat::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstdcat-Release-387065248f7e1e2194a3.json",
+					"name" : "zstdcat",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstdcat.1::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstdcat.1-Release-bd1c714cb4026ec746d4.json",
+					"name" : "zstdcat.1",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstdgrep.1::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstdgrep.1-Release-ea88f58417957ee4e9e1.json",
+					"name" : "zstdgrep.1",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstdless.1::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstdless.1-Release-c03cc6b40b617ba95eb9.json",
+					"name" : "zstdless.1",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "zstdmt::@18563dce6c7680baa1af",
+					"jsonFile" : "target-zstdmt-Release-240611b1d5c7351d06ad.json",
+					"name" : "zstdmt",
+					"projectIndex" : 3
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release",
+		"source" : "/home/jamalids/Documents/2D/final results/big-data-compression"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

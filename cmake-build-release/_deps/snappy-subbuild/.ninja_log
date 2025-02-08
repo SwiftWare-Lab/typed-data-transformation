@@ -1,0 +1,37 @@
+# ninja log v6
+0	3	1738941887023510338	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-mkdir	1122ee95d1f44ce1
+6485	6488	1738973925260437052	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-patch	944aa1195240e3af
+6493	6495	1738973925268437076	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-test	1e4654763a0ced02
+6493	6495	1738973925268437076	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-test	1e4654763a0ced02
+0	6485	1738973918773417941	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-update	175973cf990aa854
+6488	6489	1738973925262437058	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-configure	4b4414d0fba010ad
+6485	6488	1738973925260437052	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-patch	944aa1195240e3af
+6491	6493	1738973925266437070	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-install	6b1940c010178e42
+6488	6489	1738973925262437058	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-configure	4b4414d0fba010ad
+6495	6498	1738973925271437084	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-done	2a268d5cb82b21e1
+6489	6491	1738973925264437064	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-build	b42ecd7905162e6f
+6491	6493	1738973925266437070	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-install	6b1940c010178e42
+0	6485	1738973918773417941	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-update	175973cf990aa854
+6495	6498	1738973925271437084	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-done	2a268d5cb82b21e1
+3	18444	1738941905465554702	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-download	fd008e118a4030d3
+3	18444	1738941905465554702	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-download	fd008e118a4030d3
+6489	6491	1738973925264437064	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-build	b42ecd7905162e6f
+0	3	1738941887023510338	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-mkdir	1122ee95d1f44ce1
+6495	6498	1738973925271437084	CMakeFiles/snappy-populate-complete	2a268d5cb82b21e1
+6495	6498	1738973925271437084	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/CMakeFiles/snappy-populate-complete	2a268d5cb82b21e1
+1	5282	1738975709440133137	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-update	175973cf990aa854
+1	5282	1738975709440133137	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-update	175973cf990aa854
+5282	5285	1738975714723149788	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-patch	944aa1195240e3af
+5282	5285	1738975714723149788	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-patch	944aa1195240e3af
+5285	5287	1738975714726149798	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-configure	4b4414d0fba010ad
+5285	5287	1738975714726149798	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-configure	4b4414d0fba010ad
+5287	5289	1738975714728149804	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-build	b42ecd7905162e6f
+5287	5289	1738975714728149804	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-build	b42ecd7905162e6f
+5289	5291	1738975714730149810	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-install	6b1940c010178e42
+5289	5291	1738975714730149810	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-install	6b1940c010178e42
+5291	5293	1738975714732149817	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-test	1e4654763a0ced02
+5291	5293	1738975714732149817	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-test	1e4654763a0ced02
+5293	5296	1738975714734149823	CMakeFiles/snappy-populate-complete	2a268d5cb82b21e1
+5293	5296	1738975714734149823	snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-done	2a268d5cb82b21e1
+5293	5296	1738975714734149823	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/CMakeFiles/snappy-populate-complete	2a268d5cb82b21e1
+5293	5296	1738975714734149823	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/snappy-subbuild/snappy-populate-prefix/src/snappy-populate-stamp/snappy-populate-done	2a268d5cb82b21e1

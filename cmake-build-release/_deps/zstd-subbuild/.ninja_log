@@ -1,0 +1,21 @@
+# ninja log v6
+10503	10505	1738941857640439692	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-update	348cb25554acba96
+10509	10511	1738941857646439706	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-build	f3a7e713f7221fcb
+0	3	1738941847137414450	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-mkdir	d2240be22cd23fc9
+10509	10511	1738941857646439706	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-build	f3a7e713f7221fcb
+3	10503	1738941857637439684	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-download	9461ebccbd0ce08e
+10513	10515	1738941857650439716	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-test	33b65195e4b8f7cb
+10503	10505	1738941857640439692	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-update	348cb25554acba96
+10507	10509	1738941857644439701	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-configure	f82144e5151c366c
+10505	10507	1738941857642439696	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-patch	ca366f9835d7ec47
+10507	10509	1738941857644439701	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-configure	f82144e5151c366c
+10515	10518	1738941857653439723	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/CMakeFiles/zstd-populate-complete	59d423e5df34e6e0
+10513	10515	1738941857650439716	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-test	33b65195e4b8f7cb
+0	3	1738941847137414450	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-mkdir	d2240be22cd23fc9
+10511	10513	1738941857648439711	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-install	fb4e89c1817d2f7
+10515	10518	1738941857653439723	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-done	59d423e5df34e6e0
+10515	10518	1738941857653439723	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-done	59d423e5df34e6e0
+10515	10518	1738941857653439723	CMakeFiles/zstd-populate-complete	59d423e5df34e6e0
+10511	10513	1738941857648439711	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-install	fb4e89c1817d2f7
+3	10503	1738941857637439684	/home/jamalids/Documents/2D/final results/big-data-compression/cmake-build-release/_deps/zstd-subbuild/zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-download	9461ebccbd0ce08e
+10505	10507	1738941857642439696	zstd-populate-prefix/src/zstd-populate-stamp/zstd-populate-patch	ca366f9835d7ec47
