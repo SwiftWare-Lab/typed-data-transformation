@@ -267,46 +267,43 @@ inline void lz4DecomposedParallelDecompression(
     ProfilingInfo &pi,
     const std::vector<std::vector<size_t>>& allComponentSizes,
     int numThreads,
-    size_t originalBlockSize,    // Original block size (before compression)
+    size_t originalBlockSize,    // Original block size before compression
     uint8_t* finalReconstructed  // Preallocated destination buffer
 ) {
     auto startAll = std::chrono::high_resolution_clock::now();
 
-    // 1) Determine total bytes per element.
+    // Determine total bytes per element.
     size_t totalBytesPerElement = 0;
     for (const auto &group : allComponentSizes)
         totalBytesPerElement += group.size();
     size_t numElements = originalBlockSize / totalBytesPerElement;
 
-    // 2) Compute expected uncompressed size for each component.
+    // Compute expected uncompressed size for each component.
     std::vector<size_t> chunkSizes;
     chunkSizes.reserve(allComponentSizes.size());
     for (const auto &group : allComponentSizes)
         chunkSizes.push_back(numElements * group.size());
 
-    // 3) Decompress each compressed component in parallel.
-    std::vector<std::vector<uint8_t>> decompressedSubChunks(compressedComponents.size());
     omp_set_num_threads(numThreads);
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < static_cast<int>(compressedComponents.size()); i++) {
         std::vector<uint8_t> temp(chunkSizes[i]);
         decompressWithLZ4(compressedComponents[i], temp, chunkSizes[i]);
-        decompressedSubChunks[i] = temp;
-    }
 
-    // 4) Reassemble the full block.
-    reassembleBytesFromComponentsNested1(
-        decompressedSubChunks,
-        finalReconstructed,
-        originalBlockSize,
-        allComponentSizes,
-        numThreads
-    );
+        // Directly interleave decompressed data into the final buffer
+        for (size_t elem = 0; elem < numElements; elem++) {
+            size_t readPos = elem * allComponentSizes[i].size();
+            for (size_t sub = 0; sub < allComponentSizes[i].size(); sub++) {
+                size_t idxInElem = allComponentSizes[i][sub] - 1;
+                size_t globalIndex = elem * totalBytesPerElement + idxInElem;
+                finalReconstructed[globalIndex] = temp[readPos + sub];
+            }
+        }
+    }
 
     auto endAll = std::chrono::high_resolution_clock::now();
     pi.total_time_decompressed = std::chrono::duration<double>(endAll - startAll).count();
 }
-
 //=============================================================================
 // New Functions: Decomposed Then Chunked Parallel Compression/Decompression
 // (Analogous to your FastLZ functions, but using LZ4.)

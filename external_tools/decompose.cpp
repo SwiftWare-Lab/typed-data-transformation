@@ -146,6 +146,7 @@ std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComp
           {{4,2,3,1,5}, {7,6}, {8}},
   }},
   {"wesad_chest_f64", {
+              {{7,5,6}, {8,4,1,3,2}},
           {{7,5}, {6}, {8,4,1}, {3,2}},
           {{7,5}, {6}, {8,4}, {1}, {3,2}},
           {{7,5}, {6}, {8,4,1,3,2}},
@@ -361,7 +362,7 @@ int main(int argc, char* argv[]) {
   std::string method      = result["method"].as<std::string>(); // "fastlz" or "zstd"
 
   // For convenience, we test only the user–supplied thread count.
-  std::vector<int> threadList = { 8,userThreads };
+  std::vector<int> threadList = { userThreads };
   int runCount = 5;
 
   // 1. Load dataset.
@@ -403,6 +404,9 @@ int main(int argc, char* argv[]) {
     1000 * 1024,
     10000 * 1024,
     100000 * 1024,
+    132978*1024,
+
+    265956 * 1024,
   };
 
   // Open the CSV output file.
@@ -1588,7 +1592,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
             totalDecompTime = decompEndOverall - decompStartOverall;
 
             if (finalReconstructed == globalByteArray)
-                std::cout << "[INFO] (LZ4) Reconstructed data matches the original (PARALLEL)." << std::endl;
+                std::cout << "[INFO] (LZ4) Reconstructed lz4 data matches the original (PARALLEL)." << std::endl;
             else
                 std::cerr << "[ERROR] (LZ4) Reconstructed data does NOT match the original (PARALLEL)." << std::endl;
 

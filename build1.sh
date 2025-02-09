@@ -17,7 +17,7 @@ module load gcc/13.3
 module load cmake/3.27.7
 
 # Define directories
-DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"
+DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
 RESULTS_DIR="/home/jamalids/Documents/results1"
 EXECUTABLE="./build/external_tools/parallel-test"
 
@@ -50,7 +50,7 @@ for dataset in "$DATASET_DIR"/*; do
         start_time=$(date +%s.%N)
 
 
-        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 32 --method=zstd
+        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 64 --method=snappy
 
         end_time=$(date +%s.%N)
         elapsed_time=$(echo "$end_time - $start_time" | bc)
@@ -60,6 +60,7 @@ for dataset in "$DATASET_DIR"/*; do
         echo "Processing Time: $elapsed_time sec" >> "$result_file"
 
         echo "Results saved in: $result_file"
+
     fi
 done
 

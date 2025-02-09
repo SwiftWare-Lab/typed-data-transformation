@@ -240,71 +240,48 @@ inline size_t zstdFusedDecomposedParallel(
     double overallEnd = omp_get_wtime();
     double overallTime = overallEnd - overallStart;
 
-    // Use the maximum per–component time for split and compress, respectively.
-    double maxSplitTime = 0.0, maxCompressTime = 0.0;
-    for (size_t i = 0; i < allComponentSizes.size(); i++) {
-        if (splitTimes[i] > maxSplitTime)
-            maxSplitTime = splitTimes[i];
-        if (compressTimes[i] > maxCompressTime)
-            maxCompressTime = compressTimes[i];
-    }
-
-    // Update profiling info.
-    pi.split_time = maxSplitTime;
-    pi.compress_time = maxCompressTime;
-    pi.total_time_compressed = overallTime;
 
     return totalCompressedSize;
 }
 //////////////////////////////////////////////////
+
 inline void zstdDecomposedParallelDecompression(
     const std::vector<std::vector<uint8_t>>& compressedComponents,
     ProfilingInfo &pi,
     const std::vector<std::vector<size_t>>& allComponentSizes,
     int numThreads,
-    size_t originalBlockSize,    // Original block size (before compression)
+    size_t originalBlockSize,    // Original block size before compression
     uint8_t* finalReconstructed  // Preallocated destination buffer
 ) {
-    auto startAll = std::chrono::high_resolution_clock::now();
+  auto startAll = std::chrono::high_resolution_clock::now();
 
-    // 1) Determine total bytes per element (sum of all component sizes).
-    size_t totalBytesPerElement = 0;
-    for (const auto &group : allComponentSizes) {
-        totalBytesPerElement += group.size();
-    }
-    // Compute the number of elements based on the original block size.
-    size_t numElements = originalBlockSize / totalBytesPerElement;
+  // Determine total bytes per element.
+  size_t totalBytesPerElement = 0;
+  for (const auto &group : allComponentSizes) {
+    totalBytesPerElement += group.size();
+  }
+  size_t numElements = originalBlockSize / totalBytesPerElement;
 
-    // 2) Compute the expected uncompressed size for each component.
-    std::vector<size_t> chunkSizes;
-    chunkSizes.reserve(allComponentSizes.size());
-    for (const auto &group : allComponentSizes) {
-        chunkSizes.push_back(numElements * group.size());
-    }
-
-    // 3) Decompress each compressed component in parallel.
-    std::vector<std::vector<uint8_t>> decompressedSubChunks(compressedComponents.size());
-    omp_set_num_threads(numThreads);
+  // Setup parallel decompression
+  omp_set_num_threads(numThreads);
 #pragma omp parallel for
-    for (int i = 0; i < static_cast<int>(compressedComponents.size()); i++) {
-        // Preallocate a temporary vector of the expected uncompressed size.
-        std::vector<uint8_t> temp(chunkSizes[i]);
-        // Decompress into the temporary vector.
-        decompressWithZstd(compressedComponents[i], temp, chunkSizes[i]);
-        decompressedSubChunks[i] = temp;
+  for (int i = 0; i < static_cast<int>(compressedComponents.size()); i++) {
+    std::vector<uint8_t> temp(numElements * allComponentSizes[i].size());
+    decompressWithZstd(compressedComponents[i], temp, temp.size());
+
+    // Interleave the decompressed data directly into the final buffer
+    for (size_t elem = 0; elem < numElements; elem++) {
+      size_t readPos = elem * allComponentSizes[i].size();
+      for (size_t sub = 0; sub < allComponentSizes[i].size(); sub++) {
+        size_t idxInElem = allComponentSizes[i][sub] - 1;
+        size_t globalIndex = elem * totalBytesPerElement + idxInElem;
+        finalReconstructed[globalIndex] = temp[readPos + sub];
+      }
     }
+  }
 
-    // 4) Reassemble the full block from the decompressed sub-components.
-    reassembleBytesFromComponentsNested(
-        decompressedSubChunks,
-        finalReconstructed,       // Preallocated destination buffer
-        originalBlockSize,        // Total size of the destination buffer
-        allComponentSizes,
-        numThreads
-    );
-
-    auto endAll = std::chrono::high_resolution_clock::now();
-    pi.total_time_decompressed = std::chrono::duration<double>(endAll - startAll).count();
+  auto endAll = std::chrono::high_resolution_clock::now();
+  pi.total_time_decompressed = std::chrono::duration<double>(endAll - startAll).count();
 }
 
 

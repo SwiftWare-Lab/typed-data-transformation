@@ -278,16 +278,16 @@ inline void zlibDecomposedParallelDecompression(
         std::vector<uint8_t> temp(chunkSizes[i]);
         decompressWithZlib(compressedComponents[i], temp, chunkSizes[i]);
         decompressedSubChunks[i] = temp;
+        // Interleave the decompressed data directly into the final buffer
+        for (size_t elem = 0; elem < numElements; elem++) {
+            size_t readPos = elem * allComponentSizes[i].size();
+            for (size_t sub = 0; sub < allComponentSizes[i].size(); sub++) {
+                size_t idxInElem = allComponentSizes[i][sub] - 1;
+                size_t globalIndex = elem * totalBytesPerElement + idxInElem;
+                finalReconstructed[globalIndex] = temp[readPos + sub];
+            }
+        }
     }
-
-    // 4) Reassemble the full block from the decompressed components.
-    reassembleBytesFromComponentsNested1(
-        decompressedSubChunks,
-        finalReconstructed,
-        originalBlockSize,
-        allComponentSizes,
-        numThreads
-    );
 
     auto endAll = std::chrono::high_resolution_clock::now();
     pi.total_time_decompressed = std::chrono::duration<double>(endAll - startAll).count();
