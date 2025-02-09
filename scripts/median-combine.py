@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # ====================================
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
-directories = ['/home/jamalids/Documents/snappy']
+directories = ['/home/jamalids/Documents/snappy-chunking']
 dataframes = []
 
 for directory_path in directories:
@@ -65,29 +65,22 @@ median_df.to_csv(median_output_path, index=False)
 print(f'Combined CSV with median-based values saved to {median_output_path}')
 
 # ====================================
-# 3. Select pairs per (DatasetName, Threads)
+# 3. Step 2: Select pairs per (DatasetName, Threads)
 #
 # For each (DatasetName, Threads) group:
-#   (a) Select the "Chunk-decompose_Parallel" row with the best CompressionRatio,
-#       but allow a 5% deviation from the maximum. From those candidates, choose
-#       the one with the highest CompressionThroughput.
+#   (a) Select the "Chunked_Decompose_Parallel" row with the maximum CompressionRatio
+#       (and if tied, with maximum CompressionThroughput).
 #   (b) Then, from the same group, select a corresponding "Full" row.
 # ====================================
 selected_pairs = []
 for (dataset, threads), group in median_df.groupby(['DatasetName', 'Threads']):
-    # Get rows for the "Chunk-decompose_Parallel" run type.
     decompose_rows = group[group['RunType'] == 'Chunk-decompose_Parallel']
     if not decompose_rows.empty:
-        # (a) Find maximum CompressionRatio and allow a 5% deviation.
-        max_ratio = decompose_rows['CompressionRatio'].max()
-        threshold = max_ratio * 0.95
-        candidate_rows = decompose_rows[decompose_rows['CompressionRatio'] >= threshold]
-
-        # Choose the candidate with the highest CompressionThroughput.
-        chosen_decompose = candidate_rows.sort_values(by='CompressionThroughput', ascending=False).iloc[0]
+        sorted_decompose = decompose_rows.sort_values(
+            by=['CompressionRatio', 'CompressionThroughput'], ascending=False
+        )
+        chosen_decompose = sorted_decompose.iloc[0]
         selected_pairs.append(chosen_decompose)
-
-        # (b) From the same group, select a corresponding "Full" row.
         full_rows = group[group['RunType'] == 'Full']
         if not full_rows.empty:
             corresponding_full = full_rows.iloc[0]
@@ -99,15 +92,12 @@ selected_df.to_csv(selected_output_path, index=False)
 print(f'CSV with selected pairs saved to {selected_output_path}')
 
 # ====================================
-# 4. Create two final selections.
-#
+# 4. Step 3: Create two final selections.
 # 4A. Final Selection A: For each DatasetName, choose the pair with maximum CompressionThroughput
-#     (using the "Chunk-decompose_Parallel" row).
-#
+#     (using the "Chunked_Decompose_Parallel" row).
 # 4B. Final Selection B: For each DatasetName, choose the pair with maximum DecompressionThroughput
 #     (using the "Full" row).
 # ====================================
-# Final Selection A
 final_A = []
 chunked_df = selected_df[selected_df['RunType'] == 'Chunk-decompose_Parallel']
 if not chunked_df.empty:
@@ -126,7 +116,6 @@ final_output_path_A = '/home/jamalids/Documents/max_compression_throughput_pairs
 final_df_A.to_csv(final_output_path_A, index=False)
 print(f'CSV with pairs having maximum CompressionThroughput saved to {final_output_path_A}')
 
-# Final Selection B
 final_B = []
 full_rows = selected_df[selected_df['RunType'] == 'Full']
 if not full_rows.empty:
@@ -137,7 +126,7 @@ if not full_rows.empty:
         final_B.append(row)
         chunked_row = selected_df[(selected_df['DatasetName'] == dataset) &
                                   (selected_df['Threads'] == threads) &
-                                  (selected_df['RunType'] == 'Chunk-decompose_Parallel')]
+                                  (selected_df['RunType'] == 'Chunked_Decompose_Parallel')]
         if not chunked_row.empty:
             final_B.append(chunked_row.iloc[0])
 final_df_B = pd.DataFrame(final_B)
@@ -148,23 +137,25 @@ print(f'CSV with pairs having maximum DecompressionThroughput saved to {final_ou
 
 # ====================================
 # 5. Plotting
+# We will create two separate figures (one for each final selection) and save them.
 #
-# For each final selection DataFrame (final_df_A and final_df_B), create a figure with 3 subplots:
-#   - Subplot 1: Bar plot of log10(CompressionRatio) by DatasetName (grouped by RunType).
-#   - Subplot 2: Bar plot of CompressionThroughput by DatasetName (grouped by RunType).
-#   - Subplot 3: Bar plot of DecompressionThroughput by DatasetName (grouped by RunType).
+# For each final selection DataFrame (final_df_A and final_df_B), we create a figure with 3 subplots:
+#   Subplot 1: Bar plot of log10(CompressionRatio) by DatasetName (grouped by RunType).
+#   Subplot 2: Bar plot of CompressionThroughput by DatasetName (grouped by RunType).
+#   Subplot 3: Bar plot of DecompressionThroughput by DatasetName (grouped by RunType).
 #
-# Annotate each bar with the number of Threads (taken from the "Full" row).
+# Above each bar, annotate the number of Threads (from the "Full" row; assumed to be the same for both).
 # ====================================
+
 def create_and_save_plot(final_df, title_suffix, output_filename):
     # Pivot the DataFrame so that the index is DatasetName and columns are RunType.
     pivot_log_ratio = final_df.pivot(index='DatasetName', columns='RunType', values='CompressionRatio')
     pivot_log_ratio = np.log10(pivot_log_ratio)
     pivot_comp = final_df.pivot(index='DatasetName', columns='RunType', values='CompressionThroughput')
     pivot_decomp = final_df.pivot(index='DatasetName', columns='RunType', values='DecompressionThroughput')
-
     # Get Threads from the "Full" row.
     threads_pivot = final_df.pivot(index='DatasetName', columns='RunType', values='Threads')
+    # If "Full" column exists, use it; otherwise, use any available column.
     if 'Full' in threads_pivot.columns:
         threads_per_dataset = threads_pivot['Full']
     else:
@@ -178,7 +169,7 @@ def create_and_save_plot(final_df, title_suffix, output_filename):
     ax = axes[0]
     for i, col in enumerate(pivot_log_ratio.columns):
         offset = (i - len(pivot_log_ratio.columns) / 2) * width + width / 2
-        ax.bar(x + offset, pivot_log_ratio[col].values, width=width, label=col)
+        bars = ax.bar(x + offset, pivot_log_ratio[col].values, width=width, label=col)
     ax.set_title("Log10(Compression Ratio) Comparison " + title_suffix)
     ax.set_ylabel("Log10(Compression Ratio)")
     ax.set_xticks(x)
@@ -195,7 +186,7 @@ def create_and_save_plot(final_df, title_suffix, output_filename):
     ax = axes[1]
     for i, col in enumerate(pivot_comp.columns):
         offset = (i - len(pivot_comp.columns) / 2) * width + width / 2
-        ax.bar(x + offset, pivot_comp[col].values, width=width, label=col)
+        bars = ax.bar(x + offset, pivot_comp[col].values, width=width, label=col)
     ax.set_title("Compression Throughput Comparison " + title_suffix)
     ax.set_ylabel("Compression Throughput")
     ax.set_xticks(x)
@@ -212,7 +203,7 @@ def create_and_save_plot(final_df, title_suffix, output_filename):
     ax = axes[2]
     for i, col in enumerate(pivot_decomp.columns):
         offset = (i - len(pivot_decomp.columns) / 2) * width + width / 2
-        ax.bar(x + offset, pivot_decomp[col].values, width=width, label=col)
+        bars = ax.bar(x + offset, pivot_decomp[col].values, width=width, label=col)
     ax.set_title("Decompression Throughput Comparison " + title_suffix)
     ax.set_ylabel("Decompression Throughput")
     ax.set_xticks(x)

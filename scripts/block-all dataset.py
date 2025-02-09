@@ -12,7 +12,8 @@ matplotlib.use("Agg")
 # ------------------------------
 # Specify the folder containing your CSV files.
 # ------------------------------
-folder_path = "/home/jamalids/Documents/results1"
+folder_path = "/home/jamalids/Documents"
+#folder_path = "/home/jamalids/Documents"
 
 # List all CSV files in the folder (include full paths).
 dataset_files = [
@@ -51,7 +52,8 @@ for file_path in dataset_files:
     # Only do this if "RunType" and "TotalValues" exist in your CSV.
     if "RunType" in df.columns and "TotalValues" in df.columns:
         # For rows where RunType == "Full", set BlockSize = TotalValues * 4
-        df.loc[df["RunType"] == "Full", "BlockSize"] = df["TotalValues"] * 4
+        df.loc[(df["RunType"] == "Full") | (df["RunType"] == "Decompose_NonChunked"), "BlockSize"] = df["TotalValues"] * 4
+
 
     # -----------------------------------------------------
     # 4) Convert your known numeric columns
@@ -118,38 +120,36 @@ for file_path in dataset_files:
     grouped = df_median.groupby("GroupLabel")
 
     for label, group in grouped:
-        # Check if this group is "Full" (i.e., RunType == "Full").
-        # Because we've grouped by (Threads,BlockSize,ConfigString,RunType),
-        # you can look at group["RunType"].unique().
-        # If all are "Full," treat as horizontal lines:
+        # Determine if this group is "Full" or "Decompose_NonChunked"
         is_full = (group["RunType"] == "Full").all()
+        is_decompose_nonchunked = (group["RunType"] == "Decompose_NonChunked").all()
 
         if is_full:
-            # Just take the (single) median value from that group
-            # (Because after groupby+median, "Full" typically has 1 row per Threads/Config combo.)
+            # Get the (single) median values from that group.
             comp_time = group["TotalTimeCompressed"].iloc[0]
             decomp_time = group["TotalTimeDecompressed"].iloc[0]
             ratio = group["CompressionRatio"].iloc[0]
 
-            # Plot horizontal lines across the entire x‐range.
-            # `axhline` draws a line parallel to the x‐axis at the given y.
-            ax_ctime.axhline(
-                y=comp_time, label=label, color="red", linestyle="--", linewidth=2
-            )
-            ax_dtime.axhline(
-                y=decomp_time, label=label, color="red", linestyle="--", linewidth=2
-            )
-            ax_cratio.axhline(
-                y=ratio, label=label, color="red", linestyle="--", linewidth=2
-            )
+            # Plot horizontal lines across the entire x-range.
+            ax_ctime.axhline(y=comp_time, label=label, color="red", linestyle="--", linewidth=2)
+            ax_dtime.axhline(y=decomp_time, label=label, color="red", linestyle="--", linewidth=2)
+            ax_cratio.axhline(y=ratio, label=label, color="red", linestyle="--", linewidth=2)
+
+        elif is_decompose_nonchunked:
+            comp_time = group["TotalTimeCompressed"].iloc[0]
+            decomp_time = group["TotalTimeDecompressed"].iloc[0]
+            ratio = group["CompressionRatio"].iloc[0]
+
+            ax_ctime.axhline(y=comp_time, label=label, color="black", linestyle="--", linewidth=2)
+            ax_dtime.axhline(y=decomp_time, label=label, color="black", linestyle="--", linewidth=2)
+            ax_cratio.axhline(y=ratio, label=label, color="black", linestyle="--", linewidth=2)
 
         else:
-            # Normal runs: Plot vs. numeric BlockSize
+            # Normal runs: plot versus numeric BlockSize.
             x = group["BlockSize"].map(mapping).values
             ax_ctime.plot(x, group["TotalTimeCompressed"], marker="o", linestyle="-", label=label)
             ax_dtime.plot(x, group["TotalTimeDecompressed"], marker="o", linestyle="-", label=label)
             ax_cratio.plot(x, group["CompressionRatio"], marker="o", linestyle="-", label=label)
-
     # Now finalize each subplot as before:
     ax_ctime.set_title(f"Compression Time vs Block Size\n({dataset_name})")
     ax_ctime.set_xlabel("Block Size (bytes)")
