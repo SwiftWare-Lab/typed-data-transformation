@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # ====================================
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
-directories = ['/home/jamalids/Documents/snappy']
+directories = ['/home/jamalids/Documents/fastlz1']
 dataframes = []
 
 for directory_path in directories:
@@ -76,7 +76,9 @@ print(f'Combined CSV with median-based values saved to {median_output_path}')
 selected_pairs = []
 for (dataset, threads), group in median_df.groupby(['DatasetName', 'Threads']):
     # Get rows for the "Chunk-decompose_Parallel" run type.
-    decompose_rows = group[group['RunType'] == 'Chunk-decompose_Parallel']
+    #decompose_rows = group[group['RunType'] == 'Chunked_Decompose_Parallel']
+    decompose_rows = group[group['RunType'] == 'Decompose_Block_Parallel']
+
     if not decompose_rows.empty:
         # (a) Find maximum CompressionRatio and allow a 5% deviation.
         max_ratio = decompose_rows['CompressionRatio'].max()
@@ -109,7 +111,9 @@ print(f'CSV with selected pairs saved to {selected_output_path}')
 # ====================================
 # Final Selection A
 final_A = []
-chunked_df = selected_df[selected_df['RunType'] == 'Chunk-decompose_Parallel']
+#chunked_df = selected_df[selected_df['RunType'] == 'Chunked_Decompose_Parallel']
+chunked_df = selected_df[selected_df['RunType'] == 'Decompose_Block_Parallel']
+
 if not chunked_df.empty:
     best_chunked = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionThroughput'].idxmax()]
     for idx, row in best_chunked.iterrows():
@@ -137,7 +141,7 @@ if not full_rows.empty:
         final_B.append(row)
         chunked_row = selected_df[(selected_df['DatasetName'] == dataset) &
                                   (selected_df['Threads'] == threads) &
-                                  (selected_df['RunType'] == 'Chunk-decompose_Parallel')]
+                                  (selected_df['RunType'] == 'Decompose_Block_Parallel')]
         if not chunked_row.empty:
             final_B.append(chunked_row.iloc[0])
 final_df_B = pd.DataFrame(final_B)
