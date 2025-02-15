@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <cufile.h>
+#include </usr/local/cuda-12.3/targets/x86_64-linux/include/cufile.h>
 #include <nvtx3/nvToolsExt.h>
 
 #include "nvcomp.hpp"

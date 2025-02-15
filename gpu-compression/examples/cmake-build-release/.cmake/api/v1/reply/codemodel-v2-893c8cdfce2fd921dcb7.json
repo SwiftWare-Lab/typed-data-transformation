@@ -1,0 +1,141 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "nvcomp-examples",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "deflate_cpu_compression::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-deflate_cpu_compression-Release-408347db6d546203d638.json",
+					"name" : "deflate_cpu_compression",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "deflate_cpu_decompression::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-deflate_cpu_decompression-Release-445b4b9c43da030b5570.json",
+					"name" : "deflate_cpu_decompression",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "gdeflate_cpu_compression::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-gdeflate_cpu_compression-Release-9f3cef723fb5bb4bcd9c.json",
+					"name" : "gdeflate_cpu_compression",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "gdeflate_cpu_compression1::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-gdeflate_cpu_compression1-Release-5f5a34f85ff5c44764a6.json",
+					"name" : "gdeflate_cpu_compression1",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "gzip_gpu_decompression::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-gzip_gpu_decompression-Release-ac3a7e4505ac273fb0d0.json",
+					"name" : "gzip_gpu_decompression",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "high_level_quickstart_example::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-high_level_quickstart_example-Release-4dfa750bbf0803cdcfa1.json",
+					"name" : "high_level_quickstart_example",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "low_level_quickstart_example::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-low_level_quickstart_example-Release-1873a539554634283c40.json",
+					"name" : "low_level_quickstart_example",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "lz4_cpu_compression::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-lz4_cpu_compression-Release-581d22694321826951ae.json",
+					"name" : "lz4_cpu_compression",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "lz4_cpu_decompression::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-lz4_cpu_decompression-Release-89e3716a79de85a8602c.json",
+					"name" : "lz4_cpu_decompression",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "nvcomp_gds::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-nvcomp_gds-Release-0fd75b21d8cbee7cd47a.json",
+					"name" : "nvcomp_gds",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release",
+		"source" : "/home/jamalids/development/big-data-compression/gpu-compression/examples"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

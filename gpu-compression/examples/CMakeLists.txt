@@ -32,7 +32,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   find_package(nvcomp REQUIRED)
 else()
   message(STATUS "Building examples as part of the nvCOMP library build.")
-  
+
   # Options
   option(BUILD_GDS_EXAMPLE "Build nvCOMP with the GDS example" OFF)
 
