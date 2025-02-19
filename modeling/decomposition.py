@@ -6,9 +6,7 @@ import pandas as pd
 
 from xor_based import encode_xor_floats
 from utils import tuple_to_string, compute_entropy, list_to_string, find_max_consecutive_similar_values
-from compression_tools import zstd_comp,zlib_comp,bz2_comp,snappy_comp,fastlz_compress,rle_compress,huffman_compress
-
-
+from compression_tools import zstd_comp, zlib_comp, bz2_comp, snappy_comp, fastlz_compress, rle_compress, huffman_compress, blosc_comp,blosc_comp_bit
 
 
 def possible_sum(m):
@@ -69,7 +67,6 @@ def compress_data(data_set_list, compress_method, order='F'):
     # view data_set as bytes
     compressed_data, compressed_size = [], 0
     for cmp in data_set_list:
-        #data_set_bytes = cmp.view(np.byte)
         data_set_bytes = np.frombuffer(cmp.flatten(order).tobytes(), dtype=np.byte)
         compressed_comp = compress_method(data_set_bytes)
         compressed_data.append(compressed_comp)
@@ -81,7 +78,6 @@ def transform_data(data_set_list, order='C'):
     # view data_set as bytes
     compressed_data = []
     for cmp in data_set_list:
-        #data_set_bytes = cmp.view(np.byte)
         data_set_bytes = np.frombuffer(cmp.flatten(order).tobytes(), dtype=np.byte)
         compressed_data.append(data_set_bytes)
     # flatten the list
@@ -128,13 +124,10 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
                  'Dimension': len(data_set), 'decomposition': tuple_to_string(decomp), 'chunk no': chuck_no}
         comp_list, comp_list_bytes = [], []
         for cur_comp in decomp:
-            cur_comp_data =np.zeros((len(cur_comp), len(data_set)), dtype=type_byte)
+            cur_comp_data = np.zeros((len(cur_comp), len(data_set)), dtype=type_byte)
             for i in range(len(cur_comp)):
                 cur_comp_data[i] = comps[cur_comp[i]]
             comp_list.append(cur_comp_data)
-            #comp_list_bytes.append(cur_comp_data.flatten('F').tobytes())
-        # concatenate comp_list list
-        #reordered_full_data = np.concatenate(comp_list, axis=0)
         reordered_full_data_row_based = transform_data(comp_list, order='C')
         reordered_full_data = transform_data(comp_list, order='F')
 
@@ -152,11 +145,11 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             stats[f'decomposed row-ordered {comp_name} compressed size (B)'] = decomp_compressed_size_row_based
 
             stats[f'reordered {comp_name} compressed size (B)'] = reordered_compressed_size
-            stats[f'reordered row-ordered {comp_name} compressed size (B)'] = reordered_compressed_size_row_based
+            stats[f'reordered row-based {comp_name} compressed size (B)'] = reordered_compressed_size_row_based
 
             stats[f'standard {comp_name} compressed size (B)'] = full_comp_size
             print(f'decomp: {tuple_to_string(decomp)} : {comp_name} compression ratio: {len_bytes/full_comp_size}, decomposed compression ratio: {len_bytes/decomp_compressed_size},'
-                    f' decomposed row-based compression ratio: {len_bytes/decomp_compressed_size_row_based}, reordered compression ratio: {len_bytes/reordered_compressed_size}, '
+                  f' decomposed row-based compression ratio: {len_bytes/decomp_compressed_size_row_based}, reordered compression ratio: {len_bytes/reordered_compressed_size}, '
                   f' reordered row-based compression ratio: {len_bytes/reordered_compressed_size_row_based}')
         # calculate entropy
         entropy_list, WE, entropy_word, rle_max, uniq_ratio = analyze_data(comp_list, data_set)
@@ -166,7 +159,7 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
         stats['max rep'] = list_to_string(rle_max)
         stats['unique ratio'] = list_to_string(uniq_ratio)
         stat_array.append(stats)
-        if out_log_dir != '' and ( ((idx+1) % 20 == 0) or (idx+1) == len(all_4) ):
+        if out_log_dir != '' and (((idx+1) % 20 == 0) or ((idx+1) == len(all_4))):
             # store stats in a csv file
             stats_df = pd.DataFrame(stat_array)
             if not os.path.exists(out_log_dir):
@@ -179,13 +172,15 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
 
 chunk_size = -1
 contig_order = False
-dataset_path = sys.argv[1]
-m = int(sys.argv[2])
-if len(sys.argv) > 3:
-    chunk_size = int(sys.argv[3])
-if len(sys.argv) > 4:
-    contig_order = bool(sys.argv[4])
-
+# dataset_path = sys.argv[1]
+# m = int(sys.argv[2])
+# if len(sys.argv) > 3:
+#     chunk_size = int(sys.argv[3])
+# if len(sys.argv) > 4:
+#     contig_order = bool(sys.argv[4])
+dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/jw_mirimage_f32.tsv"
+m=4
+chunk_size = -1
 
 dataset_name = dataset_path.split('/')[-1].split('.')[0]
 # open tsv file with df
@@ -200,18 +195,26 @@ else:
 
 if chunk_size == -1:
     comp_tool_dict = {
-        'huffman_compress' : huffman_compress,
-        'zstd' : zstd_comp,
-        'zlib' : zlib_comp,
-        'bz2' : bz2_comp, 'snappy' : snappy_comp,
-        'fastlz' : fastlz_compress, 'rle' : rle_compress,
-        #'xor': encode_xor_floats
+        # 'huffman_compress': huffman_compress,
+        # 'zstd': zstd_comp,
+        # 'zlib': zlib_comp,
+        # 'bz2': bz2_comp,
+        # 'snappy': snappy_comp,
+        # 'fastlz': fastlz_compress,
+        # 'rle': rle_compress,
+        'blosc': blosc_comp ,
+        'blosc_bit': blosc_comp_bit ,# Added blosc from compression_tools
                       }
     stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='logs')
 else:
-    comp_tool_dict = {'zstd' : zstd_comp, 'zlib' : zlib_comp,
-                      'bz2' : bz2_comp, 'snappy' : snappy_comp,
-                      'xor' : encode_xor_floats}
+    comp_tool_dict = {
+        'zstd': zstd_comp,
+        'zlib': zlib_comp,
+        'bz2': bz2_comp,
+        'snappy': snappy_comp,
+        'xor': encode_xor_floats,
+        'blosc': blosc_comp  # Added blosc from compression_tools
+    }
     no_chunks = len(sliced_data) // chunk_size
     no_chunks = np.min([100, no_chunks])
     stats_array = []
@@ -224,6 +227,3 @@ else:
         os.makedirs('logs')
     stats_df.to_csv(f'logs/{dataset_name}_decomposition_streaming_stats.csv', index=False)
 #stats = test_decomposition(sliced_data, dataset_name, given_decomp=[((0,), (1, 2), (3,))], m=m, comp_tool_dict=comp_tool_dict)
-
-
-

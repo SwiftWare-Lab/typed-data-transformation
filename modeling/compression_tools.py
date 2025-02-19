@@ -6,6 +6,54 @@ import snappy
 import lzma as lz2
 import lz4.frame as fastlz
 from dahuffman import HuffmanCodec
+import numpy as np
+import blosc
+
+def blosc_comp(data, clevel=3, shuffle=blosc.SHUFFLE, codec='zstd'):
+    """
+    Compresses data using Blosc.
+
+    Parameters:
+      data: The input data to compress. This can be a NumPy array (e.g., float32)
+            or a bytes object.
+      clevel (int): Compression level (typically 1-9).
+      shuffle: Shuffle filter to use (e.g., blosc.SHUFFLE or blosc.BITSHUFFLE).
+      codec (str): Compression codec to use (e.g., 'zstd', 'lz4', 'blosclz', etc.).
+
+    Returns:
+      The compressed data as a bytes object.
+    """
+    if isinstance(data, np.ndarray):
+        typesize = data.dtype.itemsize  # For float32, this will be 4.
+        data_bytes = data.tobytes()
+    else:
+        typesize = 1
+        data_bytes = data
+
+    return blosc.compress(data_bytes, typesize=typesize, cname=codec, clevel=clevel, shuffle=shuffle)
+
+def blosc_comp_bit(data, clevel=3, shuffle=blosc.SHUFFLE, codec='zstd'):
+    """
+    Compresses data using Blosc.
+
+    Parameters:
+      data: The input data to compress. This can be a NumPy array (e.g., float32)
+            or a bytes object.
+      clevel (int): Compression level (typically 1-9).
+      shuffle: Shuffle filter to use (e.g., blosc.SHUFFLE or blosc.BITSHUFFLE).
+      codec (str): Compression codec to use (e.g., 'zstd', 'lz4', 'blosclz', etc.).
+
+    Returns:
+      The compressed data as a bytes object.
+    """
+    if isinstance(data, np.ndarray):
+        typesize = data.dtype.itemsize  # For float32, this will be 4.
+        data_bytes = data.tobytes()
+    else:
+        typesize = 1
+        data_bytes = data
+
+    return blosc.compress(data_bytes, typesize=typesize, cname=codec, clevel=clevel, shuffle=blosc.BITSHUFFLE)
 
 
 def zstd_comp(data_set):

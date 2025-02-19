@@ -100,6 +100,8 @@ def compute_conditional_entropy(byte_groups, config_str):
     For example, if config_str is "{ [1]- [2]- [3]- [4] }" then each channel is its own cluster.
     """
     if config_str.strip() == "0":
+        # "No grouping" => interpret it as the entire array is one chunk
+        # The existing code merges all channels and returns single-entropy
         merged = np.concatenate(byte_groups)
         return compute_total_entropy(merged.tobytes())
 
@@ -115,9 +117,44 @@ def compute_conditional_entropy(byte_groups, config_str):
     return cond_entropy
 
 
+# --------------------------- Byte-Group Entropy --------------------------- #
+
+def compute_bytegroup_entropy(byte_data, bytes_per_value=4):
+    """
+    For a float32 array (4 bytes each), we create 4 clusters:
+      - Cluster #1: all first bytes of every float
+      - Cluster #2: all second bytes
+      - Cluster #3: all third bytes
+      - Cluster #4: all fourth bytes
+
+    Then we compute the weighted average of entropies of these 4 clusters.
+    If you use float64, you'd have 8 bytes per value => 8 clusters, etc.
+    """
+
+    # raw is the entire dataset's bytes. We'll separate it by offset 0..(bytes_per_value-1)
+    raw = np.frombuffer(byte_data, dtype=np.uint8)
+    # total floats = len(raw) // bytes_per_value
+    total_len = len(raw)
+    # We'll build the 4 clusters
+    cluster_entropies = []
+    stride = bytes_per_value
+    for offset in range(bytes_per_value):
+        # Extract the offset-th byte from each float
+        # i.e. raw[offset], raw[offset+stride], raw[offset+2*stride], ...
+        cluster = raw[offset::stride]
+        # compute entropy of this cluster
+        e = compute_total_entropy(cluster.tobytes())
+        # Weighted by cluster size
+        w = len(cluster) / total_len
+        cluster_entropies.append(w * e)
+
+    # sum them up for final "conditional" measure
+    return sum(cluster_entropies)
+
+
 # --------------------------- Main Analysis Function --------------------------- #
 
-def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_ratiosfastlz64.csv",
+def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_ratioszstd32.csv",
                  default_full_channels=4, data_dtype=np.float32):
     """
     For each dataset listed in the CSV file:
@@ -128,23 +165,25 @@ def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_
         are interleaved.
       - Split the resulting byte stream into the original channels using the known number
         of channels and the number of bytes per value.
-      - Compute the full entropy (on the entire byte stream) and the conditional entropy by merging
-        channels as defined by the ConfigString.
-      - Compute two ratios:
+      - Compute:
+          1) full_entropy (the entire byte stream)
+          2) conditional_entropy (based on config_str from CSV)
+          3) bytegroup_entropy (4 clusters for float32, or 8 for float64, etc.)
+      - Then compute two ratios:
             * EntropyRatio = FullEntropy / ConditionalEntropy
             * CompRatioRatio = CompressionRatio_Full / CompressionRatio_Chunk
-      - Save the results (including FullEntropy, ConditionalEntropy, EntropyRatio,
+      - Save the results (including FullEntropy, ConditionalEntropy, ByteGroupEntropy, EntropyRatio,
         CompressionRatio_Full, CompressionRatio_Chunk, and CompRatioRatio) to a CSV file.
-      - Plot a scatter plot with:
-            x-axis: EntropyRatio (with dataset names as annotations)
-            y-axis: CompRatioRatio
+      - Plot:
+          (A) A scatter: x=EntropyRatio, y=CompRatioRatio
+          (B) A grouped bar chart of [FullEntropy, ConditionalEntropy, ByteGroupEntropy]
+              for each dataset on the x-axis.
 
-    The CSV file passed to this function must contain at least the following columns:
+    The CSV file must contain at least:
         - DatasetName
-        - RunType (with values "Full" and "Chunked_Decompose_Parallel")
+        - RunType (with values "Full" and "Decompose_Block_Parallel")
         - ConfigString (for the Chunked run; e.g. "0" or "{ [1]- [2]- [3]- [4] }")
-        - CompressionRatio (for both Full and Chunked runs, which become available as
-                              CompressionRatio_Full and CompressionRatio_Chunk after merging)
+        - CompressionRatio (for both Full and Chunked runs)
     """
     # Read the CSV file
     df = pd.read_csv(csv_file)
@@ -155,12 +194,17 @@ def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_
     df_merged = pd.merge(df_full, df_chunk, on='DatasetName', suffixes=('_Full', '_Chunk'))
 
     results = []
+
+    ### Identify how many bytes each data type has
+    bytes_per_value = np.dtype(data_dtype).itemsize  # 4 if float32, 8 if float64
+
     for idx, row in df_merged.iterrows():
         dataset_name = row['DatasetName']
         raw_file = os.path.join(raw_data_folder, dataset_name + '.tsv')
         if not os.path.exists(raw_file):
             print(f"Raw file {raw_file} not found, skipping {dataset_name}.")
             continue
+
         try:
             ts_data = pd.read_csv(raw_file, delimiter='\t', header=None)
             # Assume the first column is an identifier; the remaining columns contain numeric data.
@@ -173,48 +217,48 @@ def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_
             print(f"Error loading {raw_file}: {e}")
             continue
 
-        # Use the Chunked run's ConfigString. If it is "0", assume no grouping.
+        # 1) Full entropy
+        full_entropy = compute_total_entropy(byte_data)
+
+        # 2) Conditional entropy (based on config_str from CSV)
         config_str = str(row['ConfigString_Chunk']).strip()
         if config_str == "0":
             total_channels = default_full_channels
         else:
             groups = parse_config_string_to_groups(config_str)
-            # The total number of original channels is the sum of the counts in the config.
-            # For example, if config_str is "{ [1]- [2]- [3]- [4] }", then groups = [[1],[2],[3],[4]]
-            # and total_channels = 1+1+1+1 = 4.
             total_channels = sum(len(g) for g in groups)
 
-        # Determine the number of bytes per value.
-        bytes_per_value = np.dtype(data_dtype).itemsize
-        # Split the raw byte stream into channels.
+        # Split the raw byte stream into channels as per original code
         byte_groups = split_bytes_into_components(byte_data, total_channels, bytes_per_value)
-
-        # Compute the full entropy over the entire byte stream.
-        full_entropy = compute_total_entropy(byte_data)
-        # Compute the conditional entropy by merging channels according to the config string.
         cond_entropy = compute_conditional_entropy(byte_groups, config_str)
 
-        # Extract compression ratios from the CSV for the Full and Chunked runs.
+        # 3) Byte-group entropy
+        #    E.g. float32 => 4 clusters: each offset in [0..3] => weighted sum
+        #    float64 => 8 clusters, etc.
+        bytegroup_entropy = compute_bytegroup_entropy(byte_data, bytes_per_value=bytes_per_value)
+
+        # Extract compression ratios
         comp_ratio_full = row['CompressionRatio_Full']
         comp_ratio_chunk = row['CompressionRatio_Chunk']
 
-        # Compute the desired ratios.
+        # Compute the desired ratios
         entropy_ratio = full_entropy / cond_entropy if cond_entropy != 0 else np.nan
-        comp_ratio_ratio = comp_ratio_full / comp_ratio_chunk if comp_ratio_chunk != 0 else np.nan
+        comp_ratio_ratio = (comp_ratio_full / comp_ratio_chunk) if comp_ratio_chunk != 0 else np.nan
 
         results.append({
             'DatasetName': dataset_name,
             'FullEntropy': full_entropy,
             'ConditionalEntropy': cond_entropy,
+            'ByteGroupEntropy': bytegroup_entropy,
             'EntropyRatio': entropy_ratio,
             'CompRatioFull': comp_ratio_full,
             'CompRatioChunk': comp_ratio_chunk,
             'CompRatioRatio': comp_ratio_ratio
         })
         print(f"Processed {dataset_name}: FullEntropy={full_entropy:.4f}, "
-              f"ConditionalEntropy={cond_entropy:.4f}, EntropyRatio={entropy_ratio:.4f}, "
-              f"CompRatioFull={comp_ratio_full}, CompRatioChunk={comp_ratio_chunk}, "
-              f"CompRatioRatio={comp_ratio_ratio:.4f}")
+              f"ConditionalEntropy={cond_entropy:.4f}, ByteGroupEntropy={bytegroup_entropy:.4f}, "
+              f"EntropyRatio={entropy_ratio:.4f}, CompRatioFull={comp_ratio_full}, "
+              f"CompRatioChunk={comp_ratio_chunk}, CompRatioRatio={comp_ratio_ratio:.4f}")
 
     df_results = pd.DataFrame(results)
 
@@ -222,10 +266,9 @@ def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_
     df_results.to_csv(output_csv, index=False)
     print(f"Results saved to {output_csv}")
 
-    # --------------------------- Plotting --------------------------- #
-    # Remove points with ConditionalEntropy equal to 0 to avoid division issues.
+    # --------------------------- (A) Scatter Plot --------------------------- #
+    # Remove points with ConditionalEntropy=0 to avoid /0 in EntropyRatio
     df_plot = df_results[(df_results['ConditionalEntropy'] != 0) & (df_results['EntropyRatio'] < 4)]
-
 
     plt.figure(figsize=(10, 6))
     plt.scatter(df_plot['EntropyRatio'], df_plot['CompRatioRatio'], color='blue', s=60)
@@ -239,9 +282,37 @@ def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_
     plt.title('Entropy Ratio vs Compression Ratio Ratio')
     plt.grid(True)
     plt.tight_layout()
-    output_plot = "entropy_ratio_vs_compression_ratio_ratio64-fastlz64.png"
+    output_plot = "entropy_ratio_vs_compression_ratio_ratio64-zstd32.png"
     plt.savefig(output_plot)
     print(f"Plot saved as {output_plot}")
+    plt.show()
+
+    # --------------------------- (B) Bar Chart: Full vs Conditional vs ByteGroup --------------------------- #
+    # We create a grouped bar chart with 3 bars for each dataset
+    df_plot2 = df_results[['DatasetName', 'FullEntropy', 'ConditionalEntropy', 'ByteGroupEntropy']].copy()
+    # Sort by dataset name for consistent x-axis
+    df_plot2.sort_values(by='DatasetName', inplace=True)
+
+    x_labels = df_plot2['DatasetName'].tolist()
+    x = np.arange(len(x_labels))  # index for each dataset
+    width = 0.25
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(x - width, df_plot2['FullEntropy'], width, label='FullEntropy')
+    ax.bar(x, df_plot2['ConditionalEntropy'], width, label='ConditionalEntropy')
+    ax.bar(x + width, df_plot2['ByteGroupEntropy'], width, label='ByteGroupEntropy')
+
+    ax.set_xlabel("DatasetName")
+    ax.set_ylabel("Entropy (bits)")
+    ax.set_title("Comparison of Entropy: Full vs. Conditional vs. ByteGroup")
+    ax.set_xticks(x)
+    ax.set_xticklabels(x_labels, rotation=45, ha='right')
+    ax.legend()
+    ax.grid(axis='y')
+
+    plt.tight_layout()
+    plt.savefig("entropy_comparison_barplot.png")
+    print("Bar chart saved as entropy_comparison_barplot.png")
     plt.show()
 
 
@@ -249,8 +320,13 @@ def run_analysis(csv_file, raw_data_folder, output_csv="entropy_and_compression_
 
 if __name__ == "__main__":
     # Path to the CSV file that contains grouping and compression ratio information.
-    csv_file = "/home/jamalids/Documents/fastlz1/results/max_decompression_throughput_pairs.csv"  # Update this path as needed.
+    csv_file = "/home/jamalids/Documents/zstd/results/max_decompression_throughput_pairs.csv"  # Update this path as needed.
     # Folder containing the raw data TSV files (one per dataset).
-    raw_data_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"  # Update as needed.
-    # Specify the desired data type: use np.float32 for 32-bit (4 bytes per value) or np.float64 for 64-bit.
-    run_analysis(csv_file, raw_data_folder, default_full_channels=4, data_dtype=np.float32)
+    raw_data_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"  # Update as needed.
+
+    # data_dtype => np.float32 => 4 bytes per value => 4 byte clusters
+    # or np.float64 => 8 bytes => 8 byte clusters
+    run_analysis(csv_file, raw_data_folder,
+                 output_csv="entropy_and_compression_ratiosfastzstd_extended.csv",
+                 default_full_channels=4,
+                 data_dtype=np.float32)
