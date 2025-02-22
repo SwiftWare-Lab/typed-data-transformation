@@ -6,18 +6,18 @@ import pandas as pd
 
 # --------------------------------------------------------------------
 # Add your compression and utility functions here (from compression_tools, utils, etc.)
-# For example:
-from xor_based import encode_xor_floats
-from utils import tuple_to_string, compute_entropy, list_to_string, find_max_consecutive_similar_values
-from compression_tools import (
+# --------------------------------------------------------------------
+from modeling.xor_based import encode_xor_floats
+from modeling.utils import tuple_to_string, compute_entropy, list_to_string, find_max_consecutive_similar_values
+from modeling.compression_tools import (
     zstd_comp, zlib_comp, bz2_comp, snappy_comp, fastlz_compress,
     rle_compress, huffman_compress,
     blosc_comp, blosc_comp_bit
 )
 
 # --------------------------------------------------------------------
- # Example compConfigMap
-# -------------------------------------------------------------------------
+# Example compConfigMap
+# --------------------------------------------------------------------
 compConfigMap = {
     "acs_wht_f32": [[[1, 2], [3], [4]]],
     "g24_78_usb2_f32": [[[1, 2, 3], [4]]],
@@ -27,92 +27,78 @@ compConfigMap = {
     "wave_f32": [[[1, 2], [3], [4]]],
     "hdr_night_f32": [
         [[1, 4], [2], [3]],
-
     ],
-    "ts_gas_f32": [[[1, 2], [3], [4]], ],
-    "solar_wind_f32": [[[1], [2, 3], [4]],],
+    "ts_gas_f32": [
+        [[1, 2], [3], [4]],
+    ],
+    "solar_wind_f32": [
+        [[1], [2, 3], [4]],
+    ],
     "tpch_lineitem_f32": [
         [[1, 2, 3], [4]],
-
     ],
     "tpcds_web_f32": [
         [[1, 2, 3], [4]],
-
     ],
     "tpcds_store_f32": [
         [[1, 2, 3], [4]],
-
     ],
     "tpcds_catalog_f32": [
         [[1, 2, 3], [4]],
-
     ],
     "citytemp_f32": [
         [[1, 4], [2, 3]],
-
     ],
     "hst_wfc3_ir_f32": [
         [[1, 2], [3], [4]],
-
     ],
     "hst_wfc3_uvis_f32": [
         [[1, 2], [3], [4]],
-
     ],
     "rsim_f32": [
         [[1, 2, 3], [4]],
-
     ],
     "astro_mhd_f64": [
         [[1, 2, 3, 4, 5, 6], [7], [8]],
-
     ],
     "astro_pt_f64": [
         [[1, 2, 3, 4, 5, 6], [7], [8]],
-
     ],
     "jane_street_f64": [
         [[1, 2, 3, 4, 5, 6], [7], [8]],
-
     ],
     "msg_bt_f64": [
         [[1, 2, 3, 4, 5], [6], [7], [8]],
-
     ],
     "num_brain_f64": [
         [[3, 2, 4, 5, 1, 6], [7], [8]],
-
     ],
     "num_control_f64": [
         [[1, 2, 3, 4, 5, 6], [7], [8]],
-
     ],
     "nyc_taxi2015_f64": [
         [[7, 4, 6], [5], [3, 2, 1, 8]],
-
     ],
     "phone_gyro_f64": [
         [[4, 6], [8], [3, 2, 1, 7], [5]],
-
     ],
     "tpch_order_f64": [
         [[1, 2, 3, 4], [7], [6, 5], [8]],
-
     ],
     "tpcxbb_store_f64": [
         [[4, 2, 3], [1], [5], [7], [6], [8]],
-
     ],
     "tpcxbb_web_f64": [
         [[4, 2, 3], [1], [5], [7], [6], [8]],
-
     ],
     "wesad_chest_f64": [
         [[7, 5, 6], [8, 4, 1, 3, 2]],
-
     ],
-    "default": [[[1], [2], [3], [4]]],
+    "default": [
+        [[1], [2], [3], [4]]
+    ],
 }
+
 
 # --------------------------------------------------------------------
 # Utility to find all integer compositions (not used if we only want custom)
@@ -244,8 +230,9 @@ def analyze_data(data_set_list, data_set_word):
 # --------------------------------------------------------------------
 # test_decomposition function
 # --------------------------------------------------------------------
-def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=None,
-                       m=4, chuck_no=-1, contig_order=True, out_log_dir=''):
+def test_decomposition(data_set, dataset_name, comp_tool_dict={},
+                       given_decomp=None, m=4, chuck_no=-1,
+                       contig_order=True, out_log_dir=''):
     """
     data_set: 1D array of floats
     dataset_name: string for logging
@@ -292,7 +279,6 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
         # Build a list of sub-component arrays for each group
         comp_list = []
         for group_tuple in decomp:
-            # e.g. group_tuple might be (0,1)
             group_len = len(group_tuple)
             cur_comp_data = np.zeros((group_len, len(data_set)), dtype=type_byte)
             for idx2, byte_idx in enumerate(group_tuple):
@@ -324,7 +310,6 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             stats[f'reordered {comp_name} row-order (B)'] = reordered_compressed_size_row
 
             # ---- Compute compression ratios ----
-            # Ratio = original_size / compressed_size
             def ratio(orig, comp):
                 return float('inf') if comp == 0 else orig / comp
 
@@ -353,16 +338,15 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
 
     return stat_array
 
-import os
-import sys
-import numpy as np
-import pandas as pd
 
+# --------------------------------------------------------------------
+# Main script
+# --------------------------------------------------------------------
 def main():
     # Folder containing the datasets
-    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/"
-    m = 4               # For float32
-    chunk_size = -1     # If not -1, we do block-based
+    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
+    m = 8               # For float32
+    chunk_size = 65536  # If not -1, we do block-based
     contig_order = False
 
     # Ensure folder exists
@@ -383,11 +367,11 @@ def main():
         # Load the data from TSV
         data_df = pd.read_csv(dataset_path, sep='\t')
 
+        # Cast to the appropriate float type
         if m == 2:
             sliced_data = data_df.values[:, 1].astype(np.float16)
         elif m == 4:
-            sliced_data1 = data_df.values[:, 1].astype(np.float32)
-            sliced_data = sliced_data1[49151:65536]
+            sliced_data = data_df.values[:, 1].astype(np.float32)
         else:
             sliced_data = data_df.values[:, 1].astype(np.float64)
 
@@ -411,14 +395,17 @@ def main():
         # 2) Build compression tool dictionary
         # ---------------------------------------------------------------
         comp_tool_dict = {
-            'zstd': zstd_comp,
+            # Example: 'zstd': zstd_comp,
+            #'huffman_compress': huffman_compress,
+            #'zlib': zlib_comp,
+            'blosc': blosc_comp,
         }
 
         # ---------------------------------------------------------------
         # 3) Run either once (chunk_size = -1) or in blocks
         # ---------------------------------------------------------------
         if chunk_size == -1:
-            # Single pass
+            # Single pass (no chunking)
             stats = test_decomposition(
                 data_set=sliced_data,
                 dataset_name=dataset_name,
@@ -429,11 +416,12 @@ def main():
                 out_log_dir='logs'
             )
             print(f"Done: wrote stats in logs/{dataset_name}_decomposition_stats.csv")
+
         else:
             # Chunked approach
             no_chunks = len(sliced_data) // chunk_size
-            no_chunks = min(no_chunks, 100)  # if you want a limit
             stats_array = []
+
             for i in range(no_chunks):
                 block_data = sliced_data[i * chunk_size : (i + 1) * chunk_size]
                 block_stats = test_decomposition(
@@ -444,16 +432,58 @@ def main():
                     chuck_no=i,
                     given_decomp=converted_decomps,
                     contig_order=contig_order,
-                    out_log_dir=''  # or 'logs' if you want partial logs each iteration
+                    out_log_dir=''  # omit partial logs each iteration
                 )
                 stats_array.extend(block_stats)
 
-            # Save final CSV
-            stats_df = pd.DataFrame(stats_array)
+            # -----------------------------------------------------------
+            # Aggregate all chunk-based stats into ONE row
+            # -----------------------------------------------------------
+            if len(stats_array) == 0:
+                print(f"No data for dataset {dataset_name} with chunk_size={chunk_size}. Skipping.")
+                continue
+
+            aggregated_stats = {}
+            aggregated_stats['dataset name'] = dataset_name
+
+            # Sum the original sizes from each chunk
+            total_original = sum(row['original size'] for row in stats_array)
+            aggregated_stats['total original size'] = total_original
+
+            # For each compression tool, sum the compressed sizes and compute ratio
+            # We must match the EXACT keys from test_decomposition
+            # e.g. "standard huffman_compress compressed size (B)", "decomposed huffman_compress col-order (B)", etc.
+            ordering_variants = [
+                ('standard',    'standard {comp_name} compressed size (B)'),
+                ('decomposed col-order', 'decomposed {comp_name} col-order (B)'),
+                ('decomposed row-order', 'decomposed {comp_name} row-order (B)'),
+                ('reordered col-order',  'reordered {comp_name} col-order (B)'),
+                ('reordered row-order',  'reordered {comp_name} row-order (B)'),
+            ]
+
+            for comp_name in comp_tool_dict.keys():
+                for label, key_pattern in ordering_variants:
+                    # Build the exact key for the chunked stats
+                    key = key_pattern.format(comp_name=comp_name)
+                    total_comp = sum(row.get(key, 0) for row in stats_array)
+
+                    # Store aggregated compressed size
+                    agg_size_key = f'aggregated {label} {comp_name} compressed size (B)'
+                    aggregated_stats[agg_size_key] = total_comp
+
+                    # Store aggregated ratio
+                    if total_comp == 0:
+                        aggregated_stats[f'aggregated {label} {comp_name} ratio'] = float('inf')
+                    else:
+                        aggregated_stats[f'aggregated {label} {comp_name} ratio'] = total_original / total_comp
+
+            # Write a single-row CSV with the aggregated stats
+            aggregated_df = pd.DataFrame([aggregated_stats])
             if not os.path.exists('logs'):
                 os.makedirs('logs')
-            stats_df.to_csv(f'logs/{dataset_name}_decomposition_streaming_stats.csv', index=False)
-            print(f"Done: wrote chunk-based stats to logs/{dataset_name}_decomposition_streaming_stats.csv")
+            csv_path = f'logs/{dataset_name}_decomposition_streaming_stats.csv'
+            aggregated_df.to_csv(csv_path, index=False)
+            print(f"Done: wrote aggregated stats to {csv_path}")
 
 
 if __name__ == "__main__":
