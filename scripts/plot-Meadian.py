@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # ====================================
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
-directories = ['/home/jamalids/Documents/fastlz1']
+directories = ['/home/jamalids/Documents/results']
 dataframes = []
 
 for directory_path in directories:

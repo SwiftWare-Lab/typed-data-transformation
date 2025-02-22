@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # ====================================
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
-directories = ['/home/jamalids/Documents/snappy-chunking']
+directories = ['/home/jamalids/Documents/results1']
 dataframes = []
 
 for directory_path in directories:
@@ -74,7 +74,7 @@ print(f'Combined CSV with median-based values saved to {median_output_path}')
 # ====================================
 selected_pairs = []
 for (dataset, threads), group in median_df.groupby(['DatasetName', 'Threads']):
-    decompose_rows = group[group['RunType'] == 'Chunk-decompose_Parallel']
+    decompose_rows = group[group['RunType'] == 'Chunked_Decompose_Parallel']
     if not decompose_rows.empty:
         sorted_decompose = decompose_rows.sort_values(
             by=['CompressionRatio', 'CompressionThroughput'], ascending=False
@@ -99,7 +99,7 @@ print(f'CSV with selected pairs saved to {selected_output_path}')
 #     (using the "Full" row).
 # ====================================
 final_A = []
-chunked_df = selected_df[selected_df['RunType'] == 'Chunk-decompose_Parallel']
+chunked_df = selected_df[selected_df['RunType'] == 'Chunked_Decompose_Parallel']
 if not chunked_df.empty:
     best_chunked = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionThroughput'].idxmax()]
     for idx, row in best_chunked.iterrows():
@@ -224,6 +224,6 @@ def create_and_save_plot(final_df, title_suffix, output_filename):
 
 # Create and save the two plots.
 create_and_save_plot(final_df_A, "(Max CompressionThroughput Pair)",
-                     '/home/jamalids/Documents/plot_max_compression_throughput.png')
+                     '/home/jamalids/Documents/plot_max_compression_throughput1.png')
 create_and_save_plot(final_df_B, "(Max DecompressionThroughput Pair)",
-                     '/home/jamalids/Documents/plot_max_decompression_throughput.png')
+                     '/home/jamalids/Documents/plot_max_decompression_throughput1.png')

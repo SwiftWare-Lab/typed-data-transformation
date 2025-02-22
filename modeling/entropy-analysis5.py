@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -23,14 +22,17 @@ def compute_probablity(data):
         value_counts[i] = np.sum(data == val)
     return value_counts, value_counts / len(data)
 
+
 def compute_entropy(data):
     """Computes the Shannon entropy of a 1D array (base 2)."""
     data = np.asarray(data)
     counts, probs = compute_probablity(data)
-    probs = probs[probs > 0]  # avoid log2(0)
+    # Guard against any zero probabilities (to avoid NaN in log2)
+    probs = probs[probs > 0]
     entropy_manual = -np.sum(probs * np.log2(probs))
     entropy_scipy = entropy(probs, base=2)
     return entropy_manual, entropy_scipy
+
 
 def compute_kth_order_entropy(sequence, k, modified=True):
     """
@@ -52,10 +54,14 @@ def compute_kth_order_entropy(sequence, k, modified=True):
     for kgram, next_syms in kgram_map.items():
         e, e_scipy = compute_entropy(next_syms)
         c = len(next_syms)
+        # fallback if e == 0
         if e == 0 and modified:
+            # fallback, e.g. (1 + log2(n)) / n
             e_scipy = (1 + np.log2(n)) / n
         total_entropy += c * e_scipy
+
     return total_entropy / n
+
 
 def compute_entropy_w(data, w_bits):
     """
@@ -73,39 +79,36 @@ def compute_entropy_w(data, w_bits):
     e_man, e_sp = compute_entropy(data_casted)
     return e_man, e_sp
 
+
 # -------------------------------------------------------------------------
 # Standard TDT, parameterized for 32-bit (4 groups) or 64-bit (8 groups)
 # -------------------------------------------------------------------------
 def tdt_transform(data, word_bits=32):
     """
-    Standard TDT transformation:
-    If word_bits=32, creates 4 interleaved groups;
-    if word_bits=64, creates 8 interleaved groups.
-
-    Now, before concatenation, the entropy for each group (arr[i::group_count])
-    is computed and returned.
-
-    Returns:
-        transformed: Concatenation of all groups.
-        group_entropies: List of entropies (in bits) for each group.
+    If word_bits=32 => 4 interleaved groups.
+    If word_bits=64 => 8 interleaved groups.
     """
     arr = np.asarray(data, dtype=np.uint8)
-    group_count = word_bits // 8  # e.g., 4 for 32-bit
+    group_count = word_bits // 8  # 4 if 32-bit, 8 if 64-bit, etc.
+
+    # Trim so length is multiple of group_count
     trim = len(arr) % group_count
     if trim != 0:
         arr = arr[:-trim]
+
+    # Build groups interleaved by group_count
     groups = []
-    group_entropies = []
     for i in range(group_count):
-        group = arr[i::group_count]
-        groups.append(group)
-        # Compute entropy for this group (using compute_entropy_w; take the manual value)
-        e, _ = compute_entropy_w(group, 8)
-        group_entropies.append(e)
+        groups.append(arr[i::group_count])
+
+    # Concatenate them in that order
     transformed = np.concatenate(groups)
-    return transformed, group_entropies
+    return transformed
 
 #############################################################
+
+
+# -------------------------------------------------------------------------
 # Split & Group for Custom TDT
 # -------------------------------------------------------------------------
 def split_bytes_into_components(data_bytes, component_sizes):
@@ -118,6 +121,7 @@ def split_bytes_into_components(data_bytes, component_sizes):
         comps.append(comp)
     return comps
 
+
 def group_components(components, grouping_config):
     grouped = []
     for group_list in grouping_config:
@@ -126,22 +130,28 @@ def group_components(components, grouping_config):
         grouped.append(merged)
     return grouped
 
+
 # -------------------------------------------------------------------------
 # Custom TDT (WITH concatenation)
 # -------------------------------------------------------------------------
 def tdt_custom_transform_with_concat(data, comp_sizes, grouping_config, num_k=5):
     arr = np.asarray(data, dtype=np.uint8)
     b = arr.tobytes()
+
     components = split_bytes_into_components(b, comp_sizes)
     grouped = group_components(components, grouping_config)
+
     group_entropy = {str(idx): [] for idx in range(len(grouped))}
     for idx, grp in enumerate(grouped):
         for k in range(num_k):
             e_k = compute_kth_order_entropy(grp, k)
             group_entropy[str(idx)].append(e_k)
+
+    # Concatenate all groups
     merged_bytes = b"".join([g.tobytes() for g in grouped])
     final_data = np.frombuffer(merged_bytes, dtype=np.uint8)
     return final_data, group_entropy, grouped
+
 
 # -------------------------------------------------------------------------
 # Custom TDT (NO concatenation) => "TDT-after-Custom"
@@ -149,14 +159,18 @@ def tdt_custom_transform_with_concat(data, comp_sizes, grouping_config, num_k=5)
 def tdt_custom_transform_no_concat(data, comp_sizes, grouping_config, num_k=5):
     arr = np.asarray(data, dtype=np.uint8)
     b = arr.tobytes()
+
     components = split_bytes_into_components(b, comp_sizes)
     grouped = group_components(components, grouping_config)
+
     group_entropy = {str(idx): [] for idx in range(len(grouped))}
     for idx, grp in enumerate(grouped):
         for k in range(num_k):
             e_k = compute_kth_order_entropy(grp, k)
             group_entropy[str(idx)].append(e_k)
+
     return grouped, group_entropy
+
 
 # -------------------------------------------------------------------------
 # Example compConfigMap
@@ -168,31 +182,95 @@ compConfigMap = {
     "spitzer_irac_f32": [[[1, 2], [3], [4]]],
     "turbulence_f32": [[[1, 2], [3], [4]]],
     "wave_f32": [[[1, 2], [3], [4]]],
-    "hdr_night_f32": [[[1, 4], [2], [3]]],
-    "ts_gas_f32": [[[1, 2], [3], [4]]],
-    "solar_wind_f32": [[[1], [2, 3], [4]]],
-    "tpch_lineitem_f32": [[[1, 2, 3], [4]]],
-    "tpcds_web_f32": [[[1, 2, 3], [4]]],
-    "tpcds_store_f32": [[[1, 2, 3], [4]]],
-    "tpcds_catalog_f32": [[[1, 2, 3], [4]]],
-    "citytemp_f32": [[[1, 4], [2, 3]]],
-    "hst_wfc3_ir_f32": [[[1, 2], [3], [4]]],
-    "hst_wfc3_uvis_f32": [[[1, 2], [3], [4]]],
-    "rsim_f32": [[[1, 2, 3], [4]]],
-    "astro_mhd_f64": [[[1, 2, 3, 4, 5, 6], [7], [8]]],
-    "astro_pt_f64": [[[1, 2, 3, 4, 5, 6], [7], [8]]],
-    "jane_street_f64": [[[1, 2, 3, 4, 5, 6], [7], [8]]],
-    "msg_bt_f64": [[[1, 2, 3, 4, 5], [6], [7], [8]]],
-    "num_brain_f64": [[[3, 2, 4, 5, 1, 6], [7], [8]]],
-    "num_control_f64": [[[1, 2, 3, 4, 5, 6], [7], [8]]],
-    "nyc_taxi2015_f64": [[[7, 4, 6], [5], [3, 2, 1, 8]]],
-    "phone_gyro_f64": [[[4, 6], [8], [3, 2, 1, 7], [5]]],
-    "tpch_order_f64": [[[1, 2, 3, 4], [7], [6, 5], [8]]],
-    "tpcxbb_store_f64": [[[4, 2, 3], [1], [5], [7], [6], [8]]],
-    "tpcxbb_web_f64": [[[4, 2, 3], [1], [5], [7], [6], [8]]],
-    "wesad_chest_f64": [[[7, 5, 6], [8, 4, 1, 3, 2]]],
+    "hdr_night_f32": [
+        [[1, 4], [2], [3]],
+
+    ],
+    "ts_gas_f32": [[[1, 2], [3], [4]], ],
+    "solar_wind_f32": [[[1], [2, 3], [4]], ],
+    "tpch_lineitem_f32": [
+        [[1, 2, 3], [4]],
+
+    ],
+    "tpcds_web_f32": [
+        [[1, 2, 3], [4]],
+
+    ],
+    "tpcds_store_f32": [
+        [[1, 2, 3], [4]],
+
+    ],
+    "tpcds_catalog_f32": [
+        [[1, 2, 3], [4]],
+
+    ],
+    "citytemp_f32": [
+        [[1, 4], [2, 3]],
+
+    ],
+    "hst_wfc3_ir_f32": [
+        [[1, 2], [3], [4]],
+
+    ],
+    "hst_wfc3_uvis_f32": [
+        [[1, 2], [3], [4]],
+
+    ],
+    "rsim_f32": [
+        [[1, 2, 3], [4]],
+
+    ],
+    "astro_mhd_f64": [
+        [[1, 2, 3, 4, 5, 6], [7], [8]],
+
+    ],
+    "astro_pt_f64": [
+        [[1, 2, 3, 4, 5, 6], [7], [8]],
+
+    ],
+    "jane_street_f64": [
+        [[1, 2, 3, 4, 5, 6], [7], [8]],
+
+    ],
+    "msg_bt_f64": [
+        [[1, 2, 3, 4, 5], [6], [7], [8]],
+
+    ],
+    "num_brain_f64": [
+        [[3, 2, 4, 5, 1, 6], [7], [8]],
+
+    ],
+    "num_control_f64": [
+        [[1, 2, 3, 4, 5, 6], [7], [8]],
+
+    ],
+    "nyc_taxi2015_f64": [
+        [[7, 4, 6], [5], [3, 2, 1, 8]],
+
+    ],
+    "phone_gyro_f64": [
+        [[4, 6], [8], [3, 2, 1, 7], [5]],
+
+    ],
+    "tpch_order_f64": [
+        [[1, 2, 3, 4], [7], [6, 5], [8]],
+
+    ],
+    "tpcxbb_store_f64": [
+        [[4, 2, 3], [1], [5], [7], [6], [8]],
+
+    ],
+    "tpcxbb_web_f64": [
+        [[4, 2, 3], [1], [5], [7], [6], [8]],
+
+    ],
+    "wesad_chest_f64": [
+        [[7, 5, 6], [8, 4, 1, 3, 2]],
+
+    ],
     "default": [[[1], [2], [3], [4]]],
 }
+
 
 # -------------------------------------------------------------------------
 def process_single_dataset(
@@ -205,11 +283,12 @@ def process_single_dataset(
     """
     Process a single dataset file with:
       - Original
-      - Standard TDT (with group-level entropy measurement)
+      - Standard TDT
       - Custom TDT (with concat)
-      - TDT-after-custom (no concat) -- includes per-group entropies
+      - TDT-after-custom (no concat) -- NOW includes per-group entropies
     Saves a CSV + plot named after the dataset.
     """
+
     dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
     try:
         data_loaded = pd.read_csv(dataset_path, sep="\t")
@@ -218,7 +297,7 @@ def process_single_dataset(
         print(f"Error loading {dataset_path}: {e}")
         return
 
-    # Crop data (adjust indices as needed)
+    # Crop data
     data = sliced_data[49151:65536]
     data = np.float32(data)
 
@@ -232,24 +311,31 @@ def process_single_dataset(
 
     tdt_kth = {str(k): [] for k in range(num_k)}
     tdt_fw8 = []
-    # NEW: We'll also store the group-level entropies for standard TDT
-    tdt_group_entropy_list = []
 
     custom_kth = {str(k): [] for k in range(num_k)}
     custom_fw8 = []
+
+    # TDT-after-custom (no concat)
+    # We'll store both group entropies and final weighted average
     tdt_after_custom_kth = {str(k): [] for k in range(num_k)}
     tdt_after_custom_fw8 = []
+
+    # We will also store group-level results separately for each block:
+    # tdt_after_custom_k{k}_G{g} and tdt_after_custom_fw_8bit_G{g}
+    # So let's define a structure to hold them. We'll fill them dynamically
+    # because the number of groups can vary by dataset's config.
     tdt_after_custom_kth_groups = []
     tdt_after_custom_fw8_groups = []
 
-    # Pick grouping config
+    # pick grouping config
     if dataset_name in compConfigMap:
         grouping_configs = compConfigMap[dataset_name]
         grouping_config = grouping_configs[0]
     else:
         grouping_config = compConfigMap["default"][0]
 
-    # Decide components for custom transformation
+    # Decide how many components for custom
+    # (Typically 4 for 32-bit, 8 for 64-bit, etc.)
     if transform_word_bits == 32:
         comp_sizes = [1, 1, 1, 1]
     elif transform_word_bits == 64:
@@ -263,25 +349,22 @@ def process_single_dataset(
     for i in range(num_blocks):
         block = data_bytes[i * chunk_size : (i + 1) * chunk_size]
 
-        # 1) Original
+        # -------- 1) Original --------
         for k in range(num_k):
             e_k = compute_kth_order_entropy(block, k)
             orig_kth[str(k)].append(e_k)
         fw_e, _ = compute_entropy_w(block, 8)
         orig_fw8.append(fw_e)
 
-        # 2) Standard TDT
-        # Now use the modified tdt_transform that returns both the transformed block and group entropies.
-        tdt_block, tdt_group_entropies = tdt_transform(block, word_bits=transform_word_bits)
-        # Save the TDT group entropies for this block for CSV
-        tdt_group_entropy_list.append(tdt_group_entropies)
+        # -------- 2) Standard TDT --------
+        tdt_block = tdt_transform(block, word_bits=transform_word_bits)
         for k in range(num_k):
             e_k = compute_kth_order_entropy(tdt_block, k)
             tdt_kth[str(k)].append(e_k)
         fw_e_tdt, _ = compute_entropy_w(tdt_block, 8)
         tdt_fw8.append(fw_e_tdt)
 
-        # 3) Custom TDT (with concat)
+        # -------- 3) Custom TDT (with concat) --------
         custom_final, custom_grp_entropy, custom_groups = tdt_custom_transform_with_concat(
             tdt_block, comp_sizes, grouping_config, num_k=num_k
         )
@@ -291,7 +374,8 @@ def process_single_dataset(
         fw_e_custom, _ = compute_entropy_w(custom_final, 8)
         custom_fw8.append(fw_e_custom)
 
-        # 4) TDT-after-Custom (no concat)
+        # -------- 4) TDT-after-Custom (no concat) --------
+        #     Now we also store group-level entropies and the final weighted average
         groups_no_concat, grp_entropy_noc = tdt_custom_transform_no_concat(
             tdt_block, comp_sizes, grouping_config, num_k=num_k
         )
@@ -301,31 +385,47 @@ def process_single_dataset(
 
         group_fw_ents = []
         group_kth_ents = {str(k): [] for k in range(num_k)}
+
         for grpdata in groups_no_concat:
-            tdt_g = tdt_transform(grpdata, word_bits=transform_word_bits)[0]
+            # Optionally apply TDT again to each group (user's choice).
+            # The code as given suggests we do TDT again on each group for consistency:
+            tdt_g = tdt_transform(grpdata, word_bits=transform_word_bits)
+
+            # per-group k-th order
             for k in range(num_k):
                 e_k = compute_kth_order_entropy(tdt_g, k)
                 group_kth_ents[str(k)].append(e_k)
+
+            # per-group fw-8bit
             fw_e_g, _ = compute_entropy_w(tdt_g, 8)
             group_fw_ents.append(fw_e_g)
 
+        # Weighted average across groups => final "tdt_after_custom"
         final_fw = sum(w * e for w, e in zip(weights, group_fw_ents))
         tdt_after_custom_fw8.append(final_fw)
-        for k in range(num_k):
-            final_k = sum(w * e for w, e in zip(weights, group_kth_ents[str(k)]))
-            tdt_after_custom_kth[str(k)].append(final_k)
 
+        # For each K, get weighted average across groups
+        final_k_vals = {}
+        for k in range(num_k):
+            final_k = sum(
+                w * e for w, e in zip(weights, group_kth_ents[str(k)])
+            )
+            tdt_after_custom_kth[str(k)].append(final_k)
+            final_k_vals[k] = final_k
+
+        # Now store group-level data so we can write it to the CSV
         tdt_after_custom_kth_groups.append(group_kth_ents)
         tdt_after_custom_fw8_groups.append(group_fw_ents)
 
     # ---------------------------------------------------------------------
-    # Build DataFrame rows and include TDT group entropies from standard TDT
+    # Build DataFrame
     # ---------------------------------------------------------------------
+    # ...
     rows = []
     for i in range(num_blocks):
         row = {
             "block": i,
-            "dataset_name": dataset_name,
+            "dataset_name": dataset_name,  # <--- Add the dataset name here
         }
         # Original
         for k in range(num_k):
@@ -336,10 +436,6 @@ def process_single_dataset(
         for k in range(num_k):
             row[f"tdt_k{k}"] = tdt_kth[str(k)][i]
         row["tdt_fw_8bit"] = tdt_fw8[i]
-        # NEW: Add TDT group entropies to CSV (each group entropy from the standard TDT)
-        tdt_grp = tdt_group_entropy_list[i]
-        for idx, e_val in enumerate(tdt_grp):
-            row[f"tdt_group_entropy_G{idx}"] = e_val
 
         # Custom TDT (with concat)
         for k in range(num_k):
@@ -354,20 +450,30 @@ def process_single_dataset(
         # TDT-after-Custom (no concat) - Per group
         per_block_group_kth = tdt_after_custom_kth_groups[i]
         per_block_group_fw = tdt_after_custom_fw8_groups[i]
+
+        # Add one column per group for each k
         for g, fw_g in enumerate(per_block_group_fw):
             row[f"tdt_after_custom_fw_8bit_G{g}"] = fw_g
+
+        # Now fill in the kth entropies
         for k in range(num_k):
             for g, e_k_g in enumerate(per_block_group_kth[str(k)]):
                 row[f"tdt_after_custom_k{k}_G{g}"] = e_k_g
 
         rows.append(row)
+    # ...
 
     df = pd.DataFrame(rows)
+
+    # CSV / plot filenames
+
+
     out_csv = f"/home/jamalids/Documents/combined_entropy_results_8bit_{dataset_name}.csv"
+
     df.to_csv(out_csv, index=False)
     print(f"[{dataset_name}] => Saved results to {out_csv}")
 
-    # Plotting section (unchanged)
+    # Make plot
     ks = np.arange(num_k)
     avg_orig = np.array([df[f"orig_k{k}"].mean() for k in ks])
     avg_tdt = np.array([df[f"tdt_k{k}"].mean() for k in ks])
@@ -383,6 +489,7 @@ def process_single_dataset(
     y_min = 0.0
 
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+
     axs[0].plot(ks, ratio_tdt, marker='o')
     axs[0].set_title("orig_k / standard_tdt_k")
     axs[0].set_xlabel("k")
@@ -405,14 +512,15 @@ def process_single_dataset(
     axs[2].grid(True)
 
     plt.tight_layout()
-    plot_name = f"/home/jamalids/Documents/combined_entropy_results_8bitplot_{dataset_name}.png"
+    plot_name =  f"/home/jamalids/Documents/combined_entropy_results_8bitplot_{dataset_name}.png"
     plt.savefig(plot_name)
     print(f"[{dataset_name}] => Saved plot to {plot_name}")
     plt.close(fig)
 
+
 def main():
-    chunk_size = 65536 * 1
-    data_size = 16384 * 4
+    chunk_size = 65536 *1
+    data_size = 16384 *4
     num_k = 5
     transform_word_bits = 32  # default
 
@@ -421,12 +529,18 @@ def main():
         return
 
     dataset_path = sys.argv[1]
+
+    # If second arg is chunk_size
     if len(sys.argv) >= 3:
         chunk_size = int(sys.argv[2])
+
+    # If third arg is data_size
     if len(sys.argv) >= 4:
         data_size = int(sys.argv[3])
+
+    # If fourth arg is word_bits (32 or 64)
     if len(sys.argv) >= 5:
-        transform_word_bits = int(sys.argv[4])
+        transform_word_bits = int(sys.argv[4])  # 32 or 64 typically
 
     if os.path.isdir(dataset_path):
         all_files = sorted(os.listdir(dataset_path))
@@ -434,10 +548,12 @@ def main():
             full_path = os.path.join(dataset_path, fname)
             if os.path.isfile(full_path):
                 process_single_dataset(full_path, chunk_size, data_size, num_k,
-                                         transform_word_bits=transform_word_bits)
+                                       transform_word_bits=transform_word_bits)
     else:
+        # single file
         process_single_dataset(dataset_path, chunk_size, data_size, num_k,
-                                 transform_word_bits=transform_word_bits)
+                               transform_word_bits=transform_word_bits)
+
 
 if __name__ == "__main__":
     main()
