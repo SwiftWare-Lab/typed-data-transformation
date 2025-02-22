@@ -31,8 +31,91 @@ def get_slop_for_all_pair(data_frame):
             results[(col1, col2)] = {"slope": slope, "intercept": intercept, "r2": r2}
     return results
 
+
+def average_entropy_plot(data):
+    # for each row in the data, compute the average entropy
+    average_bytshuffle_entropy, average_tdt_entropy, original_entropy, tdt_min_entropy, tdt_custom_entropy = [], [], [], [], []
+    average_bytshuffle_entropyk1, average_tdt_entropyk1, original_entropyk1, tdt_min_entropyk1, tdt_custom_entropyk1 = [], [], [], [], []
+    average_bytshuffle_entropyk2, average_tdt_entropyk2, original_entropyk2, tdt_min_entropyk2, tdt_custom_entropyk2 = [], [], [], [], []
+    average_bytshuffle_entropyk3, average_tdt_entropyk3, original_entropyk3, tdt_min_entropyk3, tdt_custom_entropyk3 = [], [], [], [], []
+    average_bytshuffle_entropyk4, average_tdt_entropyk4, original_entropyk4, tdt_min_entropyk4, tdt_custom_entropyk4 = [], [], [], [], []
+    dataset_names = []
+    # for each row in the data, compute the average entropy
+    for index, row in data.iterrows():
+        oe0, oe1, oe2, oe3, oe4 = row['orig_k0'], row['orig_k1'], row['orig_k2'], row['orig_k3'], row['orig_k4']
+        te0, te1, te2, te3, te4 = row['tdt_k0'], row['tdt_k1'], row['tdt_k2'], row['tdt_k3'], row['tdt_k4']
+        # bs_b0_e0, bs_b1_e0, bs_b2_e0, bs_b3_e0 = row['tdt_group_entropy_G0'], row['tdt_group_entropy_G1'], row['tdt_group_entropy_G2'], row['tdt_group_entropy_G3']
+        # avg_bitshuffle = (bs_b0_e0 + bs_b1_e0 + bs_b2_e0 + bs_b3_e0) / 4
+        tdt_k0, tdt_k1, tdt_k2, tdt_k3, tdt_k4 = row['custom_k0'], row['custom_k1'], row['custom_k2'], row['custom_k3'], row['custom_k4']
+        tdtc_k0, tdtc_k1, tdtc_k2, tdtc_k3, tdtc_k4 = row['tdt_after_custom_k0'], row['tdt_after_custom_k1'], row['tdt_after_custom_k2'], row['tdt_after_custom_k3'], row['tdt_after_custom_k4']
+        we_k0 = row['WE']
+        ds_name = row['dataset_name']
+        dataset_names.append(ds_name)
+
+        original_entropy.append(oe0)
+        average_bytshuffle_entropy.append(te0)
+        tdt_custom_entropy.append(tdt_k0)
+        average_tdt_entropy.append(tdtc_k0)
+        tdt_min_entropy.append(np.min([tdt_k0, tdtc_k0]))
+        # k1
+        original_entropyk1.append(oe1)
+        average_bytshuffle_entropyk1.append(te1)
+        tdt_custom_entropyk1.append(tdt_k1)
+        average_tdt_entropyk1.append(tdtc_k1)
+        tdt_min_entropyk1.append(np.min([tdt_k1, tdtc_k1]))
+        # k2
+        original_entropyk2.append(oe2)
+        average_bytshuffle_entropyk2.append(te2)
+        tdt_custom_entropyk2.append(tdt_k2)
+        average_tdt_entropyk2.append(tdtc_k2)
+        tdt_min_entropyk2.append(np.min([tdt_k2, tdtc_k2]))
+        # k3
+        original_entropyk3.append(oe3)
+        average_bytshuffle_entropyk3.append(te3)
+        tdt_custom_entropyk3.append(tdt_k3)
+        average_tdt_entropyk3.append(tdtc_k3)
+        tdt_min_entropyk3.append(np.min([tdt_k3, tdtc_k3]))
+        # k4
+        original_entropyk4.append(oe4)
+        average_bytshuffle_entropyk4.append(te4)
+        tdt_custom_entropyk4.append(tdt_k4)
+        average_tdt_entropyk4.append(tdtc_k4)
+        tdt_min_entropyk4.append(np.min([tdt_k4, tdtc_k4]))
+
+
+
+
+    out_path="./"
+    plot_entropy = lambda entropy, ylabel: (
+        plt.figure(figsize=(10, 6)),
+        plt.plot(entropy[0], label='Original'),
+        plt.plot(entropy[1], label='Byte-Shuffle'),
+        plt.plot(entropy[2], label='TDT'),
+        plt.xticks(range(len(dataset_names)), dataset_names, rotation=45),
+        plt.gca().spines['top'].set_visible(False),
+        plt.gca().spines['right'].set_visible(False),
+        plt.ylabel(ylabel),
+        plt.tight_layout(),
+        plt.legend(),
+        #plt.show(),
+        plt.savefig(f"{out_path}{ylabel}.pdf"),
+        plt.close()
+    )
+
+    plot_entropy([original_entropy, average_bytshuffle_entropy, tdt_min_entropy], "Entropy k0")
+    plot_entropy([original_entropyk1, average_bytshuffle_entropyk1, tdt_min_entropyk1], "Entropy k1")
+    plot_entropy([original_entropyk2, average_bytshuffle_entropyk2, tdt_min_entropyk2], "Entropy k2")
+    plot_entropy([original_entropyk3, average_bytshuffle_entropyk3, tdt_min_entropyk3], "Entropy k3")
+    plot_entropy([original_entropyk4, average_bytshuffle_entropyk4, tdt_min_entropyk4], "Entropy k4")
+
+
+
+
+
+
+
 # Load the dataset
-data = pd.read_csv("scripts/merged.csv")
+data = pd.read_csv("merged22.csv")
 
 
 # Specify the dataset name for labeling
@@ -45,6 +128,7 @@ dataset_name = "Merged Dataset"
 # Display summary statistics
 #print(data.describe())
 
+average_entropy_plot(data)
 
 
 # add 'orig_k0' / 'tdt_k0', 'orig_k1'/'tdt_k1', 'orig_k2'/'tdt_k2' to the data dataframe
