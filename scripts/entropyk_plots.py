@@ -5,7 +5,7 @@ import seaborn as sns
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-
+from scipy.stats import spearmanr
 
 # Compute the line formula for each case
 def compute_line_formula(x, y):
@@ -28,7 +28,8 @@ def get_slop_for_all_pair(data_frame):
                 continue
             slope, intercept = compute_line_formula(x, y)
             r2 = r2_score(x, y)
-            results[(col1, col2)] = {"slope": slope, "intercept": intercept, "r2": r2}
+            s_r2 = spearmanr(x, y)
+            results[(col1, col2)] = {"slope": slope, "intercept": intercept, "r2": r2, "spearman_r2": s_r2}
     return results
 
 
@@ -109,6 +110,36 @@ def average_entropy_plot(data):
     plot_entropy([original_entropyk4, average_bytshuffle_entropyk4, tdt_min_entropyk4], "Entropy k4")
 
 
+def compute_stats(data, label_x, label_y):
+    # compute coefficient of determination (R^2) for each k
+    p_k0 = spearmanr(data[label_x], data[label_y[0]])
+    p_k1 = spearmanr(data[label_x], data[label_y[1]])
+    p_k2 = spearmanr(data[label_x], data[label_y[2]])
+    p_k3 = spearmanr(data[label_x], data[label_y[3]])
+    p_k4 = spearmanr(data[label_x], data[label_y[4]])
+    r2_k0 = r2_score(data[label_x], data[label_y[0]])
+    r2_k1 = r2_score(data[label_x], data[label_y[1]])
+    r2_k2 = r2_score(data[label_x], data[label_y[2]])
+    r2_k3 = r2_score(data[label_x], data[label_y[3]])
+    r2_k4 = r2_score(data[label_x], data[label_y[4]])
+
+    x = np.array(data[label_x])
+
+    slope_k0, intercept_k0 = compute_line_formula(x, data[label_y[0]])
+    slope_k1, intercept_k1 = compute_line_formula(x, data[label_y[1]])
+    slope_k2, intercept_k2 = compute_line_formula(x, data[label_y[2]])
+    slope_k3, intercept_k3 = compute_line_formula(x, data[label_y[3]])
+    slope_k4, intercept_k4 = compute_line_formula(x, data[label_y[4]])
+
+    stats = {
+        "k0": {"r2": r2_k0, "slope": slope_k0, "intercept": intercept_k0, "pvalue": p_k0},
+        "k1": {"r2": r2_k1, "slope": slope_k1, "intercept": intercept_k1, "pvalue": p_k1},
+        "k2": {"r2": r2_k2, "slope": slope_k2, "intercept": intercept_k2, "pvalue": p_k2},
+        "k3": {"r2": r2_k3, "slope": slope_k3, "intercept": intercept_k3, "pvalue": p_k3},
+        "k4": {"r2": r2_k4, "slope": slope_k4, "intercept": intercept_k4, "pvalue": p_k4},
+    }
+
+    return stats
 
 
 
@@ -132,61 +163,66 @@ average_entropy_plot(data)
 
 
 # add 'orig_k0' / 'tdt_k0', 'orig_k1'/'tdt_k1', 'orig_k2'/'tdt_k2' to the data dataframe
-data['orig_k0 ratio'] = data['orig_k0'] / data['tdt_k0']
-data['orig_k1 ratio'] = data['orig_k1'] / data['tdt_k1']
-data['orig_k2 ratio'] = data['orig_k2'] / data['tdt_k2']
-data['orig_k3 ratio'] = data['orig_k3'] / data['tdt_k3']
-data['orig_k4 ratio'] = data['orig_k4'] / data['tdt_k4']
+
+data['tdt_k0_entropy'] = np.minimum(data['custom_k0'], data['tdt_after_custom_k0'])
+data['tdt_k1_entropy'] = np.minimum(data['custom_k1'], data['tdt_after_custom_k1'])
+data['tdt_k2_entropy'] = np.minimum(data['custom_k2'], data['tdt_after_custom_k2'])
+data['tdt_k3_entropy'] = np.minimum(data['custom_k3'], data['tdt_after_custom_k3'])
+data['tdt_k4_entropy'] = np.minimum(data['custom_k4'], data['tdt_after_custom_k4'])
+data['orig_k0 ratio'] = data['orig_k0'] / data['tdt_k0_entropy'] # higher is better
+data['orig_k1 ratio'] = data['orig_k1'] / data['tdt_k1_entropy']
+data['orig_k2 ratio'] = data['orig_k2'] / data['tdt_k2_entropy']
+data['orig_k3 ratio'] = data['orig_k3'] / data['tdt_k3_entropy']
+data['orig_k4 ratio'] = data['orig_k4'] / data['tdt_k4_entropy']
+data['tdt over zstd ratio'] = data['standard zstd ratio'] / data['decomposed zstd row-order (B)'] # tdt zstd size / zstd size -> lower is better
 
 
-slopes = get_slop_for_all_pair(data)
-for pair, values in slopes.items():
-    if values['r2'] > 0.5 and values['r2'] < 2:
-        print(f"Pair: {pair}, Slope: {values['slope']}, R^2: {values['r2']}")
+# slopes = get_slop_for_all_pair(data)
+# for pair, values in slopes.items():
+#     # if values['r2'] > 0.8: #and values['r2'] < 2:
+#     #     print(f"Pair: {pair}, Slope: {values['slope']}, R^2: {values['r2']}")
+#     if 'comp ratio ratio' in pair[0] or 'comp ratio ratio' in pair[1]:
+#         print(f"Pair: {pair}, Slope: {values['slope']}, R^2: {values['r2']}, Spearman R^2: {values['spearman_r2']}")
+
 # Example visualizations:
 # Note: Adjust column names to fit your dataset's actual structure.
 
 # make correlation plot between 'reordered zstd row-order (B)' and 'tdt_after_custom_k1'
+
+label_x = 'tdt over zstd ratio'
+label_y = ['orig_k0 ratio', 'orig_k1 ratio', 'orig_k2 ratio', 'orig_k3 ratio', 'orig_k4 ratio']
+stats = compute_stats(data, label_x, label_y)
+for k, v in stats.items():
+    print(f"K={k}: R^2={v['r2']}, Slope={v['slope']}, Intercept={v['intercept']}, p-value={v['pvalue']}")
+    print()
+
+label_x = 'decomposed zstd row-order (B)'
+label_y = ['tdt_k0_entropy', 'tdt_k1_entropy', 'tdt_k2_entropy', 'tdt_k3_entropy', 'tdt_k4_entropy']
+stats = compute_stats(data, label_x, label_y)
+for k, v in stats.items():
+    print(f"K={k}: R^2={v['r2']}, Slope={v['slope']}, Intercept={v['intercept']}, p-value={v['pvalue']}")
+    print()
+
+# plot k vs v['pvalue'][0] for each k
 plt.figure(figsize=(10, 6))
+list_k = list(stats.keys())
+plt.plot(list_k, [v['pvalue'][0] for v in stats.values()], label='p-value', marker='o')
+plt.xticks(list_k)
+# remove top and right spines
+plt.gca().spines['top'].set_visible(False)
+plt.gca().spines['right'].set_visible(False)
+plt.xlabel("Entropy Order")
+plt.ylabel("Spearman Correlation Coefficient")
+plt.grid()
+plt.savefig("spearman_correlation.pdf")
 
 
-sns.scatterplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k0', data=data, alpha=0.6)
-sns.regplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k0', data=data, scatter=False, line_kws={"color": "green"})
-sns.scatterplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k1', data=data, alpha=0.6)
-sns.regplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k1', data=data, scatter=False, line_kws={"color": "red"})
-sns.scatterplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k2', data=data, alpha=0.6)
-sns.regplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k2', data=data, scatter=False, line_kws={"color": "blue"})
-sns.scatterplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k3', data=data, alpha=0.6)
-sns.regplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k3', data=data, scatter=False, line_kws={"color": "yellow"})
-sns.scatterplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k4', data=data, alpha=0.6)
-sns.regplot(x='reordered zstd row-order (B)', y='tdt_after_custom_k4', data=data, scatter=False, line_kws={"color": "purple"})
-# add legend
-plt.legend(['k0', 'k1', 'k2', 'k3', 'k4'])
-# compute coefficient of determination (R^2) for each k
-r2_k0 = r2_score(data['reordered zstd row-order (B)'], data['tdt_after_custom_k0'])
-r2_k1 = r2_score(data['reordered zstd row-order (B)'], data['tdt_after_custom_k1'])
-r2_k2 = r2_score(data['reordered zstd row-order (B)'], data['tdt_after_custom_k2'])
-r2_k3 = r2_score(data['reordered zstd row-order (B)'], data['tdt_after_custom_k3'])
-r2_k4 = r2_score(data['reordered zstd row-order (B)'], data['tdt_after_custom_k4'])
-x = np.array(data['reordered zstd row-order (B)'])
-
-slope_k0, intercept_k0 = compute_line_formula(x, data['tdt_after_custom_k0'])
-slope_k1, intercept_k1 = compute_line_formula(x, data['tdt_after_custom_k1'])
-slope_k2, intercept_k2 = compute_line_formula(x, data['tdt_after_custom_k2'])
-slope_k3, intercept_k3 = compute_line_formula(x, data['tdt_after_custom_k3'])
-slope_k4, intercept_k4 = compute_line_formula(x, data['tdt_after_custom_k4'])
-
-print(f"R^2 for k0: {r2_k0}, Line: y = {slope_k0}x + {intercept_k0}")
-print(f"R^2 for k1: {r2_k1}, Line: y = {slope_k1}x + {intercept_k1}")
-print(f"R^2 for k2: {r2_k2}, Line: y = {slope_k2}x + {intercept_k2}")
-print(f"R^2 for k3: {r2_k3}, Line: y = {slope_k3}x + {intercept_k3}")
-print(f"R^2 for k4: {r2_k4}, Line: y = {slope_k4}x + {intercept_k4}")
+# plt.xlabel("Entropy Order")
+# plt.title(f"Scatter Plot: reordered zstd row-order (B) vs tdt_after_custom")
+# plt.show()
 
 
-
-plt.xlabel("reordered zstd row-order (B)")
-plt.title(f"Scatter Plot: reordered zstd row-order (B) vs tdt_after_custom")
-plt.show()
+# plot tdt_k1_entropy vs 'decomposed zstd row-order ratio'
 
 
 
@@ -232,13 +268,17 @@ if not categorical_columns.empty:
 
 # 5. Heatmap (for correlations among numerical columns):
 if len(numerical_columns) > 1:
-    corr_matrix = data[numerical_columns].corr()
+    corr_matrix = data[numerical_columns].corr(method='pearson')
     plt.figure(figsize=(80, 64))
+
     sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", fmt=".2f")
     plt.title("Correlation Heatmap")
     # make x-axis and y-axis labels bigger
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.show()
+
+
+
 
 
