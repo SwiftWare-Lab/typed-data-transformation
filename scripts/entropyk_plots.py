@@ -146,7 +146,9 @@ def compute_stats(data, label_x, label_y):
 
 
 # Load the dataset
-data = pd.read_csv("merged22.csv")
+data1 = pd.read_csv("merged22_fp64.csv")
+data2 = pd.read_csv("merged22.csv")
+data = pd.merge(data1, data2, how='outer')
 
 
 # Specify the dataset name for labeling
@@ -268,7 +270,7 @@ if not categorical_columns.empty:
 
 # 5. Heatmap (for correlations among numerical columns):
 if len(numerical_columns) > 1:
-    corr_matrix = data[numerical_columns].corr(method='pearson')
+    corr_matrix = data[numerical_columns].corr(method='spearman')
     plt.figure(figsize=(80, 64))
 
     sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", fmt=".2f")
