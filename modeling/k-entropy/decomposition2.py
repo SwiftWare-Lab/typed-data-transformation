@@ -360,9 +360,9 @@ import pandas as pd
 
 def main():
     # Folder containing the datasets
-    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/"
-    m = 4               # For float32
-    chunk_size = 65536    # If not -1, we do block-based
+    dataset_folder = r"C:\Users\jamalids\Downloads\dataset\64"
+    m = 8              # For float32
+    chunk_size = -1    # If not -1, we do block-based
     contig_order = False
 
     # Ensure folder exists
@@ -386,10 +386,11 @@ def main():
         if m == 2:
             sliced_data = data_df.values[:, 1].astype(np.float16)
         elif m == 4:
-            sliced_data = data_df.values[:, 1].astype(np.float32)
-           # sliced_data = sliced_data1[49151:65536]
+            sliced_data1 = data_df.values[:, 1].astype(np.float32)
+            sliced_data = sliced_data1[49151:65536]
         else:
-            sliced_data = data_df.values[:, 1].astype(np.float64)
+            sliced_data1 = data_df.values[:, 1].astype(np.float64)
+            sliced_data = sliced_data1[49151:65536]
 
         # ---------------------------------------------------------------
         # 1) Find decompositions from compConfigMap
@@ -411,8 +412,8 @@ def main():
         # 2) Build compression tool dictionary
         # ---------------------------------------------------------------
         comp_tool_dict = {
-            #'zstd': zstd_comp,
-            'huffman_compress': huffman_compress,
+            'zstd': zstd_comp,
+           # 'huffman_compress': huffman_compress,
         }
 
         # ---------------------------------------------------------------

@@ -1,9 +1,9 @@
 import pandas as pd
 
 # 1) Read each CSV
-df_entropy = pd.read_csv("/home/jamalids/Documents/results-corrolation/k/all_entropy_summaries.csv")
-df_comp = pd.read_csv("//home/jamalids/Documents/results-corrolation/k/entropy.csv")
-df_inf = pd.read_csv("/home/jamalids/Documents/results-corrolation/k/combined_zstd.csv")
+df_entropy = pd.read_csv(r"C:\Users\jamalids\Downloads\all_entropy_summaries.csv")
+df_comp = pd.read_csv(r"C:\Users\jamalids\Downloads\entropy.csv")
+df_inf = pd.read_csv(r"C:\Users\jamalids\Downloads\zstd.csv")
 
 # 2) Rename columns to ensure consistency
 df_entropy.rename(columns={"dataset": "dataset_name"}, inplace=True)
@@ -33,6 +33,6 @@ merged_df = pd.merge(df_entropy, df_comp, on=["dataset_name"], how="inner")
 final_merged_df = pd.merge(merged_df, df_inf, on=["dataset_name"], how="inner")
 
 # 6) Write the final merged results
-final_merged_df.to_csv("/home/jamalids/Documents/merged22.csv", index=False)
+final_merged_df.to_csv(r"C:\Users\jamalids\Downloads\merged22.csv", index=False)
 
-print("Merged CSV created:", "/home/jamalids/Documents/new-merged.csv")
+print("Merged CSV created:", r"C:\Users\jamalids\Downloadsnew-merged.csv")

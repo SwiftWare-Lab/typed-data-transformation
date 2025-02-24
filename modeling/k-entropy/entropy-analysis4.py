@@ -213,7 +213,7 @@ def process_single_dataset(
     dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
     try:
         data_loaded = pd.read_csv(dataset_path, sep="\t")
-        sliced_data = data_loaded.values[:, 1].astype(np.float32)
+        sliced_data = data_loaded.values[:, 1].astype(np.float64)
     except Exception as e:
         print(f"Error loading {dataset_path}: {e}")
         return
@@ -363,7 +363,7 @@ def process_single_dataset(
         rows.append(row)
 
     df = pd.DataFrame(rows)
-    out_csv = f"/home/jamalids/Documents/combined_entropy_results_8bit_{dataset_name}.csv"
+    out_csv = rf"C:\Users\jamalids\Downloads\combined_entropy_results_8bit_{dataset_name}.csv"
     df.to_csv(out_csv, index=False)
     print(f"[{dataset_name}] => Saved results to {out_csv}")
 
@@ -405,7 +405,7 @@ def process_single_dataset(
     axs[2].grid(True)
 
     plt.tight_layout()
-    plot_name = f"/home/jamalids/Documents/combined_entropy_results_8bitplot_{dataset_name}.png"
+    plot_name = rf"C:\Users\jamalids\Downloads\combined_entropy_results_8bitplot_{dataset_name}.png"
     plt.savefig(plot_name)
     print(f"[{dataset_name}] => Saved plot to {plot_name}")
     plt.close(fig)
@@ -414,7 +414,7 @@ def main():
     chunk_size = 65536 * 1
     data_size = 16384 * 4
     num_k = 5
-    transform_word_bits = 32  # default
+    transform_word_bits = 64  # default
 
     if len(sys.argv) < 2:
         print("Missing dataset path. Exiting.")
