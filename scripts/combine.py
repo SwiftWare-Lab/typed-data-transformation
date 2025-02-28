@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Specify the directories containing the CSV files
-directories = ['/home/jamalids/Documents/entropy']
+directories = ['/home/jamalids/Documents/logs-blos']
 
 # List to hold DataFrames
 dataframes = []
@@ -25,13 +25,13 @@ if dataframes:
     combined_df = pd.concat(dataframes, ignore_index=True)
 
     # Save the combined DataFrame with all data to a CSV file
-    all_data_output_path = '/home/jamalids/Documents/entropy.csv'
+    all_data_output_path = '/home/jamalids/Documents/blosc.csv'
     combined_df.to_csv(all_data_output_path, index=False)
     print(f'Combined CSV with all data saved to {all_data_output_path}')
 import pandas as pd
 
 # Read the CSV file
-df = pd.read_csv('/home/jamalids/Documents/entropy.csv')
+df = pd.read_csv('/home/jamalids/Documents/blosc.csv')
 
 # Display the first few rows to check its structure
 print(df.head(18))

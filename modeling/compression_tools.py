@@ -57,7 +57,7 @@ def blosc_comp_bit(data, clevel=3, shuffle=blosc.SHUFFLE, codec='zstd'):
 
 
 def zstd_comp(data_set):
-    return zstd.compress(data_set, 22)
+    return zstd.compress(data_set, 3)
 
 
 def zlib_comp(data, level=9):

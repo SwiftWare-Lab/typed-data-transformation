@@ -19,13 +19,26 @@ from modeling.compression_tools import (
 # Example compConfigMap
 # --------------------------------------------------------------------
 compConfigMap = {
-    "acs_wht_f32": [[[1, 2], [3], [4]]],
-    "g24_78_usb2_f32": [[[1, 2, 3], [4]]],
-    "jw_mirimage_f32": [[[1, 2, 3], [4]]],
-    "spitzer_irac_f32": [[[1, 2], [3], [4]]],
-    "turbulence_f32": [[[1, 2], [3], [4]]],
-    "wave_f32": [[[1, 2], [3], [4]]],
-    "hdr_night_f32": [
+    "acs_wht_f32": [[[1, 2], [3], [4]],[[1,2,3,4]],
+        [[1], [2], [3],[4]],],
+    "g24_78_usb2_f32": [[[1, 2, 3], [4]],[[1,2,3,4]],
+        [[1], [2], [3],[4]],],
+    "jw_mirimage_f32": [[[1, 2, 3], [4]],[[1,2,3,4]],
+        [[1], [2], [3],[4]],],
+    "spitzer_irac_f32": [[[1, 2], [3], [4]],[[1,2,3,4]],
+        [[1], [2], [3],[4]],],
+    "turbulence_f32": [[[1, 2], [3], [4]],[[1,2,3,4]],
+        [[1], [2], [3],[4]],],
+    "wave_f32": [[[1, 2], [3], [4]],[[1,2,3,4]],
+        [[1], [2], [3],[4]],],
+    "hdr_palermo_f32": [
+        [[1, 4], [2], [3]],
+        [[1,2,3,4]],
+        [[1], [2], [3],[4]],
+        [[1], [4], [2],[3]],
+        [[1,4], [2,3]],
+    ],
+   "hdr_night_f32": [
         [[1, 4], [2], [3]],
     ],
     "ts_gas_f32": [
@@ -344,9 +357,10 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={},
 # --------------------------------------------------------------------
 def main():
     # Folder containing the datasets
-    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
-    m = 8               # For float32
-    chunk_size = 65536  # If not -1, we do block-based
+    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/test"
+    m =4            # For float32
+    #chunk_size = 65536
+    chunk_size = -1# If not -1, we do block-based
     contig_order = False
 
     # Ensure folder exists
@@ -371,7 +385,8 @@ def main():
         if m == 2:
             sliced_data = data_df.values[:, 1].astype(np.float16)
         elif m == 4:
-            sliced_data = data_df.values[:, 1].astype(np.float32)
+            sliced_data1 = data_df.values[:, 1].astype(np.float32)
+            sliced_data =  sliced_data1[100000:1000010]
         else:
             sliced_data = data_df.values[:, 1].astype(np.float64)
 
@@ -398,7 +413,10 @@ def main():
             # Example: 'zstd': zstd_comp,
             #'huffman_compress': huffman_compress,
             #'zlib': zlib_comp,
-            'blosc': blosc_comp,
+          # 'blosc': blosc_comp,
+           # 'bz2': bz2_comp,
+           # 'blosc_comp':blosc_comp_bit,
+            'zstd': zstd_comp,
         }
 
         # ---------------------------------------------------------------
