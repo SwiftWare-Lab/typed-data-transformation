@@ -146,7 +146,7 @@ def compute_stats(data, label_x, label_y):
 
 
 # Load the dataset
-data = pd.read_csv(r"C:\Users\jamalids\Downloads\merged22.csv")
+data = pd.read_csv('/home/jamalids/Documents/results-corrolation/merged22 (64).csv')
 
 
 # Specify the dataset name for labeling
@@ -214,7 +214,7 @@ plt.gca().spines['right'].set_visible(False)
 plt.xlabel("Entropy Order")
 plt.ylabel("Spearman Correlation Coefficient")
 plt.grid()
-plt.savefig("spearman_correlation.pdf")
+plt.savefig("/home/jamalids/Documents/spearman_correlation.pdf")
 
 
 # plt.xlabel("Entropy Order")
@@ -237,7 +237,7 @@ if "date" in data.columns:  # Replace 'date' with your date/time column.
     plt.ylabel(data.columns[1])
     plt.legend()
     plt.grid()
-    plt.show()
+    plt.savefig("/home/jamalids/Documents/line_plot")
 
 # 2. Histogram (for distribution of a numerical column):
 numerical_columns = data.select_dtypes(include=["float64", "int"]).columns
@@ -247,7 +247,7 @@ if not numerical_columns.empty:
         sns.histplot(data[col], kde=True, label=col, bins=20)
     plt.title("Histogram of Numerical Columns")
     plt.legend()
-    plt.show()
+    plt.savefig("/home/jamalids/Documents/histogram.pdf")
 
 # 3. Scatter Plot with regression line (for relationships between two numerical columns):
 if len(numerical_columns) >= 2:
@@ -255,7 +255,7 @@ if len(numerical_columns) >= 2:
     sns.scatterplot(x=numerical_columns[0], y=numerical_columns[1], data=data, alpha=0.6)
     sns.regplot(x=numerical_columns[0], y=numerical_columns[1], data=data, scatter=False, line_kws={"color": "red"})
     plt.title(f"Scatter Plot: {numerical_columns[0]} vs {numerical_columns[1]}")
-    plt.show()
+    plt.savefig("/home/jamalids/Documents/Scatter Plot")
 
 # 4. Box Plot (to analyze spread and outliers for a category):
 categorical_columns = data.select_dtypes(include=["object"]).columns
@@ -264,7 +264,7 @@ if not categorical_columns.empty:
     sns.boxplot(x=categorical_columns[0], y=numerical_columns[0], data=data)  # Replace with meaningful columns.
     plt.title(f"Box Plot of {numerical_columns[0]} by {categorical_columns[0]}")
     plt.xticks(rotation=45)
-    plt.show()
+    plt.savefig(f"box-plot-{numerical_columns[0]}")
 
 # 5. Heatmap (for correlations among numerical columns):
 if len(numerical_columns) > 1:
@@ -276,7 +276,7 @@ if len(numerical_columns) > 1:
     # make x-axis and y-axis labels bigger
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
-    plt.show()
+    plt.savefig("/home/jamalids/Documents/correlation_heatmap.png")
 
 
 

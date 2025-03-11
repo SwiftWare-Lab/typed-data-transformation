@@ -23,14 +23,14 @@ compConfigMap = {
     "g24_78_usb2_f32": [[[1, 2, 3], [4]]],
     "jw_mirimage_f32": [[[1, 2, 3], [4]]],
     "spitzer_irac_f32": [[[1, 2], [3], [4]]],
-    "turbulence_f32": [[[1, 2], [3], [4]]],
-    "wave_f32": [[[1, 2], [3], [4]]],
+    "turbulence_f32": [[[1, 2], [3], [4]],[[1, 2,3], [4]]],
+    "wave_f32": [[[1, 2], [3], [4]],[[1, 2,3], [4]]],
     "hdr_night_f32": [
         [[1, 4], [2], [3]],
 
     ],
-    "ts_gas_f32": [[[1, 2], [3], [4]], ],
-    "solar_wind_f32": [[[1], [2, 3], [4]],],
+    "ts_gas_f32": [[[1],[ 2,3], [4]],[[1,4],[ 2],[3]] ],
+    "solar_wind_f32": [[[1], [2, 3], [4]]],
     "tpch_lineitem_f32": [
         [[1, 2, 3], [4]],
 
@@ -60,7 +60,7 @@ compConfigMap = {
 
     ],
     "rsim_f32": [
-        [[1, 2, 3], [4]],
+        [[1, 2],[ 3], [4]],
 
     ],
     "astro_mhd_f64": [
@@ -360,8 +360,9 @@ import pandas as pd
 
 def main():
     # Folder containing the datasets
-    dataset_folder = r"C:\Users\jamalids\Downloads\dataset\64"
-    m = 8              # For float32
+   # dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
+    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/test"
+    m = 4          # For float32
     chunk_size = -1    # If not -1, we do block-based
     contig_order = False
 
@@ -386,11 +387,11 @@ def main():
         if m == 2:
             sliced_data = data_df.values[:, 1].astype(np.float16)
         elif m == 4:
-            sliced_data1 = data_df.values[:, 1].astype(np.float32)
-            sliced_data = sliced_data1[49151:65536]
+            sliced_data= data_df.values[:, 1].astype(np.float32)
+           # sliced_data = sliced_data1[49151:65536]
         else:
-            sliced_data1 = data_df.values[:, 1].astype(np.float64)
-            sliced_data = sliced_data1[49151:65536]
+            sliced_data = data_df.values[:, 1].astype(np.float64)
+           # sliced_data = sliced_data1[49151:65536]
 
         # ---------------------------------------------------------------
         # 1) Find decompositions from compConfigMap
@@ -412,8 +413,13 @@ def main():
         # 2) Build compression tool dictionary
         # ---------------------------------------------------------------
         comp_tool_dict = {
-            'zstd': zstd_comp,
-           # 'huffman_compress': huffman_compress,
+           'zstd': zstd_comp,
+           'snappy': snappy_comp,
+           'blosc': blosc_comp,
+           'bz2': bz2_comp,
+           'huffman_compress': huffman_compress,
+           'fastlz': fastlz_compress,
+           'rle': rle_compress,
         }
 
         # ---------------------------------------------------------------

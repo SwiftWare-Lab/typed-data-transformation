@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # Specify the directories containing the CSV files
-directories = [r"C:\Users\jamalids\Downloads\logs"]
+directories = ["/home/jamalids/Documents/frame/new/big-data-compression/modeling/k-entropy/zstd"]
 
 # List to hold DataFrames
 dataframes = []
@@ -25,7 +25,7 @@ if dataframes:
     combined_df = pd.concat(dataframes, ignore_index=True)
 
     # Save the combined DataFrame with all data to a CSV file
-    all_data_output_path = r"C:\Users\jamalids\Downloads\zstd.csv"
+    all_data_output_path = "/home/jamalids/Documents/frame/new/big-data-compression/modeling/k-entropy/zstd/combine.csv"
     combined_df.to_csv(all_data_output_path, index=False)
     print(f'Combined CSV with all data saved to {all_data_output_path}')
 import pandas as pd

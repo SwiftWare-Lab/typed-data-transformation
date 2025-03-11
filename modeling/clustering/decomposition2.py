@@ -222,9 +222,9 @@ def main():
                 # 'zlib': zlib_comp,
                  #'bz2': bz2_comp,
                 # 'snappy': snappy_comp,
-                 'fastlz': fastlz_compress,
+                 #'fastlz': fastlz_compress,
                 # 'rle': rle_compress,
-                #'blosc': blosc_comp,
+               'blosc': blosc_comp,
                 #'blosc_bit': blosc_comp_bit,  # Added blosc from compression_tools
             }
             stats = test_decomposition(
@@ -261,6 +261,6 @@ def main():
             stats_df = pd.DataFrame(stats_array)
             if not os.path.exists('logs'):
                 os.makedirs('logs')
-            stats_df.to_csv(f'logs/{dataset_name}_decomposition_streaming_stats.csv', index=False)
+            stats_df.to_csv(f'logs-snappy/{dataset_name}_decomposition_streaming_stats.csv', index=False)
 if __name__ == "__main__":
     main()
