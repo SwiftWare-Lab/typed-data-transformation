@@ -5,110 +5,85 @@ import pandas as pd
 from collections import Counter
 import matplotlib.pyplot as plt
 import seaborn as sns
+import zlib
+import matplotlib.cm as cm
+
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import pdist, squareform
-from sklearn.metrics import silhouette_score
-from sklearn.preprocessing import StandardScaler
-import zlib
+from sklearn.metrics import silhouette_score, silhouette_samples
 
 
-# --------------------------- Entropy Calculation --------------------------- #
-
-def compute_entropy(data_window):
-    """Compute the entropy of a given byte window."""
-    freq = Counter(data_window)
-    total = len(data_window)
-    entropy = 0.0
-    for count in freq.values():
-        p = count / total
-        if p > 0:
-            entropy -= p * math.log2(p)
-    return entropy
-
-
-def calculate_entropy_over_data(data, window_size=256):
-    """Slide a window of size `window_size` across data and compute entropy for each window."""
-    entropies = []
-    data_len = len(data)
-    for start_idx in range(0, data_len - window_size + 1, window_size):
-        window = data[start_idx:start_idx + window_size]
-        ent = compute_entropy(window)
-        entropies.append(ent)
-    return entropies
-
-
-# --------------------------- Feature Extraction --------------------------- #
-
-def extract_features(byte_group, window_size=256):
+# -------------------- Helper: Plot Silhouette -------------------- #
+def plot_silhouette(feature_matrix, labels,
+                    dataset_name, scenario, k, save_dir):
     """
-    Extract features from a byte group.
-
-    The feature vector consists of 4 entropy metrics (average, std, max, min)
-    followed by 256 normalized byte frequencies.
-
-    :param byte_group: Byte array of the group.
-    :param window_size: Size of each window for entropy calculation.
-    :return: 1D numpy array of features.
+    Create and save a silhouette plot for the given cluster labeling.
+    Checks if the number of clusters is valid for silhouette.
+    If invalid, we skip rather than crash.
     """
-    entropies = calculate_entropy_over_data(byte_group, window_size)
-    average_entropy = np.mean(entropies)
-    std_entropy = np.std(entropies)
-    max_entropy = np.max(entropies)
-    min_entropy = np.min(entropies)
+    unique_labels = np.unique(labels)
+    n_clusters = len(unique_labels)
+    n_samples = feature_matrix.shape[0]
 
-    # Byte frequency
-    freq = Counter(byte_group)
-    byte_freq = np.array([freq.get(i, 0) / len(byte_group) for i in range(256)])
+    # silhouette is only valid if 2 <= n_clusters <= n_samples - 1
+    if n_clusters < 2 or n_clusters > n_samples - 1:
+        print(f"Skipping silhouette plot for k={k} in {scenario}: "
+              f"{n_clusters} cluster(s), {n_samples} samples.")
+        return
 
-    # Combine all features into a single array
-    features = np.concatenate(([average_entropy, std_entropy, max_entropy, min_entropy], byte_freq))
-    return features
+    # Calculate silhouette samples & average
+    silhouette_avg = silhouette_score(feature_matrix, labels)
+    sample_sil_values = silhouette_samples(feature_matrix, labels)
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    y_lower = 10
+
+    # We'll color each cluster differently
+    colors = cm.nipy_spectral(np.linspace(0, 1, n_clusters))
+
+    # Sort clusters by label (just for consistent plotting order)
+    for i, clust_label in enumerate(sorted(unique_labels), start=1):
+        ith_cluster_values = sample_sil_values[labels == clust_label]
+        ith_cluster_values.sort()
+        size_cluster_i = len(ith_cluster_values)
+        y_upper = y_lower + size_cluster_i
+
+        color = colors[i - 1]
+        ax.fill_betweenx(np.arange(y_lower, y_upper),
+                         0, ith_cluster_values,
+                         facecolor=color, edgecolor=color, alpha=0.7)
+        # Label on the left side
+        ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(clust_label))
+        y_lower = y_upper + 10
+
+    ax.set_title(f"Silhouette plot for {scenario}, k={k}")
+    ax.set_xlabel("Silhouette coefficient values")
+    ax.set_ylabel("Cluster label")
+    ax.axvline(x=silhouette_avg, color="red", linestyle="--",
+               label=f"Avg = {silhouette_avg:.3f}")
+    ax.legend(loc="best")
+
+    ax.set_yticks([])  # Clear the y-axis
+    ax.set_xlim([-0.1, 1])
+    ax.set_ylim([0, y_lower + 10])
+
+    # Save figure
+    outfile = os.path.join(save_dir, f"{dataset_name}_{scenario}_k{k}_silhouette.png")
+    plt.tight_layout()
+    plt.savefig(outfile)
+    plt.close()
+    print(f"Silhouette plot saved at {outfile}")
 
 
-# --------------------------- Data Splitting --------------------------- #
-
-def split_bytes_into_components(byte_array, component_sizes):
-    """
-    Split the byte array into individual components based on specified sizes.
-
-    :param byte_array: The original byte array.
-    :param component_sizes: List indicating the size of each component.
-    :return: List of numpy arrays, each representing a component.
-    """
-    byte_array = np.frombuffer(byte_array, dtype=np.uint8)
-    # Assume components are interleaved
-    components = []
-    num_components = len(component_sizes)
-    for i in range(num_components):
-        component = byte_array[i::num_components]
-        components.append(component)
-    return components
-
-
-# --------------------------- Hierarchical Clustering --------------------------- #
-
+# -------------------- Hierarchical Clustering Helpers -------------------- #
 def perform_hierarchical_clustering(feature_matrix, method='complete'):
-    """
-    Perform hierarchical clustering.
-
-    :param feature_matrix: 2D numpy array where each row is a data point.
-    :param method: Linkage method.
-    :return: Linkage matrix.
-    """
-    linked = linkage(feature_matrix, method=method)
-    return linked
+    return linkage(feature_matrix, method=method)
 
 
 def plot_dendrogram_custom(linked, labels, save_path):
-    """
-    Plot and save a dendrogram.
-
-    :param linked: Linkage matrix.
-    :param labels: Labels for each data point.
-    :param save_path: File path to save the dendrogram.
-    """
     plt.figure(figsize=(10, 7))
-    dendrogram(linked, labels=labels, orientation='top', distance_sort='descending', show_leaf_counts=True)
+    dendrogram(linked, labels=labels, orientation='top',
+               distance_sort='descending', show_leaf_counts=True)
     plt.title('Hierarchical Clustering Dendrogram')
     plt.xlabel('Byte Groups')
     plt.ylabel('Distance')
@@ -118,45 +93,10 @@ def plot_dendrogram_custom(linked, labels, save_path):
     print(f"Dendrogram saved at {save_path}")
 
 
-def determine_optimal_clusters(linked, feature_matrix, max_clusters=3):
-    """
-    Determine the optimal number of clusters based on silhouette scores.
-
-    :param linked: Linkage matrix.
-    :param feature_matrix: Original feature matrix.
-    :param max_clusters: Maximum number of clusters to consider.
-    :return: Optimal number of clusters.
-    """
-    cluster_assignments = {}
-    for k in range(1, max_clusters + 1):
-        labels = fcluster(linked, k, criterion='maxclust')
-        cluster_assignments[k] = labels
-
-    silhouette_scores = {}
-    for k, labels in cluster_assignments.items():
-        try:
-            score = silhouette_score(feature_matrix, labels)
-            silhouette_scores[k] = score
-        except Exception as e:
-            silhouette_scores[k] = -1
-            print(f"Silhouette score calculation failed for K={k}: {e}")
-
-    if silhouette_scores:
-        optimal_k = max(silhouette_scores, key=silhouette_scores.get)
-    else:
-        optimal_k = 2
-
-    print(f"Optimal number of clusters based on silhouette scores: {optimal_k}")
-    return optimal_k
-
-
 def group_and_reorder(byte_groups, cluster_labels):
     """
-    Group and reorder byte groups based on cluster labels.
-
-    :param byte_groups: List of byte arrays.
-    :param cluster_labels: Cluster labels for each group.
-    :return: Ordered list of group indices.
+    Sort byte groups by (cluster_label, group_index).
+    Returns ordered indices.
     """
     group_info = []
     for idx, label in enumerate(cluster_labels):
@@ -169,34 +109,136 @@ def group_and_reorder(byte_groups, cluster_labels):
     return ordered_indices
 
 
-# --------------------------- Compression Evaluation --------------------------- #
-
+# -------------------- Compression Evaluation -------------------- #
 def compress_and_evaluate(byte_groups, ordered_indices, component_sizes=[1, 1, 1, 1]):
-    """
-    Compress byte groups based on ordered indices and evaluate compression ratio.
-
-    :param byte_groups: List of original byte arrays.
-    :param ordered_indices: List indicating the order of groups.
-    :param component_sizes: List indicating the size of each group.
-    :return: Compression ratio, original size, compressed size.
-    """
     ordered_groups = [byte_groups[i - 1].tobytes() for i in ordered_indices]
     merged_bytes = b''.join(ordered_groups)
     compressed_data = zlib.compress(merged_bytes)
     original_size = len(merged_bytes)
     compressed_size = len(compressed_data)
-    compression_ratio = compressed_size / original_size
-    return compression_ratio, original_size, compressed_size
+    ratio = compressed_size / original_size if original_size else 1
+    return ratio, original_size, compressed_size
 
 
-# --------------------------- Plotting Functions --------------------------- #
+# -------------------- Entropy & Feature Extraction -------------------- #
+def compute_entropy(data_window):
+    from collections import Counter
+    freq = Counter(data_window)
+    total = len(data_window)
+    entropy = 0.0
+    for count in freq.values():
+        p = count / total
+        if p > 0:
+            entropy -= p * math.log2(p)
+    return entropy
 
+
+def calculate_entropy_over_data(data, window_size=256):
+    entropies = []
+    for start_idx in range(0, len(data) - window_size + 1, window_size):
+        window = data[start_idx:start_idx + window_size]
+        ent = compute_entropy(window)
+        entropies.append(ent)
+    return entropies
+
+
+def extract_features(byte_group, window_size=256):
+    """
+    4 entropy metrics + 256 byte frequency bins => feature vector of length 260.
+    """
+    entropies = calculate_entropy_over_data(byte_group, window_size)
+    if len(entropies) > 0:
+        avg_ent = np.mean(entropies)
+        std_ent = np.std(entropies)
+        max_ent = np.max(entropies)
+        min_ent = np.min(entropies)
+    else:
+        # If the group is smaller than window_size, fallback:
+        avg_ent = std_ent = max_ent = min_ent = 0
+
+    from collections import Counter
+    freq = Counter(byte_group)
+    byte_freq = np.array([freq.get(i, 0) / len(byte_group) for i in range(256)])
+    return np.concatenate(([avg_ent, std_ent, max_ent, min_ent], byte_freq))
+
+
+# -------------------- Data Splitting -------------------- #
+def split_bytes_into_components(byte_array, component_sizes):
+    """
+    Splits the byte array into multiple interleaved components.
+    """
+    arr = np.frombuffer(byte_array, dtype=np.uint8)
+    components = []
+    num_components = len(component_sizes)
+    for i in range(num_components):
+        c = arr[i::num_components]
+        components.append(c)
+    return components
+
+
+# -------------------- Multi-Metric Evaluate & Choose K -------------------- #
+def evaluate_cluster_metrics(feature_matrix, linked,
+                             min_clusters=1, max_clusters=4):
+    """
+    Dummy function: we only compute Silhouette here,
+    but you could also compute DB, CH, Gap, etc.
+    Returns a dict with best k for each metric + tie info.
+    """
+    silhouette_scores = {}
+    cluster_assignments = {}
+
+    n_samples = feature_matrix.shape[0]
+
+    for k in range(min_clusters, max_clusters + 1):
+        labels = fcluster(linked, k, criterion='maxclust')
+        unique_labels = np.unique(labels)
+        n_clusters = len(unique_labels)
+
+        # Only valid if 2 <= n_clusters <= n_samples-1
+        if n_clusters >= 2 and n_clusters <= n_samples - 1:
+            try:
+                sil = silhouette_score(feature_matrix, labels)
+            except Exception:
+                sil = -1
+        else:
+            sil = -1
+
+        silhouette_scores[k] = sil
+        cluster_assignments[k] = labels
+
+    if len(silhouette_scores) == 0:
+        best_k_sil = None
+    else:
+        best_k_sil = max(silhouette_scores, key=silhouette_scores.get)
+
+    return {
+        'best_k_silhouette': best_k_sil,
+        'tie_silhouette': [k for k, v in silhouette_scores.items()
+                           if v == silhouette_scores[best_k_sil]] if best_k_sil else [],
+        'silhouette_scores': silhouette_scores,
+        'cluster_assignments': cluster_assignments
+    }
+
+
+def determine_optimal_clusters(feature_matrix, linked,
+                               min_clusters=2, max_clusters=4):
+    """
+    Uses evaluate_cluster_metrics and picks the best K by silhouette.
+    If none are valid, fallback to 2.
+    """
+    results = evaluate_cluster_metrics(feature_matrix, linked, min_clusters, max_clusters)
+    best_k_sil = results['best_k_silhouette']
+    final_k = best_k_sil if best_k_sil else 2
+    return final_k, results
+
+
+# -------------------- Plotting Helpers -------------------- #
 def plot_entropy_profiles(components_entropy, dataset_name, save_path):
     df = pd.DataFrame(components_entropy).T
     df.columns = [f'Group {i + 1}' for i in range(len(components_entropy))]
     plt.figure(figsize=(12, 6))
-    for column in df.columns:
-        plt.plot(df.index, df[column], label=column)
+    for col in df.columns:
+        plt.plot(df.index, df[col], label=col)
     plt.title(f'Entropy Profiles for {dataset_name}')
     plt.xlabel('Window Index')
     plt.ylabel('Entropy (bits)')
@@ -205,23 +247,26 @@ def plot_entropy_profiles(components_entropy, dataset_name, save_path):
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
-    print(f"Entropy profiles plot saved as {save_path}")
+    print(f"Entropy profiles plot saved at {save_path}")
 
 
 def plot_correlation_matrix(components_entropy, dataset_name, save_path):
     df = pd.DataFrame(components_entropy).T
     df.columns = [f'Group {i + 1}' for i in range(len(components_entropy))]
-    correlation_matrix = df.corr()
+    corr_mat = df.corr()
     plt.figure(figsize=(8, 6))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+    sns.heatmap(corr_mat, annot=True, cmap='coolwarm', fmt=".2f")
     plt.title(f'Correlation Matrix of Group Entropies for {dataset_name}')
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
-    print(f"Correlation matrix plot saved as {save_path}")
+    print(f"Correlation matrix plot saved at {save_path}")
 
 
 def plot_best_grouping(best_grouping, dataset_name, save_path):
+    """
+    Bar plot showing how many original groups are in each "cluster group".
+    """
     groups = [f"Group {grp}" for grp in best_grouping]
     sizes = [len(grp) for grp in best_grouping]
     plt.figure(figsize=(8, 6))
@@ -232,7 +277,7 @@ def plot_best_grouping(best_grouping, dataset_name, save_path):
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
-    print(f"Best grouping plot saved as {save_path}")
+    print(f"Best grouping plot saved at {save_path}")
 
 
 def plot_compression_comparison(best_ratio, original_ratio, dataset_name, save_path):
@@ -248,99 +293,115 @@ def plot_compression_comparison(best_ratio, original_ratio, dataset_name, save_p
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
-    print(f"Compression comparison plot saved as {save_path}")
+    print(f"Compression comparison plot saved at {save_path}")
 
 
-# --------------------------- Feature Ablation Study --------------------------- #
-
-def run_feature_ablation(feature_matrix, dataset_name, save_dir):
+# -------------------- Feature Ablation Study -------------------- #
+def run_feature_ablation(feature_matrix, dataset_name, save_dir,
+                         silhouette_records):
     """
-    Perform a feature ablation study by removing specific features and evaluating clustering performance.
+    Remove subsets of features, cluster them, and record the silhouette
+    for each scenario. Then save dendrograms & silhouette plots as well.
 
-    For each scenario (e.g., removing a particular entropy metric or the entire byte frequency set),
-    hierarchical clustering is performed and silhouette scores are computed.
-    A dendrogram is saved for each ablation scenario.
-
-    :param feature_matrix: The full feature matrix (each row corresponds to a byte group).
-    :param dataset_name: Name of the dataset (used in plot titles and file names).
-    :param save_dir: Directory where plots will be saved.
-    :return: Dictionary with ablation results.
+    We accept silhouette_records so we can append (Scenario, k, Silhouette) data.
     """
     scenarios = {
-        "All Features": np.arange(feature_matrix.shape[1]),
         "No avg_entropy": np.delete(np.arange(feature_matrix.shape[1]), 0),
         "No std_entropy": np.delete(np.arange(feature_matrix.shape[1]), 1),
         "No max_entropy": np.delete(np.arange(feature_matrix.shape[1]), 2),
         "No min_entropy": np.delete(np.arange(feature_matrix.shape[1]), 3),
-        "No entropy features": np.arange(4, feature_matrix.shape[1]),  # only byte frequencies
-        "No byte frequencies": np.arange(0, 4)  # only entropy metrics
+        "No entropy features": np.arange(4, feature_matrix.shape[1]),  # only byte freq
+        "No byte frequencies": np.arange(0, 4)  # only the 4 entropy metrics
     }
 
     ablation_results = {}
 
     for scenario, indices in scenarios.items():
         ablated_features = feature_matrix[:, indices]
-        scaler = StandardScaler()
-        ablated_features_scaled = scaler.fit_transform(ablated_features)
+        linked = linkage(ablated_features, method='complete')
 
-        # Perform hierarchical clustering using complete linkage
-        linked = linkage(ablated_features_scaled, method='complete')
-
-        # Evaluate silhouette scores for k = 2 and 3 clusters
+        # We'll test k=2,3 just as an example
         silhouette_scores = {}
         cluster_assignments = {}
+
         for k in range(2, 4):
             labels = fcluster(linked, k, criterion='maxclust')
-            try:
-                score = silhouette_score(ablated_features_scaled, labels)
-            except Exception as e:
-                score = -1
-            silhouette_scores[k] = score
+            unique_labels = np.unique(labels)
+            n_clusters = len(unique_labels)
+            n_samples = ablated_features.shape[0]
+
+            # Only compute silhouette if valid
+            if 2 <= n_clusters <= n_samples - 1:
+                try:
+                    s_val = silhouette_score(ablated_features, labels)
+                except:
+                    s_val = -1
+            else:
+                s_val = -1
+
+            silhouette_scores[k] = s_val
             cluster_assignments[k] = labels
 
-        optimal_k = max(silhouette_scores, key=silhouette_scores.get)
-        optimal_labels = cluster_assignments[optimal_k]
+            # Record
+            silhouette_records.append({
+                "Dataset": dataset_name,
+                "Scenario": f"Ablation: {scenario}",
+                "k": k,
+                "Silhouette": s_val
+            })
 
+            # Also plot silhouette
+            plot_silhouette(ablated_features, labels,
+                            dataset_name=dataset_name,
+                            scenario=f"Ablation_{scenario.replace(' ', '_')}",
+                            k=k, save_dir=save_dir)
+
+        optimal_k = max(silhouette_scores, key=silhouette_scores.get)
         ablation_results[scenario] = {
             "optimal_k": optimal_k,
             "silhouette_score": silhouette_scores[optimal_k],
-            "cluster_labels": optimal_labels,
+            "cluster_labels": cluster_assignments[optimal_k],
             "linkage_matrix": linked
         }
 
-        # Plot dendrogram for the current ablation scenario
+        # Plot dendrogram
         plt.figure(figsize=(10, 7))
-        dendrogram(linked, labels=[f"Group {i + 1}" for i in range(feature_matrix.shape[0])])
+        dendrogram(linked, labels=[f"Group {i + 1}" for i in range(ablated_features.shape[0])])
         plt.title(f'Dendrogram - {scenario}')
         plt.xlabel('Byte Groups')
         plt.ylabel('Distance')
         plt.tight_layout()
-        dendro_save_path = os.path.join(save_dir, f"{dataset_name}_{scenario.replace(' ', '_')}_dendrogram.png")
-        plt.savefig(dendro_save_path)
+        dendro_file = os.path.join(save_dir, f"{dataset_name}_Ablation_{scenario.replace(' ', '_')}_dendrogram.png")
+        plt.savefig(dendro_file)
         plt.close()
-        print(f"Dendrogram for scenario '{scenario}' saved at {dendro_save_path}")
+        print(f"Dendrogram for scenario '{scenario}' saved at {dendro_file}")
 
     print("\nFeature Ablation Study Results:")
     for scenario, res in ablation_results.items():
-        print(f"{scenario}: Optimal Clusters = {res['optimal_k']}, Silhouette Score = {res['silhouette_score']:.4f}")
+        print(f"Scenario: {scenario}, Optimal k={res['optimal_k']}, "
+              f"Silhouette={res['silhouette_score']:.4f}")
 
     return ablation_results
 
 
-# --------------------------- Main Analysis Function --------------------------- #
-
+# -------------------- Main Analysis -------------------- #
 def run_analysis(folder_path):
     """
-    Perform analysis on all .tsv files within the specified folder.
+    1) Reads .tsv in the folder
+    2) Preps data, calculates entropy
+    3) Hierarchical clustering w/ all features
+    4) Only byte frequency
+    5) Feature ablation
+    6) Saves silhouette results in a CSV
     """
     if not os.path.isdir(folder_path):
         print(f"Error: The folder path '{folder_path}' does not exist.")
         return
 
-    tsv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.tsv')]
-
+    tsv_files = [f for f in os.listdir(folder_path)
+                 if f.lower().endswith('.tsv')]
     if not tsv_files:
-        print(f"No .tsv files found in the folder '{folder_path}'.")
+        print(f"No .tsv files found in '{folder_path}'.")
         return
 
     print(f"Found {len(tsv_files)} .tsv file(s) in '{folder_path}'. Starting analysis...\n")
@@ -351,7 +412,6 @@ def run_analysis(folder_path):
         save_dir = os.path.join(os.getcwd(), f"{dataset_name}_analysis")
         os.makedirs(save_dir, exist_ok=True)
 
-        # --------------------------- Data Loading --------------------------- #
         print(f"==============================\nProcessing: {tsv_file}\n==============================")
         print(f"Loading dataset from {dataset_path}...")
         try:
@@ -361,103 +421,174 @@ def run_analysis(folder_path):
             print(f"An error occurred while loading the dataset: {e}. Skipping this file.\n")
             continue
 
-        # --------------------------- Data Preparation --------------------------- #
+        # Prepare data
         print("Preparing data...")
         try:
-            byte_columns = ts_data.columns[1:]
-            byte_data = ts_data[byte_columns].to_numpy().astype(np.float64)
-            byte_data = byte_data.flatten(order='F').tobytes()
-            byte_groups = split_bytes_into_components(byte_data, [1, 1, 1, 1])
+            # Assume col 0 is something else, actual bytes in columns 1..end
+            byte_cols = ts_data.columns[1:]
+            byte_values = ts_data[byte_cols].to_numpy().astype(np.float64)
+            byte_values = byte_values.flatten(order='F').tobytes()
+            byte_groups = split_bytes_into_components(byte_values, [1, 1, 1, 1])
             print("Data preparation completed.\n")
         except Exception as e:
-            print(f"An error occurred during data preparation: {e}. Skipping this file.\n")
+            print(f"Error in data prep: {e}")
             continue
 
-        # --------------------------- Entropy Calculation --------------------------- #
+        # Calculate entropy
         print("Calculating entropy profiles...")
         components_entropy = []
         for i, group_bytes in enumerate(byte_groups):
-            entropies = calculate_entropy_over_data(group_bytes, window_size=65536)
-            components_entropy.append(entropies)
-            print(f"Group {i + 1} entropy calculation completed. {len(entropies)} windows processed.\n")
+            ent_list = calculate_entropy_over_data(group_bytes, window_size=65536)
+            components_entropy.append(ent_list)
+            print(f"Group {i + 1} => {len(ent_list)} entropy windows")
 
-        plot_entropy_profiles_path = os.path.join(save_dir, f"{dataset_name}_entropy_profiles.png")
-        plot_entropy_profiles(components_entropy, dataset_name, plot_entropy_profiles_path)
+        # Plot entropy
+        ent_plot_file = os.path.join(save_dir, f"{dataset_name}_entropy_profiles.png")
+        plot_entropy_profiles(components_entropy, dataset_name, ent_plot_file)
 
-        print("Analyzing correlations between group entropies...")
-        plot_correlation_matrix_path = os.path.join(save_dir, f"{dataset_name}_correlation_matrix.png")
-        plot_correlation_matrix(components_entropy, dataset_name, plot_correlation_matrix_path)
+        # Correlation
+        corr_file = os.path.join(save_dir, f"{dataset_name}_correlation_matrix.png")
+        plot_correlation_matrix(components_entropy, dataset_name, corr_file)
 
-        # --------------------------- Feature Extraction --------------------------- #
+        # Feature extraction
         print("Extracting features for clustering...")
         features = []
-        for group_bytes in byte_groups:
-            feature_vector = extract_features(group_bytes, window_size=65536)
-            features.append(feature_vector)
+        for gb in byte_groups:
+            fv = extract_features(gb, window_size=65536)
+            features.append(fv)
         feature_matrix = np.array(features)
-        print(f"Extracted {feature_matrix.shape[0]} feature vectors with {feature_matrix.shape[1]} features each.\n")
+        print(f"Extracted {feature_matrix.shape[0]} rows, {feature_matrix.shape[1]} features each.\n")
 
-        # --------------------------- Clustering Using All Features --------------------------- #
-        print("Performing hierarchical clustering using all features...")
-        scaler = StandardScaler()
-        features_scaled = scaler.fit_transform(feature_matrix)
-        linked = perform_hierarchical_clustering(features_scaled, method='complete')
-        dendrogram_save_path = os.path.join(save_dir, f"{dataset_name}_dendrogram.png")
-        labels = [f'Group {i + 1}' for i in range(len(byte_groups))]
-        plot_dendrogram_custom(linked, labels, dendrogram_save_path)
+        # We'll store silhouette results in a list of dicts & then CSV
+        silhouette_records = []
 
-        print("Determining the optimal number of clusters...")
-        optimal_k = determine_optimal_clusters(linked, features_scaled, max_clusters=3)
-        cluster_labels = fcluster(linked, optimal_k, criterion='maxclust')
-        print(f"Cluster labels for each group: {cluster_labels}\n")
+        # ---------- 1) Clustering with All Features ----------
+        print("Performing hierarchical clustering (All Features)...")
+        linked = perform_hierarchical_clustering(feature_matrix, method='complete')
 
-        print("Grouping and reordering byte groups based on clustering...")
-        ordered_indices = group_and_reorder(byte_groups, cluster_labels)
-        print(f"Optimal group order (Group indices): {ordered_indices}\n")
+        # Plot dendrogram
+        dend_file = os.path.join(save_dir, f"{dataset_name}_All_Features_dendrogram.png")
+        group_labels = [f"Group {i + 1}" for i in range(len(byte_groups))]
+        plot_dendrogram_custom(linked, group_labels, dend_file)
 
-        print("Plotting best grouping configuration...")
-        best_grouping = []
-        for grp in sorted(set(cluster_labels)):
-            indices = [i + 1 for i, label in enumerate(cluster_labels) if label == grp]
-            best_grouping.append(tuple(indices))
-        plot_best_grouping(best_grouping, dataset_name, os.path.join(save_dir, f"{dataset_name}_best_grouping.png"))
+        # For k in [2..4], do silhouette
+        scenario_name = "All_Features"
+        for k in range(2, 5):
+            labels_k = fcluster(linked, k, criterion='maxclust')
+            # how many distinct clusters?
+            n_clusters = len(np.unique(labels_k))
+            n_samples = feature_matrix.shape[0]
+            if 2 <= n_clusters <= n_samples - 1:
+                try:
+                    sil_val = silhouette_score(feature_matrix, labels_k)
+                except:
+                    sil_val = -1
+            else:
+                sil_val = -1
 
-        print("Evaluating compression ratio with the determined group order...")
-        compression_ratio, original_size, compressed_size = compress_and_evaluate(byte_groups, ordered_indices, [1, 1, 1, 1])
-        print(f"Original size: {original_size} bytes")
-        print(f"Compressed size: {compressed_size} bytes")
-        print(f"Compression ratio: {compression_ratio:.4f} ({(compressed_size / original_size) * 100:.2f}%)\n")
+            silhouette_records.append({
+                "Dataset": dataset_name,
+                "Scenario": scenario_name,
+                "k": k,
+                "Silhouette": sil_val
+            })
 
-        print("Comparing with original group ordering...")
-        original_ordering = list(range(1, len(byte_groups) + 1))
-        original_compression_ratio, orig_size, orig_compressed_size = compress_and_evaluate(byte_groups, original_ordering, [1, 1, 1, 1])
-        print(f"Original Ordering Compression ratio: {original_compression_ratio:.4f} ({orig_compressed_size}/{orig_size})\n")
-        plot_compression_comparison_path = os.path.join(save_dir, f"{dataset_name}_compression_comparison.png")
-        plot_compression_comparison(compression_ratio, original_compression_ratio, dataset_name, plot_compression_comparison_path)
+            # Plot silhouette
+            plot_silhouette(feature_matrix, labels_k,
+                            dataset_name=dataset_name,
+                            scenario=scenario_name,
+                            k=k,
+                            save_dir=save_dir)
 
-        # --------------------------- Clustering Using Only Byte Frequency Features --------------------------- #
-        print("Performing hierarchical clustering using only byte frequency features (removing entropy metrics)...")
-        # Select only byte frequency features (remove first 4 entropy features)
+        # Determine best k
+        print("Determining best k (All Features)...")
+        best_k_all, metrics_all = determine_optimal_clusters(feature_matrix, linked, 2, 4)
+        cluster_labels_all = fcluster(linked, best_k_all, criterion='maxclust')
+        print(f"Best k (All Features) = {best_k_all}, silhouette scores:")
+        print(metrics_all['silhouette_scores'])
+
+        # Group & reorder
+        reorder_indices_all = group_and_reorder(byte_groups, cluster_labels_all)
+        best_groups = []
+        for grp_label in sorted(set(cluster_labels_all)):
+            idxs = [i + 1 for i, lab in enumerate(cluster_labels_all) if lab == grp_label]
+            best_groups.append(tuple(idxs))
+
+        best_group_file = os.path.join(save_dir, f"{dataset_name}_All_Features_best_grouping.png")
+        plot_best_grouping(best_groups, dataset_name, best_group_file)
+
+        # Compression
+        ratio_all, orig_size_all, comp_size_all = compress_and_evaluate(byte_groups, reorder_indices_all)
+        print(f"All-Features compression ratio: {ratio_all:.4f} ({comp_size_all}/{orig_size_all})")
+
+        # Compare original
+        orig_order = list(range(1, len(byte_groups) + 1))
+        ratio_orig, orig_sz, comp_sz = compress_and_evaluate(byte_groups, orig_order)
+        print(f"Original ordering ratio: {ratio_orig:.4f} ({comp_sz}/{orig_sz})")
+
+        comp_plot_file = os.path.join(save_dir, f"{dataset_name}_compression_comparison.png")
+        plot_compression_comparison(ratio_all, ratio_orig, dataset_name, comp_plot_file)
+
+        # ---------- 2) Only Byte Frequency ----------
+        print("Performing clustering (Only Byte Frequency)...")
         byte_freq_features = feature_matrix[:, 4:]
-        scaler_byte_freq = StandardScaler()
-        byte_freq_scaled = scaler_byte_freq.fit_transform(byte_freq_features)
-        linked_byte_freq = perform_hierarchical_clustering(byte_freq_scaled, method='complete')
-        dendrogram_byte_freq_path = os.path.join(save_dir, f"{dataset_name}_byte_frequency_dendrogram.png")
-        labels_byte_freq = [f'Group {i + 1}' for i in range(len(byte_groups))]
-        plot_dendrogram_custom(linked_byte_freq, labels_byte_freq, dendrogram_byte_freq_path)
-        print("Clustering with only byte frequency features completed.\n")
+        linked_freq = perform_hierarchical_clustering(byte_freq_features, 'complete')
 
-        # --------------------------- Feature Ablation Study --------------------------- #
-        print("Running feature ablation study to evaluate the impact of each feature on clustering...")
-        ablation_results = run_feature_ablation(feature_matrix, dataset_name, save_dir)
-        print("Feature ablation study completed.\n")
+        # Dendrogram
+        dend_file_freq = os.path.join(save_dir, f"{dataset_name}_Only_Byte_Freq_dendrogram.png")
+        plot_dendrogram_custom(linked_freq, group_labels, dend_file_freq)
 
-        print(f"Analysis for '{tsv_file}' completed successfully.\n{'=' * 30}\n")
+        scenario_name = "Only_Byte_Freq"
+        for k in range(2, 5):
+            labels_k = fcluster(linked_freq, k, criterion='maxclust')
+            n_clusters = len(np.unique(labels_k))
+            n_samples = byte_freq_features.shape[0]
+            if 2 <= n_clusters <= n_samples - 1:
+                try:
+                    sil_val = silhouette_score(byte_freq_features, labels_k)
+                except:
+                    sil_val = -1
+            else:
+                sil_val = -1
+
+            silhouette_records.append({
+                "Dataset": dataset_name,
+                "Scenario": scenario_name,
+                "k": k,
+                "Silhouette": sil_val
+            })
+
+            plot_silhouette(byte_freq_features, labels_k,
+                            dataset_name=dataset_name,
+                            scenario=scenario_name,
+                            k=k,
+                            save_dir=save_dir)
+
+        # Evaluate best k
+        best_k_freq, metrics_freq = determine_optimal_clusters(byte_freq_features, linked_freq, 2, 4)
+        print(f"Best k (Only Byte Freq) = {best_k_freq}, silhouette scores:")
+        print(metrics_freq['silhouette_scores'])
+
+        # ---------- 3) Feature Ablation ----------
+        print("Running Feature Ablation Study...")
+        ablation_results = run_feature_ablation(feature_matrix, dataset_name,
+                                                save_dir,
+                                                silhouette_records)
+        print("Feature ablation done.\n")
+
+        # ---------- Finally: Save Silhouette CSV for This Dataset ----------
+        df_sil = pd.DataFrame(silhouette_records)
+        csv_path = os.path.join(save_dir, f"{dataset_name}_silhouette_results.csv")
+        df_sil.to_csv(csv_path, index=False)
+        print(f"Saved all silhouette scores to {csv_path}\n")
+
+        print(f"Analysis for '{tsv_file}' completed.\n{'=' * 30}\n")
 
     print("All analyses completed successfully.")
 
 
+# -------------------- Entry Point -------------------- #
 if __name__ == "__main__":
-    # Update this path to point to the folder containing your .tsv files
+    # Replace with your folder containing .tsv files
     folder_path = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/test"
     run_analysis(folder_path)

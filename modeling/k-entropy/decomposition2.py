@@ -417,9 +417,9 @@ def main():
            'snappy': snappy_comp,
            'blosc': blosc_comp,
            'bz2': bz2_comp,
-           'huffman_compress': huffman_compress,
+           #'huffman_compress': huffman_compress,
            'fastlz': fastlz_compress,
-           'rle': rle_compress,
+           #'rle': rle_compress,
         }
 
         # ---------------------------------------------------------------
