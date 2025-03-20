@@ -3,7 +3,7 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
 # 1. Read CSV file
-df = pd.read_csv('/home/jamalids/Documents/frame/new/big-data-compression/modeling/clustering/logs-zstd/hdr_night_f32_decomposition_stats.csv')
+df = pd.read_csv('/home/jamalids/Documents/all-config-cluster/logs-zstd/jw_mirimage_f32_decomposition_stats.csv')
 
 
 # If there's NO date column, skip the following lines:

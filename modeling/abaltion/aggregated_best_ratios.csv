@@ -1,0 +1,11 @@
+dataset name,best_config,best_ratio_column,best_ratio,best_ratio_excluding_best
+acs_wht_f32,"((0,1),(2),(3))",decomposed zstd compression ratio,1.57966599415253,1.579670053257
+citytemp_f32,"((0,1),(2),(3))",decomposed zstd compression ratio,2.98722195784027,2.99049471667176
+hdr_night_f32,"((0,1),(2),(3))",decomposed zstd compression ratio,3.64616232619382,3.64616232619382
+hst_wfc3_ir_f32,"((0,1,2),(3))",decomposed zstd compression ratio,1.99328740129868,2.01051835462929
+hst_wfc3_uvis_f32,"((0,1),(2),(3))",decomposed zstd compression ratio,1.93321255246197,1.9343401869597
+jw_mirimage_f32,"((0,1,2),(3))",decomposed zstd compression ratio,1.31292679538074,1.89118620881173
+rsim_f32,"((0,1,2),(3))",decomposed zstd compression ratio,1.8054968176594,1.89408745135968
+solar_wind_f32,"((0,1),(2),(3))",decomposed zstd compression ratio,1.70860099303211,1.68332568073164
+spitzer_irac_f32,"((0,1,2),(3))",decomposed zstd compression ratio,1.45154674141569,1.45153123827429
+tpch_lineitem_f32,"((0,1,3),(2))",decomposed zstd compression ratio,2.28958962615933,2.62864442672576

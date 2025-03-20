@@ -5,25 +5,23 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from collections import Counter
+from collections import Counter, defaultdict
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 import zlib
 import subprocess
 
-################## Your Compression Tools (from second code) ##################
-
-from  modeling.utils import tuple_to_string, compute_entropy, list_to_string, find_max_consecutive_similar_values
-from  modeling.compression_tools import (
+# ===============  Your Existing Utilities & Tools  ===============
+from modeling.utils import tuple_to_string, compute_entropy, list_to_string, find_max_consecutive_similar_values
+from modeling.compression_tools import (
     zstd_comp, zlib_comp, bz2_comp, snappy_comp, fastlz_compress,
     rle_compress, huffman_compress, blosc_comp, blosc_comp_bit
 )
 
-################## 1) Basic Compression Helpers ##################
+# =============== 1) Basic Compression Helpers  ===============
 def zstd_comp_cmd(data_bytes, level=3):
     """
-    If you don't want to rely on an external 'zstd' command, you can remove this.
-    Otherwise, it writes data to a temp file and calls the zstd binary.
+    External call to the 'zstd' binary.
     """
     with open("tmp_zstd_input.bin", "wb") as f:
         f.write(data_bytes)
@@ -41,8 +39,7 @@ def ratio_or_inf(orig_size, comp_size):
         return float('inf')
     return float(orig_size) / comp_size
 
-
-################## 2) Entropy & Feature Extraction (from first code) ##################
+# =============== 2) Entropy & Feature Extraction  ===============
 def compute_entropy(data_window):
     freq = Counter(data_window)
     total = len(data_window)
@@ -65,7 +62,7 @@ def calculate_entropy_over_data(data, window_size=65536):
 
 def extract_5_features(byte_group, window_size=65536):
     """
-    [avg_ent, std_ent, max_ent, min_ent, freq_std]
+    Returns an array of 5 features: [avg_ent, std_ent, max_ent, min_ent, freq_std]
     """
     entropies = calculate_entropy_over_data(byte_group, window_size)
     if len(entropies) > 0:
@@ -97,11 +94,11 @@ def extract_only_frequency(byte_group, window_size=65536):
     byte_freqs = np.array([freq_counter.get(i, 0) / len(byte_group) for i in range(256)])
     return np.array([np.std(byte_freqs)])
 
-
-################## 3) Build/Measure Decomposition (from second code) ##################
+# =============== 3) transform_data, compress_data, analyze_data  ===============
 def transform_data(data_set_list, order='C'):
     """
-    Flatten each 2D array (row-major or col-major), then concatenate into one byte array.
+    Flatten each 2D array in data_set_list (using order 'C' or 'F'),
+    then concatenate into one 1D np.array of dtype np.byte.
     """
     all_bytes = []
     for cmp in data_set_list:
@@ -113,9 +110,9 @@ def transform_data(data_set_list, order='C'):
 
 def compress_data(data_set_list, compress_method, order='F'):
     """
-    Flatten each 2D array in 'data_set_list' with the given 'order',
-    compress it, sum total compressed size.
-    Return (list_of_compressed, total_compressed_size).
+    Flatten each 2D array in data_set_list with the given order,
+    compress it, and sum total compressed size.
+    Returns (list_of_compressed, total_compressed_size).
     """
     compressed_data = []
     total_size = 0
@@ -128,7 +125,8 @@ def compress_data(data_set_list, compress_method, order='F'):
 
 def analyze_data(data_set_list, data_set_original):
     """
-    Similar to 'analyze_data' in second code: measure entropy, etc.
+    Compute entropy metrics for each sub-array in data_set_list,
+    plus a weighted entropy (WE) and overall entropy of data_set_original.
     """
     entropy_list = []
     WE = 0
@@ -152,289 +150,255 @@ def analyze_data(data_set_list, data_set_original):
     entropy_word = compute_entropy(data_set_original)
     return entropy_list, WE, entropy_word, max_rep_lst, uniq_ratio_lst
 
+# =============== 4) Additional Cluster Metrics: WCSS, Gap Statistic  ===============
+def compute_wcss(X, labels):
+    """
+    Compute within-cluster sum of squares (WCSS) for a given dataset X and labels.
+    X: shape (n_samples, n_features)
+    labels: cluster labels for each sample.
+    """
+    unique_labels = np.unique(labels)
+    wcss = 0.0
+    for lab in unique_labels:
+        cluster_points = X[labels == lab]
+        centroid = np.mean(cluster_points, axis=0)
+        wcss += np.sum((cluster_points - centroid) ** 2)
+    return wcss
 
-################## 4) Reorder by Cluster => Build comp_list (like second code) ##################
+def gap_statistic(X, k, B=10):
+    """
+    Compute Gap statistic for clustering dataset X into k clusters.
+    X: (n_samples, n_features)
+    B: number of reference datasets.
+    Returns the gap value.
+    """
+    # Cluster the original data
+    # Here, we assume hierarchical clustering using 'complete' linkage
+    linked = linkage(X, method='complete')
+    labels = fcluster(linked, k, criterion='maxclust')
+    wcss = compute_wcss(X, labels)
+    log_wcss = np.log(wcss)
+
+    # Create B reference datasets
+    mins = np.min(X, axis=0)
+    maxs = np.max(X, axis=0)
+    ref_log_wcss = []
+    for b in range(B):
+        random_ref = np.random.uniform(mins, maxs, size=X.shape)
+        linked_ref = linkage(random_ref, method='complete')
+        labels_ref = fcluster(linked_ref, k, criterion='maxclust')
+        wcss_ref = compute_wcss(random_ref, labels_ref)
+        ref_log_wcss.append(np.log(wcss_ref))
+    gap = np.mean(ref_log_wcss) - log_wcss
+    return gap
+
+# ===============  5) Build comp_list from cluster labels  ===============
 def build_comp_list_from_clusters(byte_groups, labels):
     """
-    In the second code, each 'decomposition' is a list of 2D arrays.
-    Here, 'labels' define which cluster each group belongs to.
-    We'll gather groups with the same label into one 2D array of shape (#groups_in_label, group_length).
-    Then return a list of these arrays.
+    For each unique label, gather the corresponding groups (1D arrays) into a 2D array.
+    Return a list of these 2D arrays (comp_list).
     """
-    # First figure out group length
-    # Each group 'byte_groups[i]' is a 1D array of type uint8.
-    group_length = [len(g) for g in byte_groups]
-    # (We expect them all the same length if they came from a uniform split, but let's be safe.)
-    # We'll store (cluster_label -> list of group indices)
-    from collections import defaultdict
     cluster_dict = defaultdict(list)
     for i, lab in enumerate(labels):
         cluster_dict[lab].append(i)
-
-    # Build comp_list: each cluster => shape (#groups_in_label, length_of_each_group)
     comp_list = []
     for lab in sorted(cluster_dict.keys()):
-        indices_in_cluster = cluster_dict[lab]
-        # we create a 2D array of shape ( len(indices_in_cluster), length_of_each_group )
-        # We'll pick the length from the first group in this cluster
-        if not indices_in_cluster:
+        indices = cluster_dict[lab]
+        if not indices:
             continue
-        first_idx = indices_in_cluster[0]
-        length_g = len(byte_groups[first_idx])
-        arr2d = np.zeros((len(indices_in_cluster), length_g), dtype=np.uint8)
-        for row_idx, grp_i in enumerate(indices_in_cluster):
+        length_g = len(byte_groups[indices[0]])
+        arr2d = np.zeros((len(indices), length_g), dtype=np.uint8)
+        for row_idx, grp_i in enumerate(indices):
             arr2d[row_idx] = byte_groups[grp_i]
         comp_list.append(arr2d)
     return comp_list
 
-
-def build_reordered_single_array1(comp_list, order='F'):
-    """
-    Create a single 2D array from the entire comp_list, so we treat it like "reordered" in second code.
-    That is, all rows from each cluster appended vertically.
-    """
-    # Count total rows
-    total_rows = 0
-    length_g = 0
-    for arr2d in comp_list:
-        total_rows += arr2d.shape[0]
-        length_g = arr2d.shape[1]  # assume consistent length
-
-    # Make one big 2D array of shape (total_rows, length_g)
-    big_arr = np.zeros((total_rows, length_g), dtype=np.uint8)
-    start_row = 0
-    for arr2d in comp_list:
-        r_ = arr2d.shape[0]
-        big_arr[start_row:start_row + r_] = arr2d
-        start_row += r_
-    return big_arr
-
-###########################
-def build_reordered_single_array(comp_list, order='F'):
-    """
-    1) Create one big 2D array by stacking each 2D array in 'comp_list' vertically.
-       - The total row count is sum of row counts of each array in comp_list.
-       - The column count (length_g) is taken from the first array (assumed consistent).
-    2) Flatten that big 2D array (in 'C' or 'F' order).
-    3) Return a 1D np.ndarray of dtype np.byte.
-
-    This effectively combines the "reorder" step with the "transform_data" approach
-    so you get a single flat array of bytes representing the entire cluster decomposition.
-    """
-    # Handle empty input gracefully
-    if not comp_list:
-        return np.array([], dtype=np.byte)
-
-    # Determine total rows and the column length
-    total_rows = 0
-    length_g = comp_list[0].shape[1]  # assume at least one array, same number of columns
-    for arr2d in comp_list:
-        total_rows += arr2d.shape[0]
-
-    # Allocate a big 2D array
-    big_arr = np.zeros((total_rows, length_g), dtype=np.uint8)
-
-    # Copy each 2D array in 'comp_list' into 'big_arr' sequentially
-    start_row = 0
-    for arr2d in comp_list:
-        r_ = arr2d.shape[0]
-        big_arr[start_row : start_row + r_] = arr2d
-        start_row += r_
-
-    # Now flatten that 2D array in the desired order and convert to bytes
-    flattened_bytes = big_arr.flatten(order=order).tobytes()
-
-    # Convert bytes to a 1D numpy array of dtype np.byte (== int8)
-    data_bytes = np.frombuffer(flattened_bytes, dtype=np.byte)
-    return data_bytes
-
-################## 5) The Main run_analysis, merging both codes ##################
+# ===============  6) Main run_analysis (Clustering-based Decomposition)  ===============
 def run_analysis(folder_path):
     """
     For each .tsv file:
-      1) We read it -> flatten -> split into 4 groups
-      2) For each feature scenario (All Feat, Only Entropy, Only Freq):
-         * Build feature_matrix
-         * Linkage => for k in [2..n_groups], get labels => reorder
-         * Construct 'comp_list' (like a decomposition).
-         * Also measure 'standard' compression (the entire data as 1 chunk).
-         * Then measure 'decomposed' & 'reordered' sizes & ratio, store in CSV
+      1) Read and flatten the numeric data.
+      2) Split data into 4 groups.
+      3) For each feature scenario (e.g., "All Features (5D)", "Only Entropy (4D)", "Only Freq (1D)"):
+         - Build a feature matrix from the groups.
+         - Perform hierarchical clustering (using 'complete' linkage).
+         - For each k in [2..min(4, n_groups)]:
+             * Obtain cluster labels and compute clustering metrics:
+                 - Silhouette score,
+                 - Gap statistic,
+                 - Davies-Bouldin score,
+                 - Calinski-Harabasz score.
+             * Build a decomposition (comp_list) from the cluster labels.
+             * Measure compression ratios:
+                 - "Standard" (entire data as one chunk),
+                 - "Decomposed" (compress each cluster individually, col-based),
+                 - "RowBasedDecomposed" (row-major flattening).
+         - Store results in a CSV.
     """
     if not os.path.isdir(folder_path):
-        print("Not a valid folder:", folder_path)
+        print(f"Error: The folder path '{folder_path}' does not exist.")
         return
 
-    # Let's store results in a list of dict
     results_records = []
 
-    # Some example compression tools from the second code
+    # Define compression tools (using zstd_comp_cmd as an example)
     comp_tools = {
-      #  "blosc": blosc_comp,
-        #"blosc_bit": blosc_comp_bit,
-         "zstd": zstd_comp_cmd,   # If you want to also do external zstd command
-        # "zlib": zlib_comp,
+        "zstd_cmd": zstd_comp_cmd,
+        "zstd": zstd_comp  # You can add more if needed
     }
 
-    # Feature scenarios
+    # Define feature scenarios
     feature_scenarios = {
         "All Features (5D)": extract_5_features,
         "Only Entropy (4D)": extract_only_entropy,
         "Only Freq (1D)": extract_only_frequency
     }
 
-    # List all .tsv
+    # List all .tsv files in folder
     tsv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.tsv')]
     if not tsv_files:
-        print("No .tsv files found in", folder_path)
+        print(f"No .tsv files found in '{folder_path}'.")
         return
 
     for fname in tsv_files:
+        dataset_path = os.path.join(folder_path, fname)
         dataset_name = os.path.splitext(fname)[0]
-        fpath = os.path.join(folder_path, fname)
-        print(f"Processing: {dataset_name}")
+        print(f"\n===== Processing Dataset: {dataset_name} =====")
 
-        # read data
         try:
-            df = pd.read_csv(fpath, sep='\t', header=None)
+            df = pd.read_csv(dataset_path, sep='\t', header=None)
         except Exception as e:
-            print("Failed to load", fname, e)
+            print(f"Error loading {fname}: {e}")
             continue
 
-        # flatten numeric data
-        numeric_vals = df[df.columns[1:10000]].to_numpy().astype(np.float32)  # skip col0 if not relevant
-        flattened = numeric_vals.flatten(order='F').tobytes()
+        # Flatten numeric data (skip col0 if not numeric)
+        byte_cols = df.columns[1:]
+        numeric_vals = df[byte_cols].to_numpy().astype(np.float32)
+        # Use row-major order here (could also use 'F' if preferred)
+        flattened_bytes = numeric_vals.flatten(order='C').tobytes()
 
-        # split into 4 groups
-        arr = np.frombuffer(flattened, dtype=np.uint8)
-        # If you always want exactly 4 interleaved groups:
-        byte_groups = []
-        for i in range(4):
-            g = arr[i::4]
-            byte_groups.append(g)
+        # Split into 4 groups (interleaved)
+        arr = np.frombuffer(flattened_bytes, dtype=np.uint8)
+        byte_groups = [arr[i::4] for i in range(4)]
         n_groups = len(byte_groups)
-
         if n_groups < 2:
-            print("Only 1 group => skip clustering.")
+            print("Fewer than 2 groups => skipping.")
             continue
 
-        # measure "standard" compression (the entire data as a single chunk):
-        # We'll treat it like shape(1, total_bytes). For second code logic, we do:
-        entire_arr_2d = [arr.reshape(1, -1)]  # a list with one 2D array
-
-        # We'll store that in results for reference
-        for ctool_name, ctool_func in comp_tools.items():
-            # compress the entire data
-            _, full_comp_size = compress_data(entire_arr_2d, ctool_func)
+        # Standard compression: treat entire data as one chunk (shape (1, -1))
+        entire_arr_2d = [arr.reshape(1, -1)]
+        for tool_name, comp_func in comp_tools.items():
+            _, full_comp_size = compress_data(entire_arr_2d, comp_func)
             std_ratio = ratio_or_inf(len(arr), full_comp_size)
-            # record it as "k=0" => no clustering, scenario=Original
             results_records.append({
                 "Dataset": dataset_name,
                 "FeatureScenario": "Original",
                 "k": 0,
                 "Silhouette": None,
+                "GapStatistic": None,
+                "DaviesBouldin": None,
+                "CalinskiHarabasz": None,
                 "ClusterConfig": "(1,2,3,4) no clustering",
-                "CompressionTool": ctool_name,
+                "CompressionTool": tool_name,
                 "StandardSize(B)": full_comp_size,
                 "StandardRatio": std_ratio,
                 "DecomposedSize(B)": None,
                 "DecomposedRatio": None,
-
                 "RowBasedDecomposedSize(B)": None,
-                "RowBasedDecomposedRatio": None,
-                
+                "RowBasedDecomposedRatio": None
             })
 
-        # For each feature scenario
+        # Process each feature scenario
         for scenario_name, extractor in feature_scenarios.items():
-            # build feature matrix
-            feature_list = []
-            for grp in byte_groups:
-                fv = extractor(grp)
-                feature_list.append(fv)
+            # Build feature matrix from each group
+            feature_list = [extractor(grp) for grp in byte_groups]
             feature_matrix = np.array(feature_list)
             if feature_matrix.shape[0] < 2:
                 continue
 
-            # hierarchical clustering
+            # Hierarchical clustering on feature matrix
             linked = linkage(feature_matrix, method='complete')
 
-            # For k in [2..4] (or up to n_groups)
+            # Try k from 2 up to min(4, number of groups)
             max_k = min(4, feature_matrix.shape[0])
-            for k_val in range(2, max_k + 1):
+            for k_val in range(2, max_k+1):
                 labels_k = fcluster(linked, k_val, criterion='maxclust')
-                # compute silhouette
-                # Only valid if n_clusters between 2 and n_samples-1
-                n_clusters = len(np.unique(labels_k))
-                if n_clusters < 2 or n_clusters > feature_matrix.shape[0] - 1:
-                    sil_val = -1
-                else:
+                unique_labels = np.unique(labels_k)
+                # Compute silhouette score if valid
+                if len(unique_labels) >= 2 and len(unique_labels) <= (feature_matrix.shape[0] - 1):
                     try:
                         sil_val = silhouette_score(feature_matrix, labels_k)
                     except:
                         sil_val = -1
+                else:
+                    sil_val = -1
 
-                # Build a cluster config string
+                # Compute additional metrics (if possible)
+                try:
+                    db_score = davies_bouldin_score(feature_matrix, labels_k)
+                except Exception:
+                    db_score = None
+                try:
+                    ch_score = calinski_harabasz_score(feature_matrix, labels_k)
+                except Exception:
+                    ch_score = None
+                try:
+                    gap = gap_statistic(feature_matrix, k_val, B=10)
+                except Exception:
+                    gap = None
+
+                # Build cluster configuration string (e.g., "(1,3)|(2,4)")
                 cluster_map = {}
-                for i, lab_ in enumerate(labels_k):
-                    cluster_map.setdefault(lab_, []).append(i+1)
+                for i, lab in enumerate(labels_k):
+                    cluster_map.setdefault(lab, []).append(i+1)
                 cluster_str_parts = []
                 for c_label in sorted(cluster_map.keys()):
                     cluster_str_parts.append("({})".format(",".join(str(x) for x in cluster_map[c_label])))
                 config_str = "|".join(cluster_str_parts)
 
-                # Now we build "comp_list" as in second code => each cluster => a 2D array
+                # Build comp_list from clusters (each cluster becomes a 2D array)
                 comp_list = build_comp_list_from_clusters(byte_groups, labels_k)
 
-
-
-                # measure compression for each tool
-                for ctool_name, ctool_func in comp_tools.items():
-                    # 1) standard = entire data
-                    _, full_comp_size = compress_data(entire_arr_2d, ctool_func)
+                # Measure compression for each tool
+                for tool_name, comp_func in comp_tools.items():
+                    # Standard: compress entire data as one chunk
+                    _, full_comp_size = compress_data(entire_arr_2d, comp_func)
                     std_ratio = ratio_or_inf(len(arr), full_comp_size)
 
-                    # 2) decomposed
-                    #    "decomposed" means compress each cluster's 2D array individually
-                    #    in "column-major" or "order='F'" by default
-                    _, dec_size = compress_data(comp_list, ctool_func, order='F')
+                    # Decomposed (column-based)
+                    _, dec_size = compress_data(comp_list, comp_func, order='F')
                     dec_ratio = ratio_or_inf(len(arr), dec_size)
 
-                    # row-based decomposed
-                    _, dec_size_row = compress_data(comp_list, ctool_func, order='C')
+                    # Decomposed (row-based)
+                    _, dec_size_row = compress_data(comp_list, comp_func, order='C')
                     dec_ratio_row = ratio_or_inf(len(arr), dec_size_row)
 
-
-                    # record
                     results_records.append({
                         "Dataset": dataset_name,
                         "FeatureScenario": scenario_name,
                         "k": k_val,
                         "Silhouette": sil_val,
+                        "GapStatistic": gap,
+                        "DaviesBouldin": db_score,
+                        "CalinskiHarabasz": ch_score,
                         "ClusterConfig": config_str,
-                        "CompressionTool": ctool_name,
-
+                        "CompressionTool": tool_name,
                         "StandardSize(B)": full_comp_size,
                         "StandardRatio": std_ratio,
-
                         "DecomposedSize(B)": dec_size,
                         "DecomposedRatio": dec_ratio,
-
-
                         "RowBasedDecomposedSize(B)": dec_size_row,
-                        "RowBasedDecomposedRatio": dec_ratio_row,
-
+                        "RowBasedDecomposedRatio": dec_ratio_row
                     })
 
-    # Make a DataFrame
+    # Convert results to DataFrame and save to CSV
     df_results = pd.DataFrame(results_records)
-    # Save
     out_csv = os.path.join(folder_path, "merged_clustering_compression_results.csv")
     df_results.to_csv(out_csv, index=False)
-    print(f"All done! Results saved to: {out_csv}")
+    print(f"\nDone! Results saved at: {out_csv}")
     print(df_results.head(30))
 
-
-################## 6) Entry Point ##################
+# =============== 6) Entry Point  ===============
 if __name__ == "__main__":
     folder_path = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/test"
     run_analysis(folder_path)

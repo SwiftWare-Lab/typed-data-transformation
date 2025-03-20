@@ -148,6 +148,14 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
             stats[f'reordered row-based {comp_name} compressed size (B)'] = reordered_compressed_size_row_based
 
             stats[f'standard {comp_name} compressed size (B)'] = full_comp_size
+            # Add compression ratios to the stats
+            stats[f'standard {comp_name} compression ratio'] = len_bytes / full_comp_size
+            stats[f'decomposed {comp_name} compression ratio'] = len_bytes / decomp_compressed_size
+            stats[
+                f'decomposed row-ordered {comp_name} compression ratio'] = len_bytes / decomp_compressed_size_row_based
+            stats[f'reordered {comp_name} compression ratio'] = len_bytes / reordered_compressed_size
+            stats[
+                f'reordered row-based {comp_name} compression ratio'] = len_bytes / reordered_compressed_size_row_based
             print(f'decomp: {tuple_to_string(decomp)} : {comp_name} compression ratio: {len_bytes/full_comp_size}, decomposed compression ratio: {len_bytes/decomp_compressed_size},'
                   f' decomposed row-based compression ratio: {len_bytes/decomp_compressed_size_row_based}, reordered compression ratio: {len_bytes/reordered_compressed_size}, '
                   f' reordered row-based compression ratio: {len_bytes/reordered_compressed_size_row_based}')
@@ -178,8 +186,8 @@ contig_order = False
 #     chunk_size = int(sys.argv[3])
 # if len(sys.argv) > 4:
 #     contig_order = bool(sys.argv[4])
-dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/jw_mirimage_f32.tsv"
-m=4
+dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/num_control_f64.tsv"
+m=8
 chunk_size = -1
 
 dataset_name = dataset_path.split('/')[-1].split('.')[0]
@@ -196,16 +204,16 @@ else:
 if chunk_size == -1:
     comp_tool_dict = {
         # 'huffman_compress': huffman_compress,
-        # 'zstd': zstd_comp,
+         'zstd': zstd_comp,
         # 'zlib': zlib_comp,
         # 'bz2': bz2_comp,
         # 'snappy': snappy_comp,
         # 'fastlz': fastlz_compress,
         # 'rle': rle_compress,
-        'blosc': blosc_comp ,
-        'blosc_bit': blosc_comp_bit ,# Added blosc from compression_tools
+        #'blosc': blosc_comp ,
+       # 'blosc_bit': blosc_comp_bit ,# Added blosc from compression_tools
                       }
-    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='logs')
+    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='/home/jamalids/Documents/logs')
 else:
     comp_tool_dict = {
         'zstd': zstd_comp,
