@@ -185,8 +185,8 @@ for dataset, group in combine_df.groupby(combine_dataset_col):
 agg_df = pd.DataFrame(agg_results)
 remaining_best_df = pd.DataFrame([row for row in remaining_best_details if row is not None])
 
-agg_df.to_csv('/home/jamalids/Documents/frame/new/big-data-compression/modeling/abaltion/aggregated_remaining_best_ratios.csv', index=False)
-remaining_best_df.to_csv('/home/jamalids/Documents/frame/new/big-data-compression/modeling/abaltion/remaining_best_config_details.csv', index=False)
+agg_df.to_csv('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/abaltion/aggregated_remaining_best_ratios.csv', index=False)
+remaining_best_df.to_csv('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/abaltion/remaining_best_config_details.csv', index=False)
 
 print("\nCSV files saved: 'aggregated_remaining_best_ratios.csv' and 'remaining_best_config_details.csv'.")
 
@@ -238,5 +238,5 @@ table = ax.table(cellText=table_data,
                  bbox=[0, -1, 1, 0.7])
 
 plt.subplots_adjust(bottom=0.45)
-plt.savefig('/home/jamalids/Documents/frame/new/big-data-compression/modeling/abaltion/remaining_best_ratios.png')
+plt.savefig('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/abaltion/remaining_best_ratios.png')
 

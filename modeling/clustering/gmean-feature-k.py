@@ -284,8 +284,8 @@ for dataset, dgroup in df.groupby('Dataset'):
 
 # Convert the best results to a DataFrame and save to CSV
 best_df = pd.DataFrame(best_results)
-best_df.to_csv("best_results32H.csv", index=False)
-print("Saved best valid results to best_results32H.csv")
+best_df.to_csv("best_results64.csv", index=False)
+print("Saved best valid results to best_results32.csv")
 
 # --------------------------
 # Step 2: Plot Best Compression Ratio per Dataset for each Metric
@@ -304,7 +304,7 @@ ax.set_title("Best Compression Ratio per Dataset for Each Metric")
 ax.legend()
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("best_decomp_ratio32H.png")
+plt.savefig("best_decomp_ratio.png")
 plt.close()
 
 # --------------------------
@@ -320,7 +320,7 @@ for (scenario, metric), group in best_df.groupby(['FeatureScenario', 'Metric']):
         'GeomMeanDecomposedRatio': gm_value
     })
 gmean_df = pd.DataFrame(gmean_results)
-gmean_df.to_csv("gmean_results32H.csv", index=False)
+gmean_df.to_csv("gmean_results32.csv", index=False)
 print("Saved geometric mean results to gmean_results32H.csv")
 
 # --------------------------
@@ -336,7 +336,7 @@ ax.set_title("Geometric Mean Compression Ratio per FeatureScenario for Each Metr
 ax.legend()
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("gmean_decomp_ratio32H.png")
+plt.savefig("gmean_decomp_ratio64.png")
 plt.close()
 
 # ================================
@@ -385,7 +385,7 @@ ax.set_yscale('log')  # Set y-axis to log scale
 ax.legend(title="FeatureScenario")
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("silhouette_best_decomp_ratio_by_feature32H.png")
+plt.savefig("silhouette_best_decomp_ratio_by_feature32.png")
 plt.close()
 
 # ==========================================
@@ -421,7 +421,7 @@ ax.set_title("Standard Deviation of Compression Ratio per Dataset\nfor Allowed F
 ax.legend(title="FeatureScenario")
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("std_decomp_ratio_by_feature32H.png")
+plt.savefig("std_decomp_ratio_by_feature32.png")
 plt.close()
 
 # ==========================================
@@ -441,5 +441,5 @@ ax.set_ylabel("Std of DecomposedRatio_ColOrder")
 ax.set_title("Std of Compression Ratio (Best DaviesBouldin) per Allowed FeatureScenario")
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("std_best_silhouette_by_feature32H.png")
+plt.savefig("std_best_silhouette_by_feature32.png")
 plt.close()

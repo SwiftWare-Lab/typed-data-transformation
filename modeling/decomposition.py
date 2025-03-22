@@ -186,8 +186,8 @@ contig_order = False
 #     chunk_size = int(sys.argv[3])
 # if len(sys.argv) > 4:
 #     contig_order = bool(sys.argv[4])
-dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/num_control_f64.tsv"
-m=8
+dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/remain/wave_f32.tsv"
+m=4
 chunk_size = -1
 
 dataset_name = dataset_path.split('/')[-1].split('.')[0]
@@ -213,7 +213,7 @@ if chunk_size == -1:
         #'blosc': blosc_comp ,
        # 'blosc_bit': blosc_comp_bit ,# Added blosc from compression_tools
                       }
-    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='/home/jamalids/Documents/logs')
+    stats = test_decomposition(sliced_data, dataset_name, m=m, comp_tool_dict=comp_tool_dict, contig_order=contig_order, out_log_dir='/home/jamalids/Documents/remaind/logs')
 else:
     comp_tool_dict = {
         'zstd': zstd_comp,

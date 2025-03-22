@@ -1,0 +1,2 @@
+dataset name,clustering_config,clustering_ratio,best_exhaustive_ratio
+num_control_f64,"((0,1,2,3,4,5),(6),(7))",1.1477057302533271,1.1477057302533271
