@@ -186,8 +186,8 @@ contig_order = False
 #     chunk_size = int(sys.argv[3])
 # if len(sys.argv) > 4:
 #     contig_order = bool(sys.argv[4])
-dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/remain/wave_f32.tsv"
-m=4
+dataset_path="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/tpch_order_f64.tsv"
+m=8
 chunk_size = -1
 
 dataset_name = dataset_path.split('/')[-1].split('.')[0]
