@@ -172,12 +172,19 @@ def run_analysis(folder_path):
             continue
 
         # Adjust slicing as needed; here we use all rows from column 1.
-        numeric_vals = df.values[:, 1].astype(np.float64)
+        numeric_vals1 = df.values[:, 1].astype(np.float32)
+        # 2. Determine 10% of the total number of float32 values:
+        total_len = len(numeric_vals1)
+        portion_len = int(total_len * 0.2)  # 10% of the total length
+
+        # 3. Slice the first 10%:
+        numeric_vals = numeric_vals1[:portion_len]
+        #4.
         flattened = numeric_vals.flatten().tobytes()
         arr = np.frombuffer(flattened, dtype=np.uint8)
 
         # Split into interleaved groups (using a stride of 8 in this example).
-        byte_groups = [arr[i::8] for i in range(8)]
+        byte_groups = [arr[i::4] for i in range(4)]
         n_groups = len(byte_groups)
 
         # Standard compression on entire array.
@@ -191,7 +198,7 @@ def run_analysis(folder_path):
                 continue
 
             linked = linkage(feature_matrix, method='complete')
-            max_k = min(8, feature_matrix.shape[0])
+            max_k = min(4, feature_matrix.shape[0])
             for k_val in range(2, max_k + 1):
                 labels_k = fcluster(linked, k_val, criterion='maxclust')
 
@@ -245,5 +252,5 @@ def run_analysis(folder_path):
     print(f"Results saved to: {out_csv}")
 
 if __name__ == "__main__":
-    folder_path ="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/k"
+    folder_path ="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"
     run_analysis(folder_path)

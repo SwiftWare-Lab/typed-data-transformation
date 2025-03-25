@@ -228,8 +228,9 @@ import matplotlib.pyplot as plt
 allowed_scenarios = ['all_features', 'entropy', 'frequency']
 
 # Read the CSV file
-df = pd.read_csv('/home/jamalids/Downloads/OneDrive_1_17-03-2025/32.csv')
+#df = pd.read_csv('/home/jamalids/Downloads/OneDrive_1_17-03-2025/32.csv')
 #df = pd.read_csv('/home/jamalids/Documents/feature-k/64.csv')
+df = pd.read_csv('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/clustering/512/32.csv')
 
 
 # --------------------------
@@ -284,7 +285,7 @@ for dataset, dgroup in df.groupby('Dataset'):
 
 # Convert the best results to a DataFrame and save to CSV
 best_df = pd.DataFrame(best_results)
-best_df.to_csv("best_results64.csv", index=False)
+best_df.to_csv("best_results32.csv", index=False)
 print("Saved best valid results to best_results32.csv")
 
 # --------------------------
@@ -331,12 +332,12 @@ for metric in metrics.keys():
     subdf = gmean_df[gmean_df['Metric'] == metric].sort_values('FeatureScenario')
     ax.plot(subdf['FeatureScenario'], subdf['GeomMeanDecomposedRatio'], marker='o', label=metric)
 ax.set_xlabel("FeatureScenario")
-ax.set_ylabel("Geometric Mean of DecomposedRatio_ColOrder")
+ax.set_ylabel("Geometric Mean of DecomposedRatio")
 ax.set_title("Geometric Mean Compression Ratio per FeatureScenario for Each Metric")
 ax.legend()
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.savefig("gmean_decomp_ratio64.png")
+plt.savefig("gmean_decomp_ratio32.png")
 plt.close()
 
 # ================================
@@ -379,8 +380,9 @@ for scenario, group in best_silhouette_rows.groupby('FeatureScenario'):
                 ha='center', va='bottom', fontsize=9)
 
 ax.set_xlabel("Dataset")
-ax.set_ylabel("DecomposedRatio_ColOrder (Compression Ratio)")
-ax.set_title("Best Silhouette Metric: Compression Ratio per Dataset\nfor Allowed FeatureScenarios")
+ax.set_ylabel("DecomposedRatio (Compression Ratio)")
+#ax.set_title("Best Silhouette Metric: Compression Ratio per Dataset\nfor Allowed FeatureScenarios")
+ax.set_title("Best DaviesBouldin Metric: Compression Ratio per Dataset\nfor Allowed FeatureScenarios")
 ax.set_yscale('log')  # Set y-axis to log scale
 ax.legend(title="FeatureScenario")
 plt.xticks(rotation=90)
