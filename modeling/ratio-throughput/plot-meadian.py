@@ -10,7 +10,7 @@ import matplotlib.ticker as ticker
 # ====================================
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
-directories = ['/home/jamalids/Documents/results1/64-selection']
+directories = ['/home/jamalids/Documents/results1']
 dataframes = []
 
 for directory_path in directories:
@@ -70,7 +70,7 @@ print(f'Combined CSV with median-based values saved to {median_output_path}')
 # ====================================
 selected_pairs = []
 for (dataset, threads), group in median_df.groupby(['DatasetName', 'Threads']):
-    decompose_rows = group[group['RunType'] == 'Chunked_Decompose_Parallel']
+    decompose_rows = group[group['RunType'] == 'Decompose_Chunk_Parallel']
     if not decompose_rows.empty:
         sorted_decompose = decompose_rows.sort_values(
             by=['CompressionRatio', 'CompressionThroughput'], ascending=False
@@ -90,12 +90,12 @@ print(f'CSV with selected pairs saved to {selected_output_path}')
 # ====================================
 # 4. Create two final selections.
 # 4A. Final Selection A: For each DatasetName, choose the pair with maximum CompressionThroughput
-#     (using the "Chunked_Decompose_Parallel" row).
+#     (using the "Decompose_Chunk_Parallel" row).
 # 4B. Final Selection B: For each DatasetName, choose the pair with maximum DecompressionThroughput
 #     (using the "Full" row).
 # ====================================
 final_A = []
-chunked_df = selected_df[selected_df['RunType'] == 'Chunked_Decompose_Parallel']
+chunked_df = selected_df[selected_df['RunType'] == 'Decompose_Chunk_Parallel']
 if not chunked_df.empty:
     best_chunked = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionThroughput'].idxmax()]
     for idx, row in best_chunked.iterrows():
@@ -122,7 +122,7 @@ if not full_rows.empty:
         final_B.append(row)
         chunked_row = selected_df[(selected_df['DatasetName'] == dataset) &
                                   (selected_df['Threads'] == threads) &
-                                  (selected_df['RunType'] == 'Chunked_Decompose_Parallel')]
+                                  (selected_df['RunType'] == 'Decompose_Chunk_Parallel')]
         if not chunked_row.empty:
             final_B.append(chunked_row.iloc[0])
 final_df_B = pd.DataFrame(final_B)
@@ -133,11 +133,11 @@ print(f'CSV with pairs having maximum DecompressionThroughput saved to {final_ou
 # ====================================
 # Mapping run types to new labels:
 # "Full" -> "Standard Compression"
-# "Chunked_Decompose_Parallel" -> "TDT Compressions"
+# "Decompose_Chunk_Parallel" -> "TDT Compressions"
 # ====================================
 run_type_mapping = {
     "Full": "Standard Compression",
-    "Chunked_Decompose_Parallel": "TDT Compressions"
+    "Decompose_Chunk_Parallel": "TDT Compressions"
 }
 
 # ====================================
@@ -239,7 +239,7 @@ def safe_gmean(series):
     return np.exp(np.mean(np.log(positive_vals)))
 
 # Filter for the two RunTypes of interest.
-gmean_data = median_df[median_df['RunType'].isin(['Chunked_Decompose_Parallel', 'Full'])]
+gmean_data = median_df[median_df['RunType'].isin(['Decompose_Chunk_Parallel', 'Full'])]
 gmean_df = gmean_data.groupby('RunType')['CompressionRatio'].apply(safe_gmean).reset_index()
 gmean_df.columns = ['RunType', 'GeometricMeanCompressionRatio']
 
@@ -265,10 +265,10 @@ print(f'Geometric Mean plot saved to {gmean_output_path}')
 # ====================================
 # 6B. Dual-axis Plot: TotalValues vs. BlockSize
 # ====================================
-# This plot uses the best "Chunked_Decompose_Parallel" rows (i.e. TDT Compressions)
+# This plot uses the best "Decompose_Chunk_Parallel" rows (i.e. TDT Compressions)
 # and shows the relation between TotalValues (primary axis) and BlockSize (secondary axis).
 
-chunked_df = median_df[median_df['RunType'] == 'Chunked_Decompose_Parallel']
+chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
 best_chunked_df = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionRatio'].idxmax()].copy()
 
 if 'TotalValues' not in best_chunked_df.columns:
@@ -301,8 +301,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-# Filter for "Chunked_Decompose_Parallel" rows.
-chunked_df = median_df[median_df['RunType'] == 'Chunked_Decompose_Parallel']
+# Filter for "Decompose_Chunk_Parallel" rows.
+chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
 # Further filter to only include rows with allowed BlockSize values.
 allowed_block_sizes = [655360, 1024000, 102400000]
 chunked_df = chunked_df[chunked_df['BlockSize'].isin(allowed_block_sizes)]
@@ -355,7 +355,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Filter for TDT runs.
-tdt_df = median_df[median_df['RunType'] == 'Chunked_Decompose_Parallel']
+tdt_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
 
 # Further filter for the two BlockSize values of interest.
 blocksize_low = 655360
@@ -381,6 +381,12 @@ datasets = merged_df["DatasetName"].tolist()
 x = np.arange(len(datasets))
 
 diff_comp_ratio = merged_df["Diff_CompressionRatio"].values
+# Convert it to a DataFrame:
+diff_comp_ratio_df = pd.DataFrame(diff_comp_ratio, columns=['diff_comp_ratio'])
+
+# Now you can call .to_csv():
+diff_comp_ratio_df.to_csv('/home/jamalids/Documents/diff_comp_ratio.csv', index=False)
+
 diff_comp_throughput = merged_df["Diff_CompressionThroughput"].values
 diff_decomp_throughput = merged_df["Diff_DecompressionThroughput"].values
 
@@ -413,8 +419,8 @@ def safe_gmean(series):
         return np.nan
     return np.exp(np.mean(np.log(positive_vals)))
 
-# Filter for TDT runs (i.e. RunType == "Chunked_Decompose_Parallel")
-tdt_df = median_df[median_df['RunType'] == 'Chunked_Decompose_Parallel']
+# Filter for TDT runs (i.e. RunType == "Decompose_Chunk_Parallel")
+tdt_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
 
 # Further filter to only include rows with BlockSize equal to 655360 or 102400000.
 tdt_df = tdt_df[tdt_df['BlockSize'].isin([655360, 102400000])]

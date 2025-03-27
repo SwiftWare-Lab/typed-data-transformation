@@ -1,0 +1,13 @@
+FeatureScenario,Metric,GeomMeanDecomposedRatio
+All_Features,CalinskiHarabasz,1.552092215369503
+All_Features,DaviesBouldin,1.5878257366029351
+All_Features,GapStatistic,1.558323707746993
+All_Features,Silhouette,1.5257775171098829
+Entropy,CalinskiHarabasz,1.532815432808897
+Entropy,DaviesBouldin,1.58848409500876
+Entropy,GapStatistic,1.552133477413778
+Entropy,Silhouette,1.5189547930329792
+Frequency,CalinskiHarabasz,1.5440057905520592
+Frequency,DaviesBouldin,1.6076425536564336
+Frequency,GapStatistic,1.5451539475154723
+Frequency,Silhouette,1.5589663767267539

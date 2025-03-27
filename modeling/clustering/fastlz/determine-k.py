@@ -15,7 +15,7 @@ import subprocess
 
 # Import custom compression utilities
 from modeling.utils import compute_entropy, find_max_consecutive_similar_values
-from modeling.compression_tools import zstd_comp, zlib_comp, bz2_comp
+from modeling.compression_tools import zstd_comp, zlib_comp, bz2_comp,fastlz_compress
 
 ################## Compression Helper ##################
 
@@ -139,7 +139,8 @@ def run_analysis(folder_path):
     results_records = []
 
     comp_tools = {
-        "zstd": zstd_comp,
+        #"zstd": zstd_comp,
+        'fastlz': fastlz_compress,
         # "zlib": zlib_comp,
         # "bz2": bz2_comp,
     }
@@ -172,13 +173,13 @@ def run_analysis(folder_path):
             continue
 
         # Adjust slicing as needed; here we use all rows from column 1.
-        numeric_vals1 = df.values[:, 1].astype(np.float32)
+        numeric_vals = df.values[:, 1].astype(np.float32)
         # 2. Determine 10% of the total number of float32 values:
-        total_len = len(numeric_vals1)
-        portion_len = int(total_len * 0.2)  # 10% of the total length
-
-        # 3. Slice the first 10%:
-        numeric_vals = numeric_vals1[:portion_len]
+        # total_len = len(numeric_vals1)
+        # portion_len = int(total_len * 0.2)  # 10% of the total length
+        #
+        # # 3. Slice the first 10%:
+        # numeric_vals = numeric_vals1[:portion_len]
         #4.
         flattened = numeric_vals.flatten().tobytes()
         arr = np.frombuffer(flattened, dtype=np.uint8)

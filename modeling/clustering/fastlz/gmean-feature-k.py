@@ -230,7 +230,8 @@ allowed_scenarios = ['all_features', 'entropy', 'frequency']
 # Read the CSV file
 #df = pd.read_csv('/home/jamalids/Downloads/OneDrive_1_17-03-2025/32.csv')
 #df = pd.read_csv('/home/jamalids/Documents/feature-k/64.csv')
-df = pd.read_csv('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/clustering/512/32.csv')
+#df = pd.read_csv('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/clustering/512/32.csv')
+df = pd.read_csv('/home/jamalids/Documents/frame/new2/big-data-compression/modeling/clustering/clustering_compression_fastlz.csv')
 
 
 # --------------------------
