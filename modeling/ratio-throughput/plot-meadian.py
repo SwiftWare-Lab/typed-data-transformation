@@ -10,6 +10,7 @@ import matplotlib.ticker as ticker
 # ====================================
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
+#directories = ['/home/jamalids/Documents/results1']
 directories = ['/home/jamalids/Documents/results1']
 dataframes = []
 
@@ -68,24 +69,51 @@ print(f'Combined CSV with median-based values saved to {median_output_path}')
 # ====================================
 # 3. Select pairs per (DatasetName, Threads)
 # ====================================
+# selected_pairs = []
+# for (dataset, threads,BlockSize), group in median_df.groupby(['DatasetName', 'Threads','BlockSize']):
+#     decompose_rows = group[group['RunType'] == 'Decompose_Chunk_Parallel']
+#     if not decompose_rows.empty:
+#         sorted_decompose = decompose_rows.sort_values(
+#             by=['CompressionRatio', 'CompressionThroughput'], ascending=False
+#         )
+#         chosen_decompose = sorted_decompose.iloc[0]
+#         selected_pairs.append(chosen_decompose)
+#         full_rows = group[group['RunType'] == 'Full']
+#         if not full_rows.empty:
+#             corresponding_full = full_rows.iloc[0]
+#             selected_pairs.append(corresponding_full)
+#
+# selected_df = pd.DataFrame(selected_pairs)
+# selected_output_path = '/home/jamalids/Documents/selected_pairs.csv'
+# selected_df.to_csv(selected_output_path, index=False)
+# print(f'CSV with selected pairs saved to {selected_output_path}')
+
 selected_pairs = []
-for (dataset, threads), group in median_df.groupby(['DatasetName', 'Threads']):
+
+for (dataset, threads, blockSize), group in median_df.groupby(['DatasetName', 'Threads', 'BlockSize']):
+    # --- 1) Try to pick Decompose_Chunk_Parallel (if present) ---
     decompose_rows = group[group['RunType'] == 'Decompose_Chunk_Parallel']
     if not decompose_rows.empty:
         sorted_decompose = decompose_rows.sort_values(
-            by=['CompressionRatio', 'CompressionThroughput'], ascending=False
+            by=['CompressionRatio', 'CompressionThroughput'],
+            ascending=False
         )
         chosen_decompose = sorted_decompose.iloc[0]
         selected_pairs.append(chosen_decompose)
-        full_rows = group[group['RunType'] == 'Full']
-        if not full_rows.empty:
-            corresponding_full = full_rows.iloc[0]
-            selected_pairs.append(corresponding_full)
+
+    # --- 2) Also pick the Full row (if present) ---
+    full_rows = group[group['RunType'] == 'Full']
+    if not full_rows.empty:
+        # For "Full" you might or might not want to sort.
+        # Here we just pick the first (or best) row:
+        corresponding_full = full_rows.iloc[0]
+        selected_pairs.append(corresponding_full)
 
 selected_df = pd.DataFrame(selected_pairs)
-selected_output_path = '/home/jamalids/Documents/selected_pairs.csv'
-selected_df.to_csv(selected_output_path, index=False)
-print(f'CSV with selected pairs saved to {selected_output_path}')
+#To round the CompressionRatio column to three decimal places
+selected_df['CompressionRatio'] = selected_df['CompressionRatio'].round(3)
+selected_df.to_csv('/home/jamalids/Documents/selected_pairs.csv', index=False)
+print("Done. CSV with selected pairs saved.")
 
 # ====================================
 # 4. Create two final selections.
@@ -113,7 +141,7 @@ final_df_A.to_csv(final_output_path_A, index=False)
 print(f'CSV with pairs having maximum CompressionThroughput saved to {final_output_path_A}')
 
 final_B = []
-full_rows = selected_df[selected_df['RunType'] == 'Full']
+full_rows = selected_df[selected_df['RunType'] == 'Decompose_Chunk_Parallel']
 if not full_rows.empty:
     best_full = full_rows.loc[full_rows.groupby('DatasetName')['DecompressionThroughput'].idxmax()]
     for idx, row in best_full.iterrows():
@@ -122,7 +150,7 @@ if not full_rows.empty:
         final_B.append(row)
         chunked_row = selected_df[(selected_df['DatasetName'] == dataset) &
                                   (selected_df['Threads'] == threads) &
-                                  (selected_df['RunType'] == 'Decompose_Chunk_Parallel')]
+                                  (selected_df['RunType'] == 'Full')]
         if not chunked_row.empty:
             final_B.append(chunked_row.iloc[0])
 final_df_B = pd.DataFrame(final_B)
@@ -304,8 +332,8 @@ import matplotlib.ticker as ticker
 # Filter for "Decompose_Chunk_Parallel" rows.
 chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
 # Further filter to only include rows with allowed BlockSize values.
-allowed_block_sizes = [655360, 1024000, 102400000]
-chunked_df = chunked_df[chunked_df['BlockSize'].isin(allowed_block_sizes)]
+# allowed_block_sizes = [655360, 1024000, 102400000]
+# chunked_df = chunked_df[chunked_df['BlockSize'].isin(allowed_block_sizes)]
 
 # For each DatasetName, select the row with the maximum CompressionRatio.
 best_chunked_df = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionRatio'].idxmax()][
@@ -333,7 +361,7 @@ ax2.tick_params(axis='y', labelcolor='C1')
 # Set the secondary y-axis to logarithmic scale so the ticks are evenly spaced.
 ax2.set_yscale('log')
 # Define custom tick positions.
-custom_ticks = [655360, 1024000, 102400000]
+custom_ticks = [655360,786432,25165824,31457280]
 ax2.set_yticks(custom_ticks)
 # Set the tick labels as strings.
 ax2.set_yticklabels([str(tick) for tick in custom_ticks])
@@ -407,45 +435,3 @@ output_path = '/home/jamalids/Documents/plot_metric_differences.png'
 plt.savefig(output_path)
 plt.close()
 print(f'Difference plot saved to {output_path}')
-##################
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-def safe_gmean(series):
-    # Compute geometric mean of positive values only.
-    positive_vals = series[series > 0]
-    if len(positive_vals) == 0:
-        return np.nan
-    return np.exp(np.mean(np.log(positive_vals)))
-
-# Filter for TDT runs (i.e. RunType == "Decompose_Chunk_Parallel")
-tdt_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
-
-# Further filter to only include rows with BlockSize equal to 655360 or 102400000.
-tdt_df = tdt_df[tdt_df['BlockSize'].isin([655360, 102400000])]
-
-# Group by BlockSize and compute the geometric mean of CompressionRatio for each group.
-geom_df = tdt_df.groupby('BlockSize')['CompressionRatio'].apply(safe_gmean).reset_index()
-
-# For plotting, sort the data by BlockSize.
-geom_df.sort_values('BlockSize', inplace=True)
-
-# Create a bar plot for the geometric means.
-x = np.arange(len(geom_df))  # two groups
-width = 0.5
-
-fig, ax = plt.subplots(figsize=(8, 6))
-bars = ax.bar(x, geom_df['CompressionRatio'], width, color='C0')
-
-ax.set_xlabel("BlockSize")
-ax.set_ylabel("Geometric Mean Compression Ratio")
-ax.set_title("Geometric Mean Compression Ratio for TDT\n(655360 vs. 102400000)")
-ax.set_xticks(x)
-ax.set_xticklabels(geom_df['BlockSize'].astype(str))
-plt.tight_layout()
-
-output_path = '/home/jamalids/Documents/plot_geom_mean_comp_ratio.png'
-plt.savefig(output_path)
-plt.close()
-print(f"Geometric mean plot saved to {output_path}")
