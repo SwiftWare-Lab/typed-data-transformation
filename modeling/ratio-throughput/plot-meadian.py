@@ -11,7 +11,7 @@ import matplotlib.ticker as ticker
 # 1. Read CSV files, fill NaNs, and combine
 # ====================================
 #directories = ['/home/jamalids/Documents/results1']
-directories = ['/home/jamalids/Documents/results1']
+directories = ['/home/jamalids/Documents/results-zstd']
 dataframes = []
 
 for directory_path in directories:
@@ -324,59 +324,158 @@ output_path = '/home/jamalids/Documents/plot_totalvalues_vs_blocksize.png'
 plt.savefig(output_path)
 plt.close()
 print(f'Dual-axis plot saved to {output_path}')
-################################
+# ################################
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import matplotlib.ticker as ticker
+#
+# # Filter for "Decompose_Chunk_Parallel" rows.
+# chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
+# # Further filter to only include rows with allowed BlockSize values.
+# # allowed_block_sizes = [655360, 1024000, 102400000]
+# # chunked_df = chunked_df[chunked_df['BlockSize'].isin(allowed_block_sizes)]
+#
+# # For each DatasetName, select the row with the maximum CompressionRatio.
+# best_chunked_df = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionRatio'].idxmax()][
+#     ['DatasetName', 'CompressionRatio', 'BlockSize']
+# ]
+#
+# # Create numeric x positions.
+# x = np.arange(len(best_chunked_df))
+#
+# # Create the primary axis for CompressionRatio.
+# fig, ax1 = plt.subplots(figsize=(10, 6))
+# bars = ax1.bar(x, best_chunked_df['CompressionRatio'], color='C0', alpha=0.7, label='Best Compression Ratio')
+# ax1.set_xlabel("DatasetName")
+# ax1.set_ylabel("Best Compression Ratio", color='C0')
+# ax1.tick_params(axis='y', labelcolor='C0')
+# ax1.set_xticks(x)
+# ax1.set_xticklabels(best_chunked_df['DatasetName'], rotation=45, ha='right')
+#
+# # Create a secondary axis for BlockSize.
+# ax2 = ax1.twinx()
+# ax2.plot(x, best_chunked_df['BlockSize'], color='C1', marker='o', linestyle='-', linewidth=2, label='BlockSize')
+# ax2.set_ylabel("BlockSize", color='C1')
+# ax2.tick_params(axis='y', labelcolor='C1')
+#
+# # Set the secondary y-axis to logarithmic scale so the ticks are evenly spaced.
+# ax2.set_yscale('log')
+# # Define custom tick positions.
+# custom_ticks = [ 100 *1024,
+#
+#  300 *1024,
+#     400 *1024,
+#     640* 1024,
+#     768*1024,
+#     1024*1024,
+#     10*1024*1024,
+#     24 *1024 *1024,
+#     30 *1024 *1024,
+#     40 *1024 *1024,
+# ]
+# ax2.set_yticks(custom_ticks)
+# # Set the tick labels as strings.
+# ax2.set_yticklabels([str(tick) for tick in custom_ticks])
+#
+# # Optionally combine legends from both axes.
+# lines1, labels1 = ax1.get_legend_handles_labels()
+# lines2, labels2 = ax2.get_legend_handles_labels()
+# ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+#
+# plt.title("Best Compression Ratio and BlockSize per Dataset\n(TDT)")
+# plt.tight_layout()
+# best_comp_ratio_dual_output_path = '/home/jamalids/Documents/plot_best_compression_ratio_dual_axis.png'
+# plt.savefig(best_comp_ratio_dual_output_path)
+# plt.close()
+# print(f'Dual-axis plot saved to {best_comp_ratio_dual_output_path}')
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 
-# Filter for "Decompose_Chunk_Parallel" rows.
-chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
-# Further filter to only include rows with allowed BlockSize values.
-# allowed_block_sizes = [655360, 1024000, 102400000]
-# chunked_df = chunked_df[chunked_df['BlockSize'].isin(allowed_block_sizes)]
-
-# For each DatasetName, select the row with the maximum CompressionRatio.
-best_chunked_df = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionRatio'].idxmax()][
-    ['DatasetName', 'CompressionRatio', 'BlockSize']
+# Define the special block sizes that determine cache levels.
+special_blocks = [
+    (640 * 1024, 'L1'),
+    (24 * 1024 * 1024, 'L2'),
+    (30 * 1024 * 1024, 'L3')
 ]
 
-# Create numeric x positions.
-x = np.arange(len(best_chunked_df))
+# Loop over each thread (assuming the column is named 'Thread').
+for thread in sorted(chunked_df['Threads'].unique()):
+    # Filter the DataFrame for the current thread.
+    thread_df = chunked_df[chunked_df['Threads'] == thread]
 
-# Create the primary axis for CompressionRatio.
-fig, ax1 = plt.subplots(figsize=(10, 6))
-bars = ax1.bar(x, best_chunked_df['CompressionRatio'], color='C0', alpha=0.7, label='Best Compression Ratio')
-ax1.set_xlabel("DatasetName")
-ax1.set_ylabel("Best Compression Ratio", color='C0')
-ax1.tick_params(axis='y', labelcolor='C0')
-ax1.set_xticks(x)
-ax1.set_xticklabels(best_chunked_df['DatasetName'], rotation=45, ha='right')
+    # For each DatasetName, select the row with the maximum CompressionRatio.
+    best_thread_df = thread_df.loc[thread_df.groupby('DatasetName')['CompressionRatio'].idxmax()][
+        ['DatasetName', 'CompressionRatio', 'BlockSize', 'CompressionThroughput']
+    ]
 
-# Create a secondary axis for BlockSize.
-ax2 = ax1.twinx()
-ax2.plot(x, best_chunked_df['BlockSize'], color='C1', marker='o', linestyle='-', linewidth=2, label='BlockSize')
-ax2.set_ylabel("BlockSize", color='C1')
-ax2.tick_params(axis='y', labelcolor='C1')
+    # Sort by BlockSize for consistent categorical ordering.
+    best_thread_df = best_thread_df.sort_values('BlockSize').reset_index(drop=True)
 
-# Set the secondary y-axis to logarithmic scale so the ticks are evenly spaced.
-ax2.set_yscale('log')
-# Define custom tick positions.
-custom_ticks = [655360,786432,25165824,31457280]
-ax2.set_yticks(custom_ticks)
-# Set the tick labels as strings.
-ax2.set_yticklabels([str(tick) for tick in custom_ticks])
+    # Create a mapping for block sizes to categorical indices.
+    unique_block_sizes = sorted(best_thread_df['BlockSize'].unique())
+    blocksize_to_cat = {bs: i for i, bs in enumerate(unique_block_sizes)}
 
-# Optionally combine legends from both axes.
-lines1, labels1 = ax1.get_legend_handles_labels()
-lines2, labels2 = ax2.get_legend_handles_labels()
-ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    # Map each BlockSize to its corresponding categorical index.
+    cat_block_sizes = best_thread_df['BlockSize'].map(blocksize_to_cat)
 
-plt.title("Best Compression Ratio and BlockSize per Dataset\n(TDT)")
-plt.tight_layout()
-best_comp_ratio_dual_output_path = '/home/jamalids/Documents/plot_best_compression_ratio_dual_axis.png'
-plt.savefig(best_comp_ratio_dual_output_path)
-plt.close()
-print(f'Dual-axis plot saved to {best_comp_ratio_dual_output_path}')
+    # Create x positions (one per dataset).
+    x = np.arange(len(best_thread_df))
+
+    # Create the primary axis for CompressionRatio (bar plot).
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    bars = ax1.bar(x, best_thread_df['CompressionRatio'], color='C0', alpha=0.7,
+                   label='Best Compression Ratio')
+    ax1.set_xlabel("DatasetName")
+    ax1.set_ylabel("Best Compression Ratio", color='C0')
+    ax1.tick_params(axis='y', labelcolor='C0')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(best_thread_df['DatasetName'], rotation=45, ha='right')
+
+    # Create a secondary axis for BlockSize (plotted as a categorical variable).
+    ax2 = ax1.twinx()
+    ax2.plot(x, cat_block_sizes, color='C1', marker='o', linestyle='-', linewidth=2,
+             label='BlockSize')
+    ax2.set_ylabel("BlockSize", color='C1')
+    ax2.tick_params(axis='y', labelcolor='C1')
+    ax2.set_yticks(range(len(unique_block_sizes)))
+    ax2.set_yticklabels([str(bs) for bs in unique_block_sizes])
+
+    # Add horizontal dashed lines to mark the special cache thresholds.
+    for block_val, cache_label in special_blocks:
+        if block_val in blocksize_to_cat:
+            pos = blocksize_to_cat[block_val]
+            ax2.axhline(y=pos, color='grey', linestyle='--', linewidth=1)
+            # Annotate the cache level near the right edge.
+            ax2.text(len(x) - 0.5, pos, cache_label, color='grey',
+                     va='bottom', ha='right', fontsize=10)
+
+    # Create a third axis for Compression Throughput.
+    ax3 = ax1.twinx()
+    # Offset the third axis to the right.
+    ax3.spines["right"].set_position(("axes", 1.1))
+    ax3.set_frame_on(True)
+    ax3.patch.set_visible(False)
+    # Plot Compression Throughput as a line.
+    ax3.plot(x, best_thread_df['CompressionThroughput'], color='C2', marker='s',
+             linestyle='-', linewidth=2, label='Compression Throughput')
+    ax3.set_ylabel("Compression Throughput", color='C2')
+    ax3.tick_params(axis='y', labelcolor='C2')
+
+    # Combine legends from all axes.
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    lines3, labels3 = ax3.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2 + lines3, labels1 + labels2 + labels3, loc='upper left')
+
+    plt.title(f"Best Compression Ratio, BlockSize, and Compression Throughput per Dataset\n(TDT) - Thread {thread}")
+    plt.tight_layout()
+
+    # Save the figure with a thread-specific filename.
+    output_path = f'/home/jamalids/Documents/plot_best_compression_ratio_dual_axis_thread_{thread}.png'
+    plt.savefig(output_path)
+    plt.close()
+    print(f'Plot saved to {output_path}')
+
 #####################
 import numpy as np
 import pandas as pd
@@ -435,3 +534,152 @@ output_path = '/home/jamalids/Documents/plot_metric_differences.png'
 plt.savefig(output_path)
 plt.close()
 print(f'Difference plot saved to {output_path}')
+############################
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ---------------------------------------------------
+# 1. Read the median CSV and filter for the desired RunType
+# ---------------------------------------------------
+median_csv_path = '/home/jamalids/Documents/combined_median_rows.csv'
+median_df = pd.read_csv(median_csv_path)
+
+# Only consider rows where RunType is 'Decompose_Chunk_Parallel'
+median_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
+
+# ---------------------------------------------------
+# 2. Group by DatasetName and Threads and compute max and min for each metric
+# ---------------------------------------------------
+grouped = median_df.groupby(['DatasetName', 'Threads']).agg({
+    'CompressionThroughput': ['max', 'min'],
+    'DecompressionThroughput': ['max', 'min'],
+    'CompressionRatio': ['max', 'min']
+}).reset_index()
+
+# Flatten the MultiIndex columns
+grouped.columns = ['DatasetName', 'Threads',
+                   'CT_max', 'CT_min',
+                   'DT_max', 'DT_min',
+                   'CR_max', 'CR_min']
+
+# Compute the difference (max - min) for each metric
+grouped['CT_diff'] = grouped['CT_max'] - grouped['CT_min']
+grouped['DT_diff'] = grouped['DT_max'] - grouped['DT_min']
+grouped['CR_diff'] = grouped['CR_max'] - grouped['CR_min']
+
+# ---------------------------------------------------
+# 3. Plot differences per dataset for each thread (1, 8, 16)
+# ---------------------------------------------------
+thread_values = [1, 8, 16]
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(18, 6), sharey=True)
+
+for idx, thread_val in enumerate(thread_values):
+    ax = axes[idx]
+    # Select groups for the current thread value
+    df_thread = grouped[grouped['Threads'] == thread_val]
+
+    # Sort by DatasetName for consistent ordering on the x-axis
+    df_thread = df_thread.sort_values('DatasetName')
+    x = df_thread['DatasetName']
+
+    # Plot the differences for each metric
+    ax.plot(x, df_thread['CT_diff'], marker='o', label='Compression Throughput Diff')
+    ax.plot(x, df_thread['DT_diff'], marker='o', label='Decompression Throughput Diff')
+    ax.plot(x, df_thread['CR_diff'], marker='o', label='Compression Ratio Diff')
+
+    ax.set_title(f"Threads = {thread_val}")
+    ax.set_xlabel('DatasetName')
+    if idx == 0:
+        ax.set_ylabel('Difference (max - min)')
+
+    # Rotate x-axis labels for clarity
+    ax.tick_params(axis='x', rotation=90)
+    ax.legend(loc='best')
+
+plt.tight_layout()
+
+# Save the final plot to file
+output_path = '/home/jamalids/Documents/selected_pairs_diff_by_dataset_thread.png'
+plt.savefig(output_path)
+plt.close()
+
+print(f"Plot of metric differences for each dataset (grouped by thread) saved to {output_path}")
+########################
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ---------------------------------------------------
+# 1. Read the median CSV (already created) and filter for RunType = 'Decompose_Chunk_Parallel'
+# ---------------------------------------------------
+median_csv_path = '/home/jamalids/Documents/combined_median_rows.csv'
+df = pd.read_csv(median_csv_path)
+df = df[df['RunType'] == 'Decompose_Chunk_Parallel']
+
+# ---------------------------------------------------
+# 2. Define the two block sizes (L1 and L2) and filter the data accordingly
+# ---------------------------------------------------
+L1_value = 640 * 1024  # L1 block size (e.g., 655360)
+L2_value = 24 * 1024 * 1024  # L2 block size (e.g., 25165824)
+
+# Keep only rows with the two specified block sizes
+df_block = df[df['BlockSize'].isin([L1_value, L2_value])]
+
+# ---------------------------------------------------
+# 3. Pivot the data to have separate columns for L1 and L2 for each metric
+# ---------------------------------------------------
+# We create pivot tables for each metric using DatasetName and Threads as the index,
+# and BlockSize as the columns. Since the CSV is already median-aggregated, we assume one value per group.
+pivot_ct = df_block.pivot_table(index=['DatasetName', 'Threads'], columns='BlockSize', values='CompressionThroughput')
+pivot_dt = df_block.pivot_table(index=['DatasetName', 'Threads'], columns='BlockSize', values='DecompressionThroughput')
+pivot_cr = df_block.pivot_table(index=['DatasetName', 'Threads'], columns='BlockSize', values='CompressionRatio')
+
+# ---------------------------------------------------
+# 4. Compute the difference (L2 - L1) for each metric
+# ---------------------------------------------------
+# We use the .get() method with a fallback of NaN in case a value is missing.
+pivot_ct['Diff'] = pivot_ct.get(L2_value, float('nan')) - pivot_ct.get(L1_value, float('nan'))
+pivot_dt['Diff'] = pivot_dt.get(L2_value, float('nan')) - pivot_dt.get(L1_value, float('nan'))
+pivot_cr['Diff'] = pivot_cr.get(L2_value, float('nan')) - pivot_cr.get(L1_value, float('nan'))
+
+# Reset the index to merge these difference values
+pivot_ct = pivot_ct.reset_index()[['DatasetName', 'Threads', 'Diff']].rename(columns={'Diff': 'CT_Diff'})
+pivot_dt = pivot_dt.reset_index()[['DatasetName', 'Threads', 'Diff']].rename(columns={'Diff': 'DT_Diff'})
+pivot_cr = pivot_cr.reset_index()[['DatasetName', 'Threads', 'Diff']].rename(columns={'Diff': 'CR_Diff'})
+
+# Merge the difference DataFrames on DatasetName and Threads
+merged_diff = pivot_ct.merge(pivot_dt, on=['DatasetName', 'Threads']).merge(pivot_cr, on=['DatasetName', 'Threads'])
+
+# ---------------------------------------------------
+# 5. Plot the differences for each thread in separate subplots
+# ---------------------------------------------------
+thread_values = [1, 8, 16]
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(18, 6), sharey=False)
+
+for idx, thread_val in enumerate(thread_values):
+    ax = axes[idx]
+    # Select data for the current thread value and sort by DatasetName for clarity
+    df_thread = merged_diff[merged_diff['Threads'] == thread_val].sort_values('DatasetName')
+
+    # Use DatasetName as the x-axis labels
+    x = df_thread['DatasetName']
+
+    # Plot differences for each metric (L2 - L1)
+    ax.plot(x, df_thread['CT_Diff'], marker='o', label='Compression Throughput Diff')
+    ax.plot(x, df_thread['DT_Diff'], marker='o', label='Decompression Throughput Diff')
+    ax.plot(x, df_thread['CR_Diff'], marker='o', label='Compression Ratio Diff')
+
+    ax.set_title(f"Threads = {thread_val}")
+    ax.set_xlabel("DatasetName")
+    if idx == 0:
+        ax.set_ylabel("Difference (L2 - L1)")
+
+    ax.tick_params(axis='x', rotation=90)
+    ax.legend(loc='best')
+
+plt.tight_layout()
+output_path = '/home/jamalids/Documents/block_size_diff_l.png'
+plt.savefig(output_path)
+plt.close()
+
+print(f"Block size difference plot saved to {output_path}")

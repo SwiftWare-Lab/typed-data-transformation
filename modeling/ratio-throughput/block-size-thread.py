@@ -91,3 +91,70 @@ plt.savefig(output_plot_path)
 plt.close()
 
 print(f"Plot with three subplots (Threads=1,8,16) saved to {output_plot_path}")
+###################
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- 1. Load the CSV Data and filter for the desired RunType ---
+data = pd.read_csv('/home/jamalids/Documents/combined_all_data.csv')
+data = data[data['RunType'] == 'Decompose_Chunk_Parallel']
+
+# Define the thread values (datasets)
+thread_values = [1, 8, 16]
+
+# --- 2. Create a figure with 3 subplots (one for each thread value) ---
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(18, 6))
+
+for idx, thread_val in enumerate(thread_values):
+    # Filter data for the specific thread count
+    df_thread = data[data['Threads'] == thread_val]
+
+    # Group data by BlockSize and compute max and min for each metric
+    grouped = df_thread.groupby('BlockSize').agg({
+        'CompressionThroughput': ['max', 'min'],
+        'DecompressionThroughput': ['max', 'min'],
+        'CompressionRatio': ['max', 'min']
+    })
+
+    # If no data available for this thread, show a message
+    if grouped.empty:
+        axes[idx].set_title(f"Threads = {thread_val} (No Data)")
+        continue
+
+    # Flatten the MultiIndex columns
+    grouped.columns = ['_'.join(col) for col in grouped.columns]
+    grouped = grouped.reset_index()
+    grouped.sort_values('BlockSize', inplace=True)
+
+    # Convert BlockSize to string for better x-axis labels
+    block_sizes = grouped['BlockSize'].astype(str)
+
+    ax = axes[idx]
+
+    # Plot max and min for Compression Throughput
+    ax.plot(block_sizes, grouped['CompressionThroughput_max'], marker='o', label='CT Max')
+    ax.plot(block_sizes, grouped['CompressionThroughput_min'], marker='o', label='CT Min')
+
+    # Plot max and min for Decompression Throughput
+    ax.plot(block_sizes, grouped['DecompressionThroughput_max'], marker='o', label='DT Max')
+    ax.plot(block_sizes, grouped['DecompressionThroughput_min'], marker='o', label='DT Min')
+
+    # Plot max and min for Compression Ratio
+    ax.plot(block_sizes, grouped['CompressionRatio_max'], marker='o', label='CR Max')
+    ax.plot(block_sizes, grouped['CompressionRatio_min'], marker='o', label='CR Min')
+
+    ax.set_title(f"Threads = {thread_val}")
+    ax.set_xlabel("BlockSize")
+    ax.set_ylabel("Metric Value")
+    ax.tick_params(axis='x', rotation=45)
+    ax.legend(loc='best')
+
+plt.tight_layout()
+
+# Save the figure
+output_path = '/home/jamalids/Documents/three_subplots_max_min_by_blocksize.png'
+plt.savefig(output_path)
+plt.close()
+
+print(f"Plot saved to {output_path}")
