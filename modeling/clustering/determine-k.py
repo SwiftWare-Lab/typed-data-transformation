@@ -140,9 +140,9 @@ def run_analysis(folder_path):
 
     comp_tools = {
         #"zstd": zstd_comp,
-        'fastlz': fastlz_compress,
+       # 'fastlz': fastlz_compress,
         # "zlib": zlib_comp,
-        # "bz2": bz2_comp,
+        "bz2": bz2_comp,
     }
 
     # Define feature scenarios including all individual ones and the "All_Features" scenario.
@@ -248,7 +248,7 @@ def run_analysis(folder_path):
                     })
 
     df_results = pd.DataFrame(results_records)
-    out_csv = os.path.join(folder_path, "clustering_compression_results.csv")
+    out_csv = os.path.join("/home/jamalids/Documents", "clustering_compression_results.csv")
     df_results.to_csv(out_csv, index=False)
     print(f"Results saved to: {out_csv}")
 
