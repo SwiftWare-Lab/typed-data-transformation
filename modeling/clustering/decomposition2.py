@@ -182,7 +182,7 @@ def test_decomposition(data_set, dataset_name, comp_tool_dict={}, given_decomp=N
 # use argparser to get the dataset path
 def main():
     # Folder containing the datasets
-    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"
+    dataset_folder = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/test"
     m = 4  # For float32
     # chunk_size = 65536
     chunk_size = -1  # If not -1, we do block-based
@@ -218,13 +218,13 @@ def main():
         if chunk_size == -1:
             comp_tool_dict = {
                 # 'huffman_compress': huffman_compress,
-                 #'zstd': zstd_comp,
+                 'zstd': zstd_comp,
                 # 'zlib': zlib_comp,
                  #'bz2': bz2_comp,
                 # 'snappy': snappy_comp,
                  #'fastlz': fastlz_compress,
                 # 'rle': rle_compress,
-               'blosc': blosc_comp,
+               #'blosc': blosc_comp,
                 #'blosc_bit': blosc_comp_bit,  # Added blosc from compression_tools
             }
             stats = test_decomposition(

@@ -203,6 +203,7 @@ else:
 
 if chunk_size == -1:
     comp_tool_dict = {
+
         # 'huffman_compress': huffman_compress,
          'zstd': zstd_comp,
         # 'zlib': zlib_comp,
