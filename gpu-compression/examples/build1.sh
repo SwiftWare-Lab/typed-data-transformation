@@ -15,15 +15,16 @@
 module load StdEnv/2023
 module load gcc/13.3
 module load cmake/3.27.7
+export LD_LIBRARY_PATH=/usr/local/cuda-12.3/targets/x86_64-linux/lib:$LD_LIBRARY_PATH
 
 # Define paths
-DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
-EXECUTABLE="/home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-debug/gdeflate_cpu_compression"
+DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"
+EXECUTABLE="/home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-debug/nvcomp_gds"
 RESULTS_DIR="/home/jamalids/Documents/results1"
 
 mkdir -p "$RESULTS_DIR"
 
-echo "=====> Starting gdeflate_cpu_compression execution for all datasets <====="
+echo "=====> Starting nvcomp_gds execution for all datasets <====="
 
 # Loop over every TSV file in the dataset directory.
 for dataset in "$DATASET_DIR"/*.tsv; do
@@ -37,7 +38,7 @@ for dataset in "$DATASET_DIR"/*.tsv; do
         start_time=$(date +%s.%N)
 
         # Run the executable with arguments: dataset, 64, 262144, 1
-        "$EXECUTABLE" "$dataset" 64 262144 1
+        "$EXECUTABLE" "$dataset" 32
 
         end_time=$(date +%s.%N)
         elapsed_time=$(echo "$end_time - $start_time" | bc)

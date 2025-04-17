@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
     return 1;
   }
   int algo = 0; int level = 6;
-  printf("level %d\n", level);
+  printf("level %d\n", level); 
   int i = 1; bool choose_algo = false; bool input_file = false;
   do{
    if(strcmp(argv[i], "-a") !=0 && strcmp(argv[i], "-f") != 0){

@@ -1,5 +1,7 @@
 /home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/gdeflate_cpu_compression.dir
 /home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/gdeflate_cpu_compression1.dir
+/home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/gdeflate_cpu_compression2.dir
+/home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/gdeflate_cpu_compressiongzip.dir
 /home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/nvcomp_gds.dir
 /home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/lz4_cpu_compression.dir
 /home/jamalids/development/big-data-compression/gpu-compression/examples/cmake-build-release/CMakeFiles/lz4_cpu_decompression.dir

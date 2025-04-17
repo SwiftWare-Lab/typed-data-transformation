@@ -1,22 +1,23 @@
+// gdeflate_cpu_compression.cu
+
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2020-2024 NVIDIA CORPORATION & AFFILIATES.
- * All rights reserved. SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ * SPDX-FileCopyrightText: Copyright (c) 2020-2024 NVIDIA CORPORATION
+ * All rights reserved. SPDX-LicenseRef-NvidiaProprietary
  *
  * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
  * property and proprietary rights in and to this material, related
  * documentation and any modifications thereto. Any use, reproduction,
- * disclosure or distribution of this material and related documentation
+ * disclosure or distribution of this material
  * without an express license agreement from NVIDIA CORPORATION or its affiliates
  * is strictly prohibited.
  */
 
-#include "BatchData.h"
+#include <nvcomp/deflate.h>
+#include <nvcomp.h>
+#include <zlib.h>
+#include <cuda_runtime.h>
+#include <nvtx3/nvToolsExt.h>
 
-// nvCOMP headers
-#include <nvcomp/native/gdeflate_cpu.h>
-#include <nvcomp/gdeflate.h>
-
-// STL and other headers
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -27,17 +28,824 @@
 #include <cstdint>
 #include <cstdlib>
 #include <map>
+#include <numeric>
+#include <functional>
+#include <cstring>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+//---------------------------------------------------------
+// CUDA error checking macro
+//---------------------------------------------------------
+#ifndef CUDA_CHECK
+#define CUDA_CHECK(func)                                                       \
+  do {                                                                         \
+    cudaError_t rt = (func);                                                   \
+    if (rt != cudaSuccess) {                                                   \
+      std::cerr << "CUDA API call failure \"" #func "\" with error: "          \
+                << cudaGetErrorString(rt) << " at " << __FILE__ << ":"         \
+                << __LINE__ << std::endl;                                      \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (0)
+#endif
 
-// -----------------------------------------------------------------------------
-// Dataset Loading and Conversion Functions (for TSV files)
-// -----------------------------------------------------------------------------
+//==============================
+// CPU side: Compress one chunk using zlib raw deflate.
+//==============================
+static std::vector<uint8_t> cpuDeflateCompressOneChunk(const uint8_t* src_ptr, size_t src_size)
+{
+  // Minimal demonstration of raw DEFLATE using zlib.
+  std::vector<uint8_t> outBuffer;
+  outBuffer.resize(compressBound(src_size)); // oversize buffer
 
-// Loads a TSV file (skipping the first column) and parses remaining columns as float.
-std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath) {
+  z_stream strm;
+  std::memset(&strm, 0, sizeof(z_stream));
+  // Use negative windowBits for raw deflate, e.g. -15
+  if (deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -15, 8,
+                   Z_DEFAULT_STRATEGY) != Z_OK)
+  {
+    throw std::runtime_error("deflateInit2() failed");
+  }
+
+  strm.avail_in  = static_cast<uInt>(src_size);
+  strm.next_in   = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(src_ptr));
+  strm.avail_out = static_cast<uInt>(outBuffer.size());
+  strm.next_out  = reinterpret_cast<Bytef*>(outBuffer.data());
+
+  int ret = deflate(&strm, Z_FINISH);
+  if (ret != Z_STREAM_END) {
+    deflateEnd(&strm);
+    throw std::runtime_error("deflate() did not return Z_STREAM_END");
+  }
+  size_t compSize = strm.total_out;
+  deflateEnd(&strm);
+
+  outBuffer.resize(compSize);
+  return outBuffer;
+}
+
+// Forward-declare GPU BatchData
+class BatchData;
+
+//==============================
+// BatchDataCPU class definition
+//==============================
+class BatchDataCPU
+{
+public:
+  /**
+   * @brief Constructor that splits the input files into 64KB (or user-specified) chunks
+   *        and copies the data into the CPU batch buffers.
+   */
+  BatchDataCPU(const std::vector<std::vector<char>>& host_data, size_t chunk_size)
+    : m_ptrs(), m_sizes(), m_data(), m_size(0)
+  {
+    // First pass: count how many chunks in total
+    // and the sum of their sizes
+    size_t totalBytes = 0;
+    for (auto& file : host_data) {
+      size_t fileSize = file.size();
+      // number of chunks for this file
+      size_t numChunks = (fileSize + chunk_size - 1) / chunk_size;
+      m_size += numChunks;
+      totalBytes += fileSize;
+    }
+
+    // We'll fill m_sizes with the "actual" sizes per chunk
+    m_sizes.reserve(m_size);
+
+    // second pass: figure out exact chunk sizes
+    for (auto& file : host_data) {
+      size_t fileSize = file.size();
+      const size_t numChunks = (fileSize + chunk_size - 1) / chunk_size;
+      size_t remaining = fileSize;
+      for (size_t c = 0; c < numChunks; c++) {
+        size_t thisChunkSize = std::min<size_t>(remaining, chunk_size);
+        m_sizes.push_back(thisChunkSize);
+        remaining -= thisChunkSize;
+      }
+    }
+
+    // total size of all chunks combined
+    size_t totalChunkBytes = 0;
+    for (auto sz : m_sizes) {
+      totalChunkBytes += sz;
+    }
+    m_data.resize(totalChunkBytes);
+
+    // create pointer array and copy chunk data from each file
+    m_ptrs.resize(m_size);
+
+    size_t currentOffset = 0;
+    size_t chunkIndex = 0;
+    for (auto& file : host_data) {
+      size_t fileSize = file.size();
+      const char* srcPtr = file.data();
+      size_t remaining = fileSize;
+
+      while (remaining > 0) {
+        size_t thisChunkSize = std::min<size_t>(remaining, chunk_size);
+        m_ptrs[chunkIndex] = m_data.data() + currentOffset;
+
+        // copy the file bytes into chunk
+        std::memcpy(m_ptrs[chunkIndex], srcPtr, thisChunkSize);
+
+        currentOffset += thisChunkSize;
+        srcPtr        += thisChunkSize;
+        remaining     -= thisChunkSize;
+        chunkIndex++;
+      }
+    }
+  }
+
+  // 2) Constructor for fixed-size allocation
+  BatchDataCPU(size_t max_output_size, size_t batch_size)
+    : m_ptrs(), m_sizes(), m_data(), m_size(batch_size)
+  {
+    m_data.resize(max_output_size * m_size);
+    m_sizes.resize(m_size, max_output_size);
+    m_ptrs.resize(m_size);
+    for (size_t i = 0; i < m_size; ++i) {
+      m_ptrs[i] = m_data.data() + max_output_size * i;
+    }
+  }
+
+  // 3) Constructor from device pointers with optional copy
+  BatchDataCPU(const void* const* in_ptrs,
+               const size_t* in_sizes,
+               const uint8_t* /*in_data*/,
+               size_t in_size,
+               bool copy_data = false)
+    : m_ptrs(), m_sizes(), m_data(), m_size(in_size)
+  {
+    m_sizes.resize(m_size);
+    CUDA_CHECK(cudaMemcpy(m_sizes.data(), in_sizes,
+                          m_size * sizeof(*in_sizes),
+                          cudaMemcpyDeviceToHost));
+
+    const size_t total =
+        std::accumulate(m_sizes.begin(), m_sizes.end(),
+                        static_cast<size_t>(0));
+    m_data.resize(total);
+    m_ptrs.resize(m_size);
+
+    size_t offset = 0;
+    for (size_t i = 0; i < m_size; ++i) {
+      m_ptrs[i] = m_data.data() + offset;
+      offset += m_sizes[i];
+    }
+
+    if (copy_data) {
+      std::vector<void*> hostPtrs(m_size);
+      CUDA_CHECK(cudaMemcpy(hostPtrs.data(), in_ptrs,
+                            m_size * sizeof(void*),
+                            cudaMemcpyDeviceToHost));
+      for (size_t i = 0; i < m_size; i++) {
+        CUDA_CHECK(cudaMemcpy(m_ptrs[i], hostPtrs[i],
+                              m_sizes[i], cudaMemcpyDeviceToHost));
+      }
+    }
+  }
+
+  // 4) Move Constructor
+  BatchDataCPU(BatchDataCPU&& other) = default;
+
+  // 5) Construct from GPU BatchData (defined later)
+  BatchDataCPU(const BatchData& batch_data, bool copy_data = false);
+
+  // 6) Copy Constructor
+  BatchDataCPU(const BatchDataCPU& other)
+    : m_ptrs(), m_sizes(other.m_sizes), m_data(other.m_data), m_size(other.m_size)
+  {
+    m_ptrs.resize(m_size);
+    size_t offset = 0;
+    for (size_t i = 0; i < m_size; ++i) {
+      m_ptrs[i] = m_data.data() + offset;
+      offset += m_sizes[i];
+    }
+  }
+
+  // 7) Copy Assignment Operator
+  BatchDataCPU& operator=(const BatchDataCPU& other)
+  {
+    if (this != &other) {
+      m_size  = other.m_size;
+      m_sizes = other.m_sizes;
+      m_data  = other.m_data;
+      m_ptrs.resize(m_size);
+
+      size_t offset = 0;
+      for (size_t i = 0; i < m_size; ++i) {
+        m_ptrs[i] = m_data.data() + offset;
+        offset += m_sizes[i];
+      }
+    }
+    return *this;
+  }
+
+  // Accessors
+  uint8_t* data()             { return m_data.data(); }
+  const uint8_t* data() const { return m_data.data(); }
+
+  void** ptrs()                     { return m_ptrs.data(); }
+  const void* const* ptrs() const   { return m_ptrs.data(); }
+
+  size_t* sizes()                   { return m_sizes.data(); }
+  const size_t* sizes() const       { return m_sizes.data(); }
+
+  size_t size() const { return m_size; }
+
+private:
+  std::vector<void*>   m_ptrs;
+  std::vector<size_t>  m_sizes;
+  std::vector<uint8_t> m_data;
+  size_t               m_size;
+};
+
+inline bool operator==(const BatchDataCPU& lhs, const BatchDataCPU& rhs)
+{
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < lhs.size(); ++i) {
+    if (lhs.sizes()[i] != rhs.sizes()[i]) {
+      return false;
+    }
+    const uint8_t* lhs_ptr = reinterpret_cast<const uint8_t*>(lhs.ptrs()[i]);
+    const uint8_t* rhs_ptr = reinterpret_cast<const uint8_t*>(rhs.ptrs()[i]);
+    for (size_t j = 0; j < lhs.sizes()[i]; ++j) {
+      if (lhs_ptr[j] != rhs_ptr[j]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+//==============================
+// GPU BatchData class definition
+//==============================
+class BatchData
+{
+public:
+  // Construct a BatchData from a CPU batch (copy data from host to device)
+  BatchData(const BatchDataCPU& cpu, bool copy_data)
+  {
+    m_batch_size = cpu.size();
+
+    // Allocate device array for sizes
+    CUDA_CHECK(cudaMalloc(&d_sizes, m_batch_size * sizeof(size_t)));
+    CUDA_CHECK(cudaMemcpy(d_sizes, cpu.sizes(),
+                          m_batch_size * sizeof(size_t),
+                          cudaMemcpyHostToDevice));
+
+    // Allocate device memory for each chunk
+    std::vector<void*> host_ptrs(m_batch_size);
+    for (size_t i = 0; i < m_batch_size; i++) {
+      size_t s = cpu.sizes()[i];
+      void* d_chunk = nullptr;
+      CUDA_CHECK(cudaMalloc(&d_chunk, s));
+      if (copy_data) {
+        CUDA_CHECK(cudaMemcpy(d_chunk, cpu.ptrs()[i],
+                              s, cudaMemcpyHostToDevice));
+      }
+      host_ptrs[i] = d_chunk;
+    }
+    // Allocate device array for pointers
+    CUDA_CHECK(cudaMalloc(&d_ptrs, m_batch_size * sizeof(void*)));
+    CUDA_CHECK(cudaMemcpy(d_ptrs, host_ptrs.data(),
+                          m_batch_size * sizeof(void*),
+                          cudaMemcpyHostToDevice));
+  }
+
+  ~BatchData()
+  {
+    if (d_ptrs) {
+      std::vector<void*> host_ptrs(m_batch_size);
+      CUDA_CHECK(cudaMemcpy(host_ptrs.data(),
+                            d_ptrs,
+                            m_batch_size * sizeof(void*),
+                            cudaMemcpyDeviceToHost));
+      for (size_t i = 0; i < m_batch_size; i++) {
+        if (host_ptrs[i]) {
+          cudaFree(host_ptrs[i]);
+        }
+      }
+      cudaFree(d_ptrs);
+    }
+    if (d_sizes) {
+      cudaFree(d_sizes);
+    }
+  }
+
+  size_t size() const { return m_batch_size; }
+
+  // For nvcomp, we cast this to (void* const*) when calling the API.
+  const void* const* ptrs() const { return (const void* const*)d_ptrs; }
+  const size_t* sizes()    const { return d_sizes; }
+
+private:
+  void*   d_ptrs      = nullptr;
+  size_t* d_sizes     = nullptr;
+  size_t  m_batch_size = 0;
+};
+
+//----------------------------
+// Definition: CPU from GPU BatchData
+//----------------------------
+BatchDataCPU::BatchDataCPU(const BatchData& batch_data, bool copy_data)
+  : m_size(batch_data.size())
+{
+  m_sizes.resize(m_size);
+  CUDA_CHECK(cudaMemcpy(m_sizes.data(), batch_data.sizes(),
+                        m_size * sizeof(size_t),
+                        cudaMemcpyDeviceToHost));
+
+  size_t total_data = 0;
+  for (auto sz : m_sizes) {
+    total_data += sz;
+  }
+  m_data.resize(total_data);
+  m_ptrs.resize(m_size);
+
+  size_t offset = 0;
+  for (size_t i = 0; i < m_size; i++) {
+    m_ptrs[i] = m_data.data() + offset;
+    offset += m_sizes[i];
+  }
+  if (copy_data) {
+    std::vector<void*> hostPtrs(m_size);
+    CUDA_CHECK(cudaMemcpy(hostPtrs.data(), batch_data.ptrs(),
+                          m_size * sizeof(void*),
+                          cudaMemcpyDeviceToHost));
+    for (size_t i = 0; i < m_size; i++) {
+      CUDA_CHECK(cudaMemcpy(m_ptrs[i], hostPtrs[i],
+                            m_sizes[i], cudaMemcpyDeviceToHost));
+    }
+  }
+}
+
+//==============================
+// Additional Utility
+//==============================
+inline float measureCudaTime(std::function<void(cudaStream_t)> kernelFunc,
+                             cudaStream_t stream)
+{
+  cudaEvent_t start, stop;
+  CUDA_CHECK(cudaEventCreate(&start));
+  CUDA_CHECK(cudaEventCreate(&stop));
+
+  CUDA_CHECK(cudaEventRecord(start, stream));
+  kernelFunc(stream);
+  CUDA_CHECK(cudaEventRecord(stop, stream));
+  CUDA_CHECK(cudaEventSynchronize(stop));
+
+  float ms = 0;
+  CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
+  CUDA_CHECK(cudaEventDestroy(start));
+  CUDA_CHECK(cudaEventDestroy(stop));
+  return ms;
+}
+
+__global__ void compareBuffers(const uint8_t* a, const uint8_t* b,
+                               int* invalid, size_t n)
+{
+  size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t stride = gridDim.x * blockDim.x;
+  while (i < n) {
+    if (a[i] != b[i]) {
+      *invalid = 1;
+    }
+    i += stride;
+  }
+}
+
+//==============================
+// Whole-Dataset Metrics
+//==============================
+struct WholeDatasetMetrics
+{
+  size_t totalBytes;
+  size_t compBytes;
+  double compressionRatio;
+  float  compTimeMs;
+  float  decompTimeMs;
+  double compThroughputGBs;
+  double decompThroughputGBs;
+};
+
+//==============================
+// Splitting out-of-band (like before)
+inline void splitBytesIntoComponentsNested(
+    const std::vector<uint8_t>& byteArray,
+    std::vector<std::vector<uint8_t>>& outputComponents,
+    const std::vector<std::vector<size_t>>& allComponentSizes,
+    int numThreads)
+{
+  size_t totalBytesPerElement = 0;
+  for (const auto &group : allComponentSizes) {
+    totalBytesPerElement += group.size();
+  }
+
+  size_t numElements = byteArray.size() / totalBytesPerElement;
+  outputComponents.resize(allComponentSizes.size());
+  for (size_t i = 0; i < allComponentSizes.size(); i++) {
+    outputComponents[i].resize(numElements * allComponentSizes[i].size());
+  }
+
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(numThreads)
+#endif
+  for (size_t elem = 0; elem < numElements; elem++) {
+    for (size_t compIdx = 0; compIdx < allComponentSizes.size(); compIdx++) {
+      const auto& groupIndices = allComponentSizes[compIdx];
+      size_t groupSize = groupIndices.size();
+      size_t writePos  = elem * groupSize;
+      for (size_t sub = 0; sub < groupSize; sub++) {
+        size_t idxInElem    = groupIndices[sub] - 1;
+        size_t globalSrcIdx = elem * totalBytesPerElement + idxInElem;
+        outputComponents[compIdx][writePos + sub] = byteArray[globalSrcIdx];
+      }
+    }
+  }
+}
+
+inline void reassembleBytesFromComponentsNestedlz4(
+    const std::vector<std::vector<uint8_t>>& inputComponents,
+    uint8_t* byteArray,
+    size_t byteArraySize,
+    const std::vector<std::vector<size_t>>& allComponentSizes,
+    int numThreads)
+{
+  size_t totalBytesPerElement = 0;
+  for (const auto &group : allComponentSizes) {
+    totalBytesPerElement += group.size();
+  }
+
+  size_t numElements = byteArraySize / totalBytesPerElement;
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(numThreads)
+#endif
+  for (size_t compIdx = 0; compIdx < inputComponents.size(); compIdx++) {
+    const auto& groupIndices = allComponentSizes[compIdx];
+    const auto& componentData = inputComponents[compIdx];
+    size_t groupSize = groupIndices.size();
+    for (size_t elem = 0; elem < numElements; elem++) {
+      size_t readPos = elem * groupSize;
+      for (size_t sub = 0; sub < groupSize; sub++) {
+        size_t idxInElem   = groupIndices[sub] - 1;
+        size_t globalIndex = elem * totalBytesPerElement + idxInElem;
+        byteArray[globalIndex] = componentData[readPos + sub];
+      }
+    }
+  }
+}
+
+//==============================
+// Whole dataset test function
+//==============================
+WholeDatasetMetrics run_whole_dataset_deflate(const std::vector<std::vector<char>>& files)
+{
+  WholeDatasetMetrics metrics{};
+  size_t total_bytes = 0;
+  for (const auto& part : files) {
+    total_bytes += part.size();
+  }
+  metrics.totalBytes = total_bytes;
+  std::cout << "----------\nWhole-dataset mode (CPU zlib + GPU deflate):\n"
+            << "Files: " << files.size() << "\n"
+            << "Uncompressed (B): " << total_bytes << "\n";
+
+  // 64KB chunk
+  const size_t chunk_size = 1 << 16;
+  // Actually copy file data into chunked CPU buffers
+  BatchDataCPU input_data_cpu(files, chunk_size);
+  std::cout << "Chunks: " << input_data_cpu.size() << "\n";
+
+  // (1) CPU zlib compression
+  float comp_time_ms = 0.0f;
+  size_t total_comp_bytes = 0;
+  std::vector<std::vector<uint8_t>> comp_chunks(input_data_cpu.size());
+
+  {
+    cudaEvent_t startE, stopE;
+    CUDA_CHECK(cudaEventCreate(&startE));
+    CUDA_CHECK(cudaEventCreate(&stopE));
+    CUDA_CHECK(cudaEventRecord(startE, 0));
+
+    for (size_t i = 0; i < input_data_cpu.size(); i++) {
+      size_t src_size = input_data_cpu.sizes()[i];
+      const uint8_t* src_ptr =
+          reinterpret_cast<const uint8_t*>(input_data_cpu.ptrs()[i]);
+      std::vector<uint8_t> cdata =
+          cpuDeflateCompressOneChunk(src_ptr, src_size);
+      total_comp_bytes += cdata.size();
+      comp_chunks[i] = std::move(cdata);
+    }
+
+    CUDA_CHECK(cudaEventRecord(stopE, 0));
+    CUDA_CHECK(cudaEventSynchronize(stopE));
+    CUDA_CHECK(cudaEventElapsedTime(&comp_time_ms, startE, stopE));
+    CUDA_CHECK(cudaEventDestroy(startE));
+    CUDA_CHECK(cudaEventDestroy(stopE));
+
+    metrics.compBytes = total_comp_bytes;
+    metrics.compressionRatio =
+        (double)total_bytes / (double)total_comp_bytes;
+    std::cout << "Compressed size (B): " << total_comp_bytes
+              << ", Ratio: " << metrics.compressionRatio << "\n";
+  }
+
+  metrics.compTimeMs = comp_time_ms;
+  metrics.compThroughputGBs =
+      (comp_time_ms > 0.0f)
+          ? ((double)total_bytes / comp_time_ms) * 1e-6
+          : 0.0;
+
+  // (2) GPU deflate decompression
+  float decomp_time_ms = 0.0f;
+  {
+    size_t batch_count = input_data_cpu.size();
+
+    // Pack variable-length compressed chunks to uniform batch
+    size_t largest_chunk = 0;
+    for (size_t i = 0; i < batch_count; i++) {
+      if (comp_chunks[i].size() > largest_chunk) {
+        largest_chunk = comp_chunks[i].size();
+      }
+    }
+    // Build a CPU structure for the compressed data
+    BatchDataCPU compress_data_cpu(largest_chunk, batch_count);
+    for (size_t i = 0; i < batch_count; i++) {
+      size_t csize = comp_chunks[i].size();
+      compress_data_cpu.sizes()[i] = csize;
+      std::memcpy(compress_data_cpu.ptrs()[i],
+                  comp_chunks[i].data(), csize);
+    }
+
+    // Copy compressed data to GPU
+    BatchData compress_data(compress_data_cpu, true);
+
+    // Allocate GPU buffer for decompression output
+    BatchData decomp_data(input_data_cpu, false);
+
+    cudaStream_t stream_gpu;
+    CUDA_CHECK(cudaStreamCreate(&stream_gpu));
+
+    size_t decomp_temp_bytes = 0;
+    nvcompStatus_t status =
+      nvcompBatchedDeflateDecompressGetTempSize(batch_count, chunk_size,
+                                                &decomp_temp_bytes);
+    if (status != nvcompSuccess) {
+      throw std::runtime_error("nvcompBatchedDeflateDecompressGetTempSize() failed");
+    }
+
+    void* d_decomp_temp = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_decomp_temp, decomp_temp_bytes));
+
+    size_t* d_decomp_sizes = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_decomp_sizes, batch_count * sizeof(size_t)));
+
+    nvcompStatus_t* d_statuses = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_statuses, batch_count * sizeof(nvcompStatus_t)));
+
+    cudaEvent_t startE, stopE;
+    CUDA_CHECK(cudaEventCreate(&startE));
+    CUDA_CHECK(cudaEventCreate(&stopE));
+    CUDA_CHECK(cudaEventRecord(startE, stream_gpu));
+
+    // Decompress
+    status = nvcompBatchedDeflateDecompressAsync(
+        compress_data.ptrs(),
+        compress_data.sizes(),
+        input_data_cpu.sizes(),  // actual uncompressed sizes
+        d_decomp_sizes,
+        batch_count,
+        d_decomp_temp,
+        decomp_temp_bytes,
+        (void* const*)decomp_data.ptrs(),  // cast to match signature
+        d_statuses,
+        stream_gpu);
+
+    if (status != nvcompSuccess) {
+      throw std::runtime_error("nvcompBatchedDeflateDecompressAsync() failed");
+    }
+
+    CUDA_CHECK(cudaEventRecord(stopE, stream_gpu));
+    CUDA_CHECK(cudaStreamSynchronize(stream_gpu));
+    CUDA_CHECK(cudaEventElapsedTime(&decomp_time_ms, startE, stopE));
+    CUDA_CHECK(cudaEventDestroy(startE));
+    CUDA_CHECK(cudaEventDestroy(stopE));
+
+    CUDA_CHECK(cudaFree(d_decomp_temp));
+    CUDA_CHECK(cudaFree(d_decomp_sizes));
+    CUDA_CHECK(cudaFree(d_statuses));
+    CUDA_CHECK(cudaStreamDestroy(stream_gpu));
+
+    // Validate
+    BatchDataCPU final_decomp_cpu(decomp_data, true);
+    if (!(final_decomp_cpu == input_data_cpu)) {
+      throw std::runtime_error(
+          "ERROR: Decompressed data does not match original!");
+    } else {
+      std::cout << "Decompression validated :)\n";
+    }
+  }
+  metrics.decompTimeMs = decomp_time_ms;
+  metrics.decompThroughputGBs =
+      (decomp_time_ms > 0.0f)
+          ? ((double)total_bytes / decomp_time_ms) * 1e-6
+          : 0.0;
+
+  std::cout << "Whole-dataset Compression Throughput (GB/s): "
+            << metrics.compThroughputGBs << "\n"
+            << "Whole-dataset Decompression Throughput (GB/s): "
+            << metrics.decompThroughputGBs << "\n";
+
+  return metrics;
+}
+
+//==============================
+// Component-Based Flow
+//==============================
+struct ComponentResult
+{
+  size_t compSize;
+  std::vector<char> compData;
+  float compTimeMs;
+  float decompTimeMs;
+};
+
+ComponentResult compress_decompress_component_deflate(const std::vector<char>& compData)
+{
+  ComponentResult result{};
+  result.compData = compData;
+  const size_t comp_total_bytes = compData.size();
+  std::cout << "Component uncompressed size: " << comp_total_bytes << " bytes\n";
+
+  const size_t chunk_size = 1 << 16;
+  std::vector<std::vector<char>> files = { compData };
+  BatchDataCPU input_data_cpu(files, chunk_size);
+  size_t batch_count = input_data_cpu.size();
+
+  // (1) CPU zlib compression
+  float comp_time_ms = 0.0f;
+  size_t total_comp_bytes = 0;
+  std::vector<std::vector<uint8_t>> comp_chunks(batch_count);
+
+  {
+    cudaEvent_t startE, stopE;
+    CUDA_CHECK(cudaEventCreate(&startE));
+    CUDA_CHECK(cudaEventCreate(&stopE));
+    CUDA_CHECK(cudaEventRecord(startE, 0));
+
+    for (size_t i = 0; i < batch_count; i++) {
+      size_t src_size = input_data_cpu.sizes()[i];
+      const uint8_t* src_ptr =
+          reinterpret_cast<const uint8_t*>(input_data_cpu.ptrs()[i]);
+      std::vector<uint8_t> cdata =
+          cpuDeflateCompressOneChunk(src_ptr, src_size);
+      total_comp_bytes += cdata.size();
+      comp_chunks[i] = std::move(cdata);
+    }
+
+    CUDA_CHECK(cudaEventRecord(stopE, 0));
+    CUDA_CHECK(cudaEventSynchronize(stopE));
+    CUDA_CHECK(cudaEventElapsedTime(&comp_time_ms, startE, stopE));
+    CUDA_CHECK(cudaEventDestroy(startE));
+    CUDA_CHECK(cudaEventDestroy(stopE));
+  }
+
+  result.compTimeMs = comp_time_ms;
+  result.compSize   = total_comp_bytes;
+
+  double comp_throughput =
+      (comp_time_ms > 0.0f)
+          ? ((double)comp_total_bytes / comp_time_ms) * 1e-6
+          : 0.0;
+  std::cout << "Component Compression Throughput (GB/s): "
+            << comp_throughput << "\n";
+
+  if (total_comp_bytes >= comp_total_bytes) {
+    std::cout << "Compressed size >= uncompressed. Skipping decompression.\n";
+    result.decompTimeMs = 0.0f;
+    return result;
+  }
+
+  // (2) GPU decompression
+  float decomp_time_ms = 0.0f;
+  {
+    auto buildCPUfromChunks =
+      [&](const std::vector<std::vector<uint8_t>>& chunks) -> BatchDataCPU
+    {
+      // find the largest chunk
+      size_t largest_chunk = 0;
+      for (auto &c : chunks) {
+        if (c.size() > largest_chunk) {
+          largest_chunk = c.size();
+        }
+      }
+      BatchDataCPU ret(largest_chunk, chunks.size());
+      for (size_t i = 0; i < chunks.size(); i++) {
+        size_t csize = chunks[i].size();
+        ret.sizes()[i] = csize;
+        std::memcpy(ret.ptrs()[i],
+                    chunks[i].data(), csize);
+      }
+      return ret;
+    };
+
+    // pack the variable-length compressed chunks
+    BatchDataCPU compress_data_cpu = buildCPUfromChunks(comp_chunks);
+    // copy compressed data to GPU
+    BatchData compress_data(compress_data_cpu, true);
+
+    // allocate GPU buffer for decompressed
+    BatchData decomp_data(input_data_cpu, false);
+
+    nvcompStatus_t status;
+    size_t temp_bytes = 0;
+    status = nvcompBatchedDeflateDecompressGetTempSize(batch_count,
+                                                       chunk_size,
+                                                       &temp_bytes);
+    if (status != nvcompSuccess) {
+      throw std::runtime_error("nvcompBatchedDeflateDecompressGetTempSize() failed for component");
+    }
+
+    void* d_temp = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_temp, temp_bytes));
+    size_t* d_decomp_sizes = nullptr;
+    CUDA_CHECK(cudaMalloc(&d_decomp_sizes, batch_count * sizeof(size_t)));
+
+    cudaEvent_t startE, stopE;
+    CUDA_CHECK(cudaEventCreate(&startE));
+    CUDA_CHECK(cudaEventCreate(&stopE));
+    cudaStream_t stream;
+    CUDA_CHECK(cudaStreamCreate(&stream));
+
+    CUDA_CHECK(cudaEventRecord(startE, stream));
+
+    // Decompress
+    status = nvcompBatchedDeflateDecompressAsync(
+        compress_data.ptrs(),
+        compress_data.sizes(),
+        input_data_cpu.sizes(),
+        d_decomp_sizes,
+        batch_count,
+        d_temp,
+        temp_bytes,
+        (void* const*)decomp_data.ptrs(),
+        nullptr,
+        stream);
+
+    if (status != nvcompSuccess) {
+      throw std::runtime_error("nvcompBatchedDeflateDecompressAsync() failed for component");
+    }
+
+    CUDA_CHECK(cudaEventRecord(stopE, stream));
+    CUDA_CHECK(cudaStreamSynchronize(stream));
+    CUDA_CHECK(cudaEventElapsedTime(&decomp_time_ms, startE, stopE));
+
+    CUDA_CHECK(cudaEventDestroy(startE));
+    CUDA_CHECK(cudaEventDestroy(stopE));
+    CUDA_CHECK(cudaStreamDestroy(stream));
+
+    CUDA_CHECK(cudaFree(d_temp));
+    CUDA_CHECK(cudaFree(d_decomp_sizes));
+
+    result.decompTimeMs = decomp_time_ms;
+    double dec_throughput =
+        (decomp_time_ms > 0.0f)
+            ? ((double)comp_total_bytes / decomp_time_ms) * 1e-6
+            : 0.0;
+    std::cout << "Component Decompression Throughput (GB/s): "
+              << dec_throughput << "\n";
+
+    // Copy decompressed data back to CPU
+    BatchDataCPU final_decomp_cpu(decomp_data, true);
+    result.compData.resize(final_decomp_cpu.size() * chunk_size);
+
+    size_t offset = 0;
+    for (size_t i = 0; i < final_decomp_cpu.size(); i++) {
+      size_t csize = final_decomp_cpu.sizes()[i];
+      std::memcpy(&result.compData[offset],
+                  final_decomp_cpu.ptrs()[i],
+                  csize);
+      offset += csize;
+    }
+    result.compData.resize(offset);
+  }
+
+  return result;
+}
+
+//==============================
+// Dataset loading
+//==============================
+std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath)
+{
   std::vector<float> floatArray;
   std::ifstream file(filePath);
   std::string line;
@@ -46,7 +854,8 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string value;
-      std::getline(ss, value, '\t'); // skip first column
+      // skip first column
+      std::getline(ss, value, '\t');
       while (std::getline(ss, value, '\t')) {
         floatArray.push_back(std::stof(value));
       }
@@ -54,13 +863,13 @@ std::pair<std::vector<float>, size_t> loadTSVDataset(const std::string& filePath
     }
     file.close();
   } else {
-    std::cerr << "Unable to open file: " << filePath << std::endl;
+    throw std::runtime_error("Unable to open file: " + filePath);
   }
-  return std::make_pair(floatArray, rowCount);
+  return { floatArray, rowCount };
 }
 
-// Loads a TSV file (skipping the first column) and parses remaining columns as double.
-std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& filePath) {
+std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& filePath)
+{
   std::vector<double> doubleArray;
   std::ifstream file(filePath);
   std::string line;
@@ -69,7 +878,8 @@ std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& f
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string value;
-      std::getline(ss, value, '\t'); // skip first column
+      // skip first column
+      std::getline(ss, value, '\t');
       while (std::getline(ss, value, '\t')) {
         doubleArray.push_back(std::stod(value));
       }
@@ -77,952 +887,206 @@ std::pair<std::vector<double>, size_t> loadTSVDatasetdouble(const std::string& f
     }
     file.close();
   } else {
-    std::cerr << "Unable to open file: " << filePath << std::endl;
+    throw std::runtime_error("Unable to open file: " + filePath);
   }
-  return std::make_pair(doubleArray, rowCount);
+  return { doubleArray, rowCount };
 }
 
-// Converts a vector of floats to a vector of bytes.
-std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray) {
+std::vector<uint8_t> convertFloatToBytes(const std::vector<float>& floatArray)
+{
   std::vector<uint8_t> byteArray(floatArray.size() * sizeof(float));
-  for (size_t i = 0; i < floatArray.size(); i++) {
-    const uint8_t* floatBytes = reinterpret_cast<const uint8_t*>(&floatArray[i]);
-    for (size_t j = 0; j < sizeof(float); j++) {
-      byteArray[i * sizeof(float) + j] = floatBytes[j];
-    }
-  }
+  std::memcpy(byteArray.data(), floatArray.data(), byteArray.size());
   return byteArray;
 }
 
-// Converts a vector of doubles to a vector of bytes.
-std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray) {
+std::vector<uint8_t> convertDoubleToBytes(const std::vector<double>& doubleArray)
+{
   std::vector<uint8_t> byteArray(doubleArray.size() * sizeof(double));
-  for (size_t i = 0; i < doubleArray.size(); i++) {
-    const uint8_t* doubleBytes = reinterpret_cast<const uint8_t*>(&doubleArray[i]);
-    for (size_t j = 0; j < sizeof(double); j++) {
-      byteArray[i * sizeof(double) + j] = doubleBytes[j];
-    }
-  }
+  std::memcpy(byteArray.data(), doubleArray.data(), byteArray.size());
   return byteArray;
 }
 
-// -----------------------------------------------------------------------------
-// (A) Whole-Dataset Compression/Decompression with Throughput Measurements
-// -----------------------------------------------------------------------------
-static void run_example(const std::vector<std::vector<char>>& data)
+std::string configToString(const std::vector<std::vector<size_t>>& config)
 {
-  size_t total_bytes = 0;
-  for (const auto &part : data) {
-    total_bytes += part.size();
-  }
-
-  std::cout << "----------" << std::endl;
-  std::cout << "Whole-dataset mode:" << std::endl;
-  std::cout << "Files: " << data.size() << std::endl;
-  std::cout << "Uncompressed (B): " << total_bytes << std::endl;
-
-  const size_t chunk_size = 1 << 16; // 64K
-
-  // Build up input batch on CPU.
-  BatchDataCPU input_data_cpu(data, chunk_size);
-  std::cout << "Chunks: " << input_data_cpu.size() << std::endl;
-
-  // -----------------
-  // Compression Phase (with timing)
-  // -----------------
-  cudaEvent_t comp_start, comp_end;
-  CUDA_CHECK(cudaEventCreate(&comp_start));
-  CUDA_CHECK(cudaEventCreate(&comp_end));
-  CUDA_CHECK(cudaEventRecord(comp_start, 0));
-
-  nvcompStatus_t status;
-  size_t max_out_bytes;
-  status = nvcompBatchedGdeflateCompressGetMaxOutputChunkSize(
-      chunk_size, nvcompBatchedGdeflateDefaultOpts, &max_out_bytes);
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Failed to get max output chunk size");
-  }
-
-  BatchDataCPU compress_data_cpu(max_out_bytes, input_data_cpu.size());
-  gdeflate::compressCPU(
-      input_data_cpu.ptrs(), input_data_cpu.sizes(),
-      chunk_size, input_data_cpu.size(),
-      compress_data_cpu.ptrs(), compress_data_cpu.sizes());
-
-  CUDA_CHECK(cudaEventRecord(comp_end, 0));
-  CUDA_CHECK(cudaEventSynchronize(comp_end));
-  float comp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&comp_time_ms, comp_start, comp_end));
-  double comp_throughput = ((double)total_bytes / comp_time_ms) * 1e-6; // GB/s
-  std::cout << "Whole-dataset compression throughput (GB/s): " << comp_throughput << std::endl;
-  CUDA_CHECK(cudaEventDestroy(comp_start));
-  CUDA_CHECK(cudaEventDestroy(comp_end));
-
-  // Compute compressed size.
-  size_t* compressed_sizes_host = compress_data_cpu.sizes();
-  size_t comp_bytes = 0;
-  for (size_t i = 0; i < compress_data_cpu.size(); ++i)
-    comp_bytes += compressed_sizes_host[i];
-  std::cout << "Compressed size (B): " << comp_bytes
-            << ", Compression ratio: " << std::fixed << std::setprecision(2)
-            << (double)total_bytes / comp_bytes << std::endl;
-
-  // -----------------
-  // Decompression Phase (with timing)
-  // -----------------
-  BatchData compress_data(compress_data_cpu, true);
-  BatchData decomp_data(input_data_cpu, false);
-
-  cudaStream_t stream;
-  CUDA_CHECK(cudaStreamCreate(&stream));
-  cudaEvent_t decomp_start, decomp_end;
-  CUDA_CHECK(cudaEventCreate(&decomp_start));
-  CUDA_CHECK(cudaEventCreate(&decomp_end));
-
-  size_t decomp_temp_bytes;
-  status = nvcompBatchedGdeflateDecompressGetTempSize(
-      compress_data.size(), chunk_size, &decomp_temp_bytes);
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Failed to get decompression temp size");
-  }
-
-  void* d_decomp_temp;
-  CUDA_CHECK(cudaMalloc(&d_decomp_temp, decomp_temp_bytes));
-  size_t* d_decomp_sizes;
-  CUDA_CHECK(cudaMalloc(&d_decomp_sizes, decomp_data.size() * sizeof(size_t)));
-  nvcompStatus_t* d_statuses;
-  CUDA_CHECK(cudaMalloc(&d_statuses, decomp_data.size() * sizeof(nvcompStatus_t)));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  // Validate decompression first.
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp, decomp_temp_bytes,
-      decomp_data.ptrs(), d_statuses, stream);
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Decompression failed");
-  }
-  if (!(input_data_cpu == decomp_data))
-    throw std::runtime_error("ERROR: Decompressed data does not match input");
-  else
-    std::cout << "Decompression validated :)" << std::endl;
-
-  // Measure decompression throughput.
-  CUDA_CHECK(cudaEventRecord(decomp_start, stream));
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp, decomp_temp_bytes,
-      decomp_data.ptrs(), d_statuses, stream);
-  CUDA_CHECK(cudaEventRecord(decomp_end, stream));
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Decompression throughput run failed");
-  }
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  float decomp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&decomp_time_ms, decomp_start, decomp_end));
-  double decomp_throughput = ((double)total_bytes / decomp_time_ms) * 1e-6;
-  std::cout << "Whole-dataset decompression throughput (GB/s): " << decomp_throughput << std::endl;
-
-  CUDA_CHECK(cudaFree(d_decomp_temp));
-  CUDA_CHECK(cudaFree(d_decomp_sizes));
-  CUDA_CHECK(cudaFree(d_statuses));
-  CUDA_CHECK(cudaEventDestroy(decomp_start));
-  CUDA_CHECK(cudaEventDestroy(decomp_end));
-  CUDA_CHECK(cudaStreamDestroy(stream));
-}
-
-// -----------------------------------------------------------------------------
-// (B) Component-Based Decomposition: Map, Split, and Reassemble Functions
-// -----------------------------------------------------------------------------
-
-// Map of dataset names to possible component configurations.
-// Map to store dataset names and their multiple possible configurations
-std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
-  {"acs_wht_f32", {
-          {{1,2}, {3}, {4}} ,
-          {{1, 2,3}, {4}},
-  }},
-  {"g24_78_usb2_f32", {
-        //  {{1}, {2,3}, {4}},
-          {{1,2,3}, {4}},
-  }},
-  {"jw_mirimage_f32", {
-         // {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-  }},
-  {"spitzer_irac_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-  }},
-  {"turbulence_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-  }},
-  {"wave_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-  }},
-  {"hdr_night_f32", {
-          {{1,4}, {2}, {3}},
-          {{1}, {2}, {3}, {4}},
-          {{1,4}, {2,3}},
-  }},
-  {"ts_gas_f32", {
-          {{1,2}, {3}, {4}},
-  }},
-  {"solar_wind_f32", {
-          {{1}, {4}, {2}, {3}},
-          {{1}, {2,3}, {4}},
-  }},
-  {"tpch_lineitem_f32", {
-          {{1,2,3}, {4}},
-          {{1,2}, {3}, {4}},
-  }},
-  {"tpcds_web_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-  }},
-  {"tpcds_store_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-  }},
-  {"tpcds_catalog_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-  }},
-  {"citytemp_f32", {
-          {{1,4}, {2,3}},
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}}
-  }},
-  {"hst_wfc3_ir_f32", {
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}}
-  }},
-  {"hst_wfc3_uvis_f32", {
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}}
-  }},
-  {"rsim_f32", {
-          {{1,2,3}, {4}},
-          {{1,2}, {3}, {4}}
-  }},
-  {"astro_mhd_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{1,2,3,4,5}, {6}, {7}, {8}}
-  }},
-  {"astro_pt_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{1,2,3,4,5}, {6}, {7}, {8}}
-  }},
-  {"jane_street_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{3,2,5,6,4,1}, {7}, {8}}
-  }},
-  {"msg_bt_f64", {
-          {{1,2,3,4,5}, {6}, {7}, {8}},
-          {{3,2,1,4,5,6}, {7}, {8}},
-          {{3,2,1,4,5}, {6}, {7}, {8}}
-  }},
-  {"num_brain_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{3,2,4,5,1,6}, {7}, {8}},
-  }},
-  {"num_control_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{4,5}, {6,3}, {1,2}, {7}, {8}},
-          {{4,5,6,3,1,2}, {7}, {8}},
-  }},
-  {"nyc_taxi2015_f64", {
-          {{7,4,6}, {5}, {3,2,1,8}},
-          {{7,4,6,5}, {3,2,1,8}},
-          {{7,4,6}, {5}, {3,2,1}, {8}},
-          {{7,4}, {6}, {5}, {3,2}, {1}, {8}},
-  }},
-  {"phone_gyro_f64", {
-          {{4,6}, {8}, {3,2,1,7},{5}, },
-          {{4,6}, {1}, {3,2}, {5}, {7}, {8}},
-          {{6,4,3,2,1,7}, {5}, {8}},
-{{6,4,3,2,1,7,5}, {8}},
-{{6,4,3,2,1,7}, {5,8}},
-  }},
-  {"tpch_order_f64", {
-          {{3,2,4,1}, {7}, {6,5}, {8}},
-          {{3,2,4,1,7}, {6,5}, {8}},
-  }},
-  {"tpcxbb_store_f64", {
-          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3,1}, {5}, {7,6}, {8}},
-          {{4,2,3,1,5}, {7,6}, {8}},
-  }},
-  {"tpcxbb_web_f64", {
-          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3,1}, {5}, {7,6}, {8}},
-          {{4,2,3,1,5}, {7,6}, {8}},
-  }},
-  {"wesad_chest_f64", {
-              {{7,5,6}, {8,4,1,3,2}},
-          {{7,5}, {6}, {8,4,1}, {3,2}},
-          {{7,5}, {6}, {8,4}, {1}, {3,2}},
-          {{7,5}, {6}, {8,4,1,3,2}},
-  }},
-  {"default", {
-          {{1}, {2}, {3}, {4}}
-  }}
-};
-
-// Splits the byte array into components according to a configuration.
-// Each inner vector in allComponentSizes holds 1-based indices for that component.
-inline void splitBytesIntoComponentsNested(
-    const std::vector<uint8_t>& byteArray,
-    std::vector<std::vector<uint8_t>>& outputComponents,
-    const std::vector<std::vector<size_t>>& allComponentSizes,
-    int numThreads
-) {
-    size_t totalBytesPerElement = 0;
-    for (const auto &group : allComponentSizes)
-        totalBytesPerElement += group.size();
-
-    size_t numElements = byteArray.size() / totalBytesPerElement;
-    outputComponents.resize(allComponentSizes.size());
-
-    for (size_t i = 0; i < allComponentSizes.size(); i++) {
-        outputComponents[i].resize(numElements * allComponentSizes[i].size());
-    }
-
-    #pragma omp parallel for num_threads(numThreads)
-    for (size_t elem = 0; elem < numElements; elem++) {
-        for (size_t compIdx = 0; compIdx < allComponentSizes.size(); compIdx++) {
-            const auto &groupIndices = allComponentSizes[compIdx];
-            size_t groupSize = groupIndices.size();
-            size_t writePos = elem * groupSize;
-            for (size_t sub = 0; sub < groupSize; sub++) {
-                size_t idxInElem = groupIndices[sub] - 1; // convert from 1-based index.
-                size_t globalSrcIdx = elem * totalBytesPerElement + idxInElem;
-                outputComponents[compIdx][writePos + sub] = byteArray[globalSrcIdx];
-            }
-        }
-    }
-}
-
-// Reassembles the full byte array from its component parts.
-inline void reassembleBytesFromComponentsNestedlz4(
-    const std::vector<std::vector<uint8_t>>& inputComponents,
-    uint8_t* byteArray, // destination buffer pointer
-    size_t byteArraySize, // total size of destination buffer
-    const std::vector<std::vector<size_t>>& allComponentSizes,
-    int numThreads
-) {
-    size_t totalBytesPerElement = 0;
-    for (const auto &group : allComponentSizes)
-        totalBytesPerElement += group.size();
-
-    size_t numElements = byteArraySize / totalBytesPerElement;
-    #pragma omp parallel for num_threads(numThreads)
-    for (size_t compIdx = 0; compIdx < inputComponents.size(); compIdx++) {
-        const auto &groupIndices = allComponentSizes[compIdx];
-        const auto &componentData = inputComponents[compIdx];
-        size_t groupSize = groupIndices.size();
-        for (size_t elem = 0; elem < numElements; elem++) {
-            size_t readPos = elem * groupSize;
-            for (size_t sub = 0; sub < groupSize; sub++) {
-                size_t idxInElem = groupIndices[sub] - 1;
-                size_t globalIndex = elem * totalBytesPerElement + idxInElem;
-                byteArray[globalIndex] = componentData[readPos + sub];
-            }
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-// (C) Component-Based Compression/Decompression with Overall Throughput
-// -----------------------------------------------------------------------------
-
-// Structure to hold per-component results.
-struct ComponentResult {
-  size_t compSize;
-  std::vector<char> compData; // (decompressed data; assumed same as input)
-  float compTimeMs;   // Compression time in ms.
-  float decompTimeMs; // Decompression time in ms.
-};
-ComponentResult compress_decompress_component(const std::vector<char>& compData)
-{
-  ComponentResult result;
-  // By default, return the original data.
-  result.compData = compData;
-  size_t comp_total_bytes = compData.size();
-  std::cout << "Component uncompressed size: " << comp_total_bytes << " bytes" << std::endl;
-
-  // Wrap compData as a single “file”
-  std::vector<std::vector<char>> files = { compData };
-
-  // Create a CUDA stream.
-  cudaStream_t stream;
-  CUDA_CHECK(cudaStreamCreate(&stream));
-
-  // -----------------
-  // Compression Phase for Component
-  // -----------------
-  cudaEvent_t comp_comp_start, comp_comp_end;
-  CUDA_CHECK(cudaEventCreate(&comp_comp_start));
-  CUDA_CHECK(cudaEventCreate(&comp_comp_end));
-  CUDA_CHECK(cudaEventRecord(comp_comp_start, stream));
-
-  const size_t chunk_size = 1 << 16; // 64K
-  BatchDataCPU input_data_cpu(files, chunk_size);
-  nvcompStatus_t status;
-  size_t max_out_bytes;
-  status = nvcompBatchedGdeflateCompressGetMaxOutputChunkSize(
-      chunk_size, nvcompBatchedGdeflateDefaultOpts, &max_out_bytes);
-  if (status != nvcompSuccess)
-    throw std::runtime_error("Error: Failed to get max output chunk size for component");
-
-  BatchDataCPU compress_data_cpu(max_out_bytes, input_data_cpu.size());
-
-  // Try to compress; if compression fails (likely because the data is incompressible),
-  // catch the error and simply return the original data.
-  try {
-    gdeflate::compressCPU(
-        input_data_cpu.ptrs(), input_data_cpu.sizes(),
-        chunk_size, input_data_cpu.size(),
-        compress_data_cpu.ptrs(), compress_data_cpu.sizes());
-  }
-  catch (const std::runtime_error &e) {
-    std::cerr << "Compression failed for component (likely incompressible data): " << e.what() << std::endl;
-    // Treat as if no compression was achieved.
-    result.compSize = comp_total_bytes;
-    result.compTimeMs = 0.0f;
-    result.decompTimeMs = 0.0f;
-    CUDA_CHECK(cudaStreamDestroy(stream));
-    return result;
-  }
-
-  CUDA_CHECK(cudaEventRecord(comp_comp_end, stream));
-  CUDA_CHECK(cudaEventSynchronize(comp_comp_end));
-  float comp_comp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&comp_comp_time_ms, comp_comp_start, comp_comp_end));
-  result.compTimeMs = comp_comp_time_ms;
-  double comp_comp_throughput = ((double)comp_total_bytes / comp_comp_time_ms) * 1e-6; // GB/s
-  std::cout << "Component compression throughput (GB/s): " << comp_comp_throughput << std::endl;
-  CUDA_CHECK(cudaEventDestroy(comp_comp_start));
-  CUDA_CHECK(cudaEventDestroy(comp_comp_end));
-
-  // Compute compressed size for this component.
-  size_t* compressed_sizes_host = compress_data_cpu.sizes();
-  size_t compSize = 0;
-  for (size_t i = 0; i < input_data_cpu.size(); i++)
-    compSize += compressed_sizes_host[i];
-  result.compSize = compSize;
-  std::cout << "Component compressed size: " << compSize << " bytes" << std::endl;
-
-  // If the compressed size is not smaller than the uncompressed size, skip decompression.
-  if (compSize >= comp_total_bytes) {
-    std::cout << "Compressed size (" << compSize << " bytes) is not smaller than uncompressed size ("
-              << comp_total_bytes << " bytes). Skipping decompression." << std::endl;
-    result.decompTimeMs = 0.0f;
-    CUDA_CHECK(cudaStreamDestroy(stream));
-    return result;
-  }
-
-  // -----------------
-  // Decompression Phase for Component (validation + timing)
-  // -----------------
-  BatchData compress_data(compress_data_cpu, true);
-  BatchData decomp_data(input_data_cpu, false);
-
-  size_t decomp_temp_bytes;
-  status = nvcompBatchedGdeflateDecompressGetTempSize(
-      compress_data.size(), chunk_size, &decomp_temp_bytes);
-  if (status != nvcompSuccess)
-    throw std::runtime_error("Error: Failed to get temp decompression size for component");
-
-  void* d_decomp_temp;
-  CUDA_CHECK(cudaMalloc(&d_decomp_temp, decomp_temp_bytes));
-  size_t* d_decomp_sizes;
-  CUDA_CHECK(cudaMalloc(&d_decomp_sizes, decomp_data.size() * sizeof(size_t)));
-  nvcompStatus_t* d_statuses;
-  CUDA_CHECK(cudaMalloc(&d_statuses, decomp_data.size() * sizeof(nvcompStatus_t)));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  // Validate decompression.
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp,
-      decomp_temp_bytes, decomp_data.ptrs(),
-      d_statuses, stream);
-  if (status != nvcompSuccess)
-    throw std::runtime_error("Error: Component decompression validation failed");
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  // Measure decompression throughput.
-  cudaEvent_t comp_decomp_start, comp_decomp_end;
-  CUDA_CHECK(cudaEventCreate(&comp_decomp_start));
-  CUDA_CHECK(cudaEventCreate(&comp_decomp_end));
-  CUDA_CHECK(cudaEventRecord(comp_decomp_start, stream));
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp,
-      decomp_temp_bytes, decomp_data.ptrs(),
-      d_statuses, stream);
-  CUDA_CHECK(cudaEventRecord(comp_decomp_end, stream));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  float comp_decomp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&comp_decomp_time_ms, comp_decomp_start, comp_decomp_end));
-  result.decompTimeMs = comp_decomp_time_ms;
-  double comp_decomp_throughput = ((double)comp_total_bytes / comp_decomp_time_ms) * 1e-6; // GB/s
-  std::cout << "Component decompression throughput (GB/s): " << comp_decomp_throughput << std::endl;
-  CUDA_CHECK(cudaEventDestroy(comp_decomp_start));
-  CUDA_CHECK(cudaEventDestroy(comp_decomp_end));
-
-  CUDA_CHECK(cudaFree(d_decomp_temp));
-  CUDA_CHECK(cudaFree(d_decomp_sizes));
-  CUDA_CHECK(cudaFree(d_statuses));
-  CUDA_CHECK(cudaStreamDestroy(stream));
-
-  // For simplicity, assume that decompressed data equals the original component.
-  return result;
-}
-
-// Compresses and decompresses a single component and returns the result.
-ComponentResult compress_decompress_component1(const std::vector<char>& compData)
-{
-  ComponentResult result;
-  result.compData = compData; // We'll return the input as placeholder (assume decompression matches input)
-  size_t comp_total_bytes = compData.size();
-
-  // Wrap compData as a single "file"
-  std::vector<std::vector<char>> files = { compData };
-
-  // Create a CUDA stream.
-  cudaStream_t stream;
-  CUDA_CHECK(cudaStreamCreate(&stream));
-
-  // -----------------
-  // Compression Phase for Component
-  // -----------------
-  cudaEvent_t comp_comp_start, comp_comp_end;
-  CUDA_CHECK(cudaEventCreate(&comp_comp_start));
-  CUDA_CHECK(cudaEventCreate(&comp_comp_end));
-  CUDA_CHECK(cudaEventRecord(comp_comp_start, stream));
-
-  const size_t chunk_size = 1 << 16; // 64K
-  BatchDataCPU input_data_cpu(files, chunk_size);
-  nvcompStatus_t status;
-  size_t max_out_bytes;
-  status = nvcompBatchedGdeflateCompressGetMaxOutputChunkSize(
-      chunk_size, nvcompBatchedGdeflateDefaultOpts, &max_out_bytes);
-  if (status != nvcompSuccess)
-    throw std::runtime_error("Error: Failed to get max output size for component");
-
-  BatchDataCPU compress_data_cpu(max_out_bytes, input_data_cpu.size());
-  gdeflate::compressCPU(
-      input_data_cpu.ptrs(), input_data_cpu.sizes(),
-      chunk_size, input_data_cpu.size(),
-      compress_data_cpu.ptrs(), compress_data_cpu.sizes());
-
-  CUDA_CHECK(cudaEventRecord(comp_comp_end, stream));
-  CUDA_CHECK(cudaEventSynchronize(comp_comp_end));
-  float comp_comp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&comp_comp_time_ms, comp_comp_start, comp_comp_end));
-  result.compTimeMs = comp_comp_time_ms;
-  double comp_comp_throughput = ((double)comp_total_bytes / comp_comp_time_ms) * 1e-6;
-  std::cout << "Component compression throughput (GB/s): " << comp_comp_throughput << std::endl;
-  CUDA_CHECK(cudaEventDestroy(comp_comp_start));
-  CUDA_CHECK(cudaEventDestroy(comp_comp_end));
-
-  // Compute compressed size for this component.
-  size_t* compressed_sizes_host = compress_data_cpu.sizes();
-  size_t compSize = 0;
-  for (size_t i = 0; i < input_data_cpu.size(); i++)
-    compSize += compressed_sizes_host[i];
-  result.compSize = compSize;
-
-  // -----------------
-  // Decompression Phase for Component (validation + timing)
-  // -----------------
-  BatchData compress_data(compress_data_cpu, true);
-  BatchData decomp_data(input_data_cpu, false);
-
-  size_t decomp_temp_bytes;
-  status = nvcompBatchedGdeflateDecompressGetTempSize(
-      compress_data.size(), chunk_size, &decomp_temp_bytes);
-  if (status != nvcompSuccess)
-    throw std::runtime_error("Error: Failed to get temp decompression size for component");
-
-  void* d_decomp_temp;
-  CUDA_CHECK(cudaMalloc(&d_decomp_temp, decomp_temp_bytes));
-  size_t* d_decomp_sizes;
-  CUDA_CHECK(cudaMalloc(&d_decomp_sizes, decomp_data.size() * sizeof(size_t)));
-  nvcompStatus_t* d_statuses;
-  CUDA_CHECK(cudaMalloc(&d_statuses, decomp_data.size() * sizeof(nvcompStatus_t)));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  // Run initial decompression for validation.
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp,
-      decomp_temp_bytes, decomp_data.ptrs(),
-      d_statuses, stream);
-  if (status != nvcompSuccess)
-    throw std::runtime_error("Error: Component decompression validation failed");
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  // Measure decompression throughput.
-  cudaEvent_t comp_decomp_start, comp_decomp_end;
-  CUDA_CHECK(cudaEventCreate(&comp_decomp_start));
-  CUDA_CHECK(cudaEventCreate(&comp_decomp_end));
-  CUDA_CHECK(cudaEventRecord(comp_decomp_start, stream));
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp,
-      decomp_temp_bytes, decomp_data.ptrs(),
-      d_statuses, stream);
-  CUDA_CHECK(cudaEventRecord(comp_decomp_end, stream));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  float comp_decomp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&comp_decomp_time_ms, comp_decomp_start, comp_decomp_end));
-  result.decompTimeMs = comp_decomp_time_ms;
-  double comp_decomp_throughput = ((double)comp_total_bytes / comp_decomp_time_ms) * 1e-6;
-  std::cout << "Component decompression throughput (GB/s): " << comp_decomp_throughput << std::endl;
-  CUDA_CHECK(cudaEventDestroy(comp_decomp_start));
-  CUDA_CHECK(cudaEventDestroy(comp_decomp_end));
-
-  CUDA_CHECK(cudaFree(d_decomp_temp));
-  CUDA_CHECK(cudaFree(d_decomp_sizes));
-  CUDA_CHECK(cudaFree(d_statuses));
-  CUDA_CHECK(cudaStreamDestroy(stream));
-
-  // For simplicity, we assume the decompressed data equals the original component.
-  return result;
-}
-
-// -----------------------------------------------------------------------------
-// (D) Main: Read Dataset, Run Whole-Dataset and Component-Based Compression/Decompression
-// -----------------------------------------------------------------------------
-
-
-// Helper structure to hold overall component-based metrics for one config.
-struct ComponentMetrics {
-  std::string configStr; // string version of the configuration
-  size_t totalUncompressed;
-  size_t totalCompressed;
-  float overallCompTimeMs;
-  float overallDecompTimeMs;
-  double compThroughputGBs;
-  double decompThroughputGBs;
-  double compressionRatio;
-};
-
-std::string configToString(const std::vector<std::vector<size_t>>& config) {
   std::stringstream ss;
   ss << "\"";
   for (size_t i = 0; i < config.size(); i++) {
     ss << "[";
     for (size_t j = 0; j < config[i].size(); j++) {
       ss << config[i][j];
-      if (j < config[i].size() - 1)
+      if (j < config[i].size() - 1) {
         ss << ",";
+      }
     }
     ss << "]";
-    if (i < config.size() - 1)
+    if (i < config.size() - 1) {
       ss << ",";
+    }
   }
   ss << "\"";
   return ss.str();
 }
 
-// Define a structure to hold whole-dataset metrics.
-struct WholeDatasetMetrics {
-  size_t totalBytes;
-  size_t compBytes;
-  double compressionRatio;
-  float compTimeMs;
-  float decompTimeMs;
-  double compThroughputGBs;
-  double decompThroughputGBs;
-};
-
-// Modify or create a new function that runs the whole-dataset compression/decompression
-// and returns the metrics. (This is based on your original run_example function.)
-WholeDatasetMetrics run_whole_dataset(const std::vector<std::vector<char>>& files)
-{
-  WholeDatasetMetrics metrics;
-  // Compute total uncompressed bytes.
-  size_t total_bytes = 0;
-  for (const auto &part : files) {
-    total_bytes += part.size();
-  }
-  metrics.totalBytes = total_bytes;
-
-  std::cout << "----------" << std::endl;
-  std::cout << "Whole-dataset mode:" << std::endl;
-  std::cout << "Files: " << files.size() << std::endl;
-  std::cout << "Uncompressed (B): " << total_bytes << std::endl;
-
-  const size_t chunk_size = 1 << 16; // 64K
-
-  // Build up input batch on CPU.
-  BatchDataCPU input_data_cpu(files, chunk_size);
-  std::cout << "Chunks: " << input_data_cpu.size() << std::endl;
-
-  // -----------------
-  // Compression Phase (with timing)
-  // -----------------
-  cudaEvent_t comp_start, comp_end;
-  CUDA_CHECK(cudaEventCreate(&comp_start));
-  CUDA_CHECK(cudaEventCreate(&comp_end));
-  CUDA_CHECK(cudaEventRecord(comp_start, 0));
-
-  nvcompStatus_t status;
-  size_t max_out_bytes;
-  status = nvcompBatchedGdeflateCompressGetMaxOutputChunkSize(
-      chunk_size, nvcompBatchedGdeflateDefaultOpts, &max_out_bytes);
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Failed to get max output chunk size");
-  }
-
-  BatchDataCPU compress_data_cpu(max_out_bytes, input_data_cpu.size());
-  gdeflate::compressCPU(
-      input_data_cpu.ptrs(), input_data_cpu.sizes(),
-      chunk_size, input_data_cpu.size(),
-      compress_data_cpu.ptrs(), compress_data_cpu.sizes());
-
-  CUDA_CHECK(cudaEventRecord(comp_end, 0));
-  CUDA_CHECK(cudaEventSynchronize(comp_end));
-  float comp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&comp_time_ms, comp_start, comp_end));
-  metrics.compTimeMs = comp_time_ms;
-  metrics.compThroughputGBs = ((double)total_bytes / comp_time_ms) * 1e-6; // GB/s
-
-  // Compute compressed size.
-  size_t* compressed_sizes_host = compress_data_cpu.sizes();
-  size_t comp_bytes = 0;
-  for (size_t i = 0; i < compress_data_cpu.size(); ++i)
-    comp_bytes += compressed_sizes_host[i];
-  metrics.compBytes = comp_bytes;
-  metrics.compressionRatio = (double)total_bytes / comp_bytes;
-
-  std::cout << "Compressed size (B): " << comp_bytes
-            << ", Compression ratio: " << std::fixed << std::setprecision(2)
-            << metrics.compressionRatio << std::endl;
-
-  // -----------------
-  // Decompression Phase (with timing)
-  // -----------------
-  BatchData compress_data(compress_data_cpu, true);
-  BatchData decomp_data(input_data_cpu, false);
-
-  cudaStream_t stream;
-  CUDA_CHECK(cudaStreamCreate(&stream));
-  cudaEvent_t decomp_start, decomp_end;
-  CUDA_CHECK(cudaEventCreate(&decomp_start));
-  CUDA_CHECK(cudaEventCreate(&decomp_end));
-
-  size_t decomp_temp_bytes;
-  status = nvcompBatchedGdeflateDecompressGetTempSize(
-      compress_data.size(), chunk_size, &decomp_temp_bytes);
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Failed to get decompression temp size");
-  }
-
-  void* d_decomp_temp;
-  CUDA_CHECK(cudaMalloc(&d_decomp_temp, decomp_temp_bytes));
-  size_t* d_decomp_sizes;
-  CUDA_CHECK(cudaMalloc(&d_decomp_sizes, decomp_data.size() * sizeof(size_t)));
-  nvcompStatus_t* d_statuses;
-  CUDA_CHECK(cudaMalloc(&d_statuses, decomp_data.size() * sizeof(nvcompStatus_t)));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  // Validate decompression first.
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp, decomp_temp_bytes,
-      decomp_data.ptrs(), d_statuses, stream);
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Decompression failed");
-  }
-  if (!(input_data_cpu == decomp_data))
-    throw std::runtime_error("ERROR: Decompressed data does not match input");
-  else
-    std::cout << "Decompression validated :)" << std::endl;
-
-  // Measure decompression throughput.
-  CUDA_CHECK(cudaEventRecord(decomp_start, stream));
-  status = nvcompBatchedGdeflateDecompressAsync(
-      compress_data.ptrs(), compress_data.sizes(),
-      decomp_data.sizes(), d_decomp_sizes,
-      compress_data.size(), d_decomp_temp, decomp_temp_bytes,
-      decomp_data.ptrs(), d_statuses, stream);
-  CUDA_CHECK(cudaEventRecord(decomp_end, stream));
-  if (status != nvcompSuccess) {
-    throw std::runtime_error("ERROR: Decompression throughput run failed");
-  }
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  float decomp_time_ms;
-  CUDA_CHECK(cudaEventElapsedTime(&decomp_time_ms, decomp_start, decomp_end));
-  metrics.decompTimeMs = decomp_time_ms;
-  metrics.decompThroughputGBs = ((double)total_bytes / decomp_time_ms) * 1e-6;
-
-  CUDA_CHECK(cudaFree(d_decomp_temp));
-  CUDA_CHECK(cudaFree(d_decomp_sizes));
-  CUDA_CHECK(cudaFree(d_statuses));
-  CUDA_CHECK(cudaEventDestroy(comp_start));
-  CUDA_CHECK(cudaEventDestroy(comp_end));
-  CUDA_CHECK(cudaEventDestroy(decomp_start));
-  CUDA_CHECK(cudaEventDestroy(decomp_end));
-  CUDA_CHECK(cudaStreamDestroy(stream));
-
-  // Also print out throughput info.
-  std::cout << "Whole-dataset compression throughput (GB/s): " << metrics.compThroughputGBs << std::endl;
-  std::cout << "Whole-dataset decompression throughput (GB/s): " << metrics.decompThroughputGBs << std::endl;
-
-  return metrics;
-}
-
-//
-// ===== Main function =====
-//
+//==============================
+// Combined Main Driver
+//==============================
 int main(int argc, char* argv[])
 {
-  // Usage: <program> <datasetPath> <precisionBits (32|64)>
   if (argc < 3) {
-    std::cerr << "Usage: " << argv[0] << " <datasetPath> <precisionBits (32|64)>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <datasetPath> <precisionBits (32|64)>\n";
     return EXIT_FAILURE;
   }
 
   std::string datasetPath = argv[1];
-  int precisionBits = std::stoi(argv[2]);
+  int precisionBits       = std::stoi(argv[2]);
 
   std::vector<uint8_t> globalByteArray;
   size_t rowCount = 0;
   if (precisionBits == 64) {
     auto tmp = loadTSVDatasetdouble(datasetPath);
     if (tmp.first.empty()) {
-      std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
+      std::cerr << "Failed to load dataset from " << datasetPath << "\n";
       return EXIT_FAILURE;
     }
     globalByteArray = convertDoubleToBytes(tmp.first);
-    rowCount = tmp.second;
-    std::cout << "Loaded " << rowCount << " rows (64-bit) with " << tmp.first.size() << " total values." << std::endl;
+    rowCount        = tmp.second;
+    std::cout << "Loaded " << rowCount << " rows (64-bit) with "
+              << tmp.first.size() << " total values.\n";
+
   } else if (precisionBits == 32) {
     auto tmp = loadTSVDataset(datasetPath);
     if (tmp.first.empty()) {
-      std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
+      std::cerr << "Failed to load dataset from " << datasetPath << "\n";
       return EXIT_FAILURE;
     }
     globalByteArray = convertFloatToBytes(tmp.first);
-    rowCount = tmp.second;
-    std::cout << "Loaded " << rowCount << " rows (32-bit) with " << tmp.first.size() << " total values." << std::endl;
+    rowCount        = tmp.second;
+    std::cout << "Loaded " << rowCount << " rows (32-bit) with "
+              << tmp.first.size() << " total values.\n";
+
   } else {
-    std::cerr << "Unsupported precision: " << precisionBits << ". Use 32 or 64." << std::endl;
+    std::cerr << "Unsupported precision: " << precisionBits
+              << ". Use 32 or 64.\n";
     return EXIT_FAILURE;
   }
 
   size_t totalBytes = globalByteArray.size();
-  std::cout << "Total dataset bytes: " << totalBytes << std::endl;
+  std::cout << "Total dataset bytes: " << totalBytes << "\n";
 
-  // Prepare CSV output.
-  // Save CSV file in your desired directory.
-  // Extract dataset name from file path.
+  // Extract dataset name
   auto pos = datasetPath.find_last_of("/\\");
-  std::string datasetName = (pos == std::string::npos) ? datasetPath : datasetPath.substr(pos + 1);
+  std::string datasetName =
+      (pos == std::string::npos) ? datasetPath : datasetPath.substr(pos + 1);
   pos = datasetName.find_last_of('.');
-  if (pos != std::string::npos)
+  if (pos != std::string::npos) {
     datasetName = datasetName.substr(0, pos);
+  }
+  std::cout << "Dataset name: " << datasetName << "\n";
 
-  std::string csvFilename = "/home/jamalids/Documents/" + datasetName + ".csv";
+  // Adjust the CSV path to a valid location you can write
+  std::string csvFilename = datasetName + "_deflate.csv";
   std::ofstream csvFile(csvFilename);
   if (!csvFile.is_open()) {
-    std::cerr << "Failed to open CSV file for writing: " << csvFilename << std::endl;
+    std::cerr << "Failed to open CSV file: " << csvFilename << "\n";
     return EXIT_FAILURE;
   }
-  // Write CSV header.
-  // We include a "Level" field to distinguish Whole-Dataset vs Component-based results.
-  csvFile << "Dataset,Config,Level,ComponentIndex,UncompressedBytes,CompressedBytes,CompressionRatio,CompTimeMs,DecompTimeMs,CompThroughputGBs,DecompThroughputGBs\n";
+  csvFile << "Dataset,Config,Level,ComponentIndex,UncompressedBytes,CompressedBytes,"
+             "CompressionRatio,CompTimeMs,DecompTimeMs,CompThroughputGBs,DecompThroughputGBs\n";
 
-  //
-  // --- (I) Whole-Dataset Compression/Decompression ---
-  //
+  // (I) Whole-Dataset Mode
   std::vector<char> dataAsChar(globalByteArray.begin(), globalByteArray.end());
   std::vector<std::vector<char>> files = { dataAsChar };
 
-  // Call our new function to get whole-dataset metrics.
-  WholeDatasetMetrics wholeMetrics = run_whole_dataset(files);
-
-  // Write a row to CSV for the whole-dataset results.
+  WholeDatasetMetrics wholeMetrics = run_whole_dataset_deflate(files);
   csvFile << datasetName << ","
-          << "N/A" << ","       // Config: not applicable here.
-          << "WholeDataset" << ","
-          << "" << ","          // ComponentIndex left blank.
+          << "N/A,WholeDataset,"
+          << ","
           << wholeMetrics.totalBytes << ","
           << wholeMetrics.compBytes << ","
-          << std::fixed << std::setprecision(2) << wholeMetrics.compressionRatio << ","
+          << std::fixed << std::setprecision(2)
+          << wholeMetrics.compressionRatio << ","
           << wholeMetrics.compTimeMs << ","
           << wholeMetrics.decompTimeMs << ","
           << wholeMetrics.compThroughputGBs << ","
           << wholeMetrics.decompThroughputGBs << "\n";
 
+  // (II) Component-Based Mode
+  // For demonstration, we define a map of component configurations
+  std::map<std::string,
+           std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
+      {"acs_wht_f32", {
+                         {{1,2}, {3},   {4}},
+                         {{1,2,3}, {4}},
+                         {{1,2,3,4}}
+                      }},
+      {"default", {
+                    {{1}, {2}, {3}, {4}}
+                  }}
+  };
 
-  //
-  // --- (II) Component-Based Compression/Decompression for each configuration ---
-  //
-  // Look up configuration options; if not found, use "default".
   std::vector<std::vector<std::vector<size_t>>> configOptions;
-  if (datasetComponentMap.find(datasetName) != datasetComponentMap.end())
+  if (datasetComponentMap.find(datasetName) != datasetComponentMap.end()) {
     configOptions = datasetComponentMap[datasetName];
-  else
+  } else {
     configOptions = datasetComponentMap["default"];
+  }
 
-  int numThreads = 10; // adjust thread count as needed
-
-  // Loop over each configuration option.
+  int numThreads = 10;
   for (size_t cfgIdx = 0; cfgIdx < configOptions.size(); cfgIdx++) {
-    const std::vector<std::vector<size_t>>& chosenConfig = configOptions[cfgIdx];
+    const auto& chosenConfig = configOptions[cfgIdx];
     std::string configStr = configToString(chosenConfig);
-    std::cout << "Processing configuration " << cfgIdx << ": " << configStr << std::endl;
+    std::cout << "Processing configuration " << cfgIdx
+              << ": " << configStr << "\n";
 
-    // Split the global byte array into components.
+    // Decompose
     std::vector<std::vector<uint8_t>> decomposedComponents;
-    splitBytesIntoComponentsNested(globalByteArray, decomposedComponents, chosenConfig, numThreads);
-    std::cout << "Dataset decomposed into " << decomposedComponents.size() << " components." << std::endl;
+    splitBytesIntoComponentsNested(globalByteArray,
+                                   decomposedComponents,
+                                   chosenConfig, numThreads);
+    std::cout << "Dataset decomposed into "
+              << decomposedComponents.size() << " components.\n";
 
-    // Overall (aggregated) metrics for this configuration.
     size_t totalCompCompressedSize = 0;
-    float overallCompTimeMs = 0.0f;
-    float overallDecompTimeMs = 0.0f;
+    float overallCompTimeMs        = 0.0f;
+    float overallDecompTimeMs      = 0.0f;
 
-    // To store decompressed component data for reassembly.
-    std::vector<std::vector<uint8_t>> decompressedComponentData;
+    // We store the re-inflated components for final reassembly
+    std::vector<std::vector<uint8_t>> decomposedComponentData;
+    decomposedComponentData.reserve(decomposedComponents.size());
 
-    // Process each component.
     for (size_t compIdx = 0; compIdx < decomposedComponents.size(); compIdx++) {
-      std::vector<char> compData(decomposedComponents[compIdx].begin(), decomposedComponents[compIdx].end());
+      std::vector<char> compData(decomposedComponents[compIdx].begin(),
+                                 decomposedComponents[compIdx].end());
       size_t compUncompressed = compData.size();
 
-      ComponentResult result = compress_decompress_component(compData);
+      ComponentResult result =
+          compress_decompress_component_deflate(compData);
+
       totalCompCompressedSize += result.compSize;
-      overallCompTimeMs += result.compTimeMs;
-      overallDecompTimeMs += result.decompTimeMs;
+      overallCompTimeMs       += result.compTimeMs;
+      overallDecompTimeMs     += result.decompTimeMs;
 
-      std::vector<uint8_t> compDecomp(result.compData.begin(), result.compData.end());
-      decompressedComponentData.push_back(compDecomp);
+      std::vector<uint8_t> compDecomp(
+          result.compData.begin(),
+          result.compData.end());
+      decomposedComponentData.push_back(std::move(compDecomp));
 
-      double compThroughput = result.compTimeMs > 0 ? ((double)compUncompressed / result.compTimeMs) * 1e-6 : 0.0;
-      double decompThroughput = result.decompTimeMs > 0 ? ((double)compUncompressed / result.decompTimeMs) * 1e-6 : 0.0;
-      double compRatio = (result.compSize > 0) ? (double)compUncompressed / result.compSize : 0.0;
+      double compThroughput =
+          (result.compTimeMs > 0.0f)
+              ? ((double)compUncompressed / result.compTimeMs) * 1e-6
+              : 0.0;
+      double decompThroughput =
+          (result.decompTimeMs > 0.0f)
+              ? ((double)compUncompressed / result.decompTimeMs) * 1e-6
+              : 0.0;
+      double compRatio =
+          (result.compSize > 0)
+              ? (double)compUncompressed / (double)result.compSize
+              : 0.0;
 
-      // Write per-component row to CSV.
       csvFile << datasetName << ","
               << configStr << ","
-              << "Component" << ","
-              << compIdx << ","
+              << "Component," << compIdx << ","
               << compUncompressed << ","
               << result.compSize << ","
               << std::fixed << std::setprecision(2) << compRatio << ","
@@ -1032,34 +1096,46 @@ int main(int argc, char* argv[])
               << decompThroughput << "\n";
     }
 
-    double overallCompressionRatio = totalCompCompressedSize > 0 ? (double)totalBytes / totalCompCompressedSize : 0.0;
-    double overallCompThroughput = overallCompTimeMs > 0 ? ((double)totalBytes / overallCompTimeMs) * 1e-6 : 0.0;
-    double overallDecompThroughput = overallDecompTimeMs > 0 ? ((double)totalBytes / overallDecompTimeMs) * 1e-6 : 0.0;
+    double overallCompressionRatio =
+        (totalCompCompressedSize > 0)
+            ? ((double)totalBytes / totalCompCompressedSize)
+            : 0.0;
+    double overallCompThroughput =
+        (overallCompTimeMs > 0.0f)
+            ? ((double)totalBytes / overallCompTimeMs) * 1e-6
+            : 0.0;
+    double overallDecompThroughput =
+        (overallDecompTimeMs > 0.0f)
+            ? ((double)totalBytes / overallDecompTimeMs) * 1e-6
+            : 0.0;
 
-    // Write overall (aggregated) row for the configuration to CSV.
     csvFile << datasetName << ","
             << configStr << ","
-            << "Overall" << ","
-            << "" << ","
+            << "Overall,"
+            << ","
             << totalBytes << ","
             << totalCompCompressedSize << ","
-            << std::fixed << std::setprecision(2) << overallCompressionRatio << ","
+            << std::fixed << std::setprecision(2)
+            << overallCompressionRatio << ","
             << overallCompTimeMs << ","
             << overallDecompTimeMs << ","
             << overallCompThroughput << ","
             << overallDecompThroughput << "\n";
 
-    // Reassemble the decomposed components back into a full byte array.
+    // Reassemble to validate
     std::vector<uint8_t> reassembled(globalByteArray.size());
-    reassembleBytesFromComponentsNestedlz4(decompressedComponentData, reassembled.data(), reassembled.size(), chosenConfig, numThreads);
-    if (reassembled == globalByteArray)
-      std::cout << "Reassembled data matches the original dataset." << std::endl;
-    else
-      std::cerr << "Error: Reassembled data does NOT match the original dataset!" << std::endl;
+    reassembleBytesFromComponentsNestedlz4(
+        decomposedComponentData, reassembled.data(),
+        reassembled.size(), chosenConfig, numThreads);
+
+    if (reassembled == globalByteArray) {
+      std::cout << "Reassembled data matches the original dataset.\n";
+    } else {
+      std::cerr << "Error: Reassembled data does NOT match the original dataset!\n";
+    }
   }
 
   csvFile.close();
-  std::cout << "Results saved to " << csvFilename << std::endl;
-
+  std::cout << "Results saved to: " << csvFilename << "\n";
   return EXIT_SUCCESS;
 }

@@ -120,7 +120,9 @@ find_package (ZLIB)
 find_path(LIBDEFLATE_INCLUDE_DIR NAMES libdeflate.h)
 find_library(LIBDEFLATE_LIBRARY NAMES deflate)
 if (ZLIB_FOUND AND LIBDEFLATE_INCLUDE_DIR AND LIBDEFLATE_LIBRARY)
-  add_executable(deflate_cpu_compression deflate_cpu_compression.cu)
+  add_executable(deflate_cpu_compression deflate_cpu_compression.cu
+          example.cpp
+          BatchDataCPU.cpp)
   set_property(TARGET deflate_cpu_compression PROPERTY CUDA_ARCHITECTURES ${GPU_ARCHS})
   target_link_libraries(deflate_cpu_compression PRIVATE ${NVCOMP_LIBRARY_NAME} ZLIB::ZLIB CUDA::cudart_static CUDA::cuda_driver)
   target_include_directories(deflate_cpu_compression PRIVATE ${LIBDEFLATE_INCLUDE_DIR})
@@ -143,10 +145,12 @@ if (ZLIB_FOUND)
 else()
   message(WARNING "Skipping building Gzip GPU decompression example, as the zlib library was not found.")
 endif()
+find_package(ZLIB REQUIRED)
+target_link_libraries(gdeflate_cpu_compression PRIVATE ZLIB::ZLIB)
+find_path(ZSTD_INCLUDE_DIR NAMES zstd.h
+        HINTS
+        /usr/include
+        /usr/local/include
+)
+target_link_libraries(gdeflate_cpu_compression PRIVATE lz4)
 
-#set_target_properties(deflate_cpu_compression PROPERTIES
-#        CUDA_FLAGS "-G -g -lineinfo" # Crucial for debugging
-#        CMAKE_CUDA_FLAGS_DEBUG "-G -g -lineinfo" # For debug builds specifically
-#        CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-G -g -lineinfo" # For Release with Debug Info builds
-#        # CUDA_ARCHITECTURES "..." # Set your target architectures if needed
-#)

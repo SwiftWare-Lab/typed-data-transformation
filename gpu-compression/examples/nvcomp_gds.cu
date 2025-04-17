@@ -1,273 +1,421 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2021-2024 NVIDIA CORPORATION & AFFILIATES.
- * All rights reserved. SPDX-License-Identifier: LicenseRef-NvidiaProprietary
- *
- * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
- * property and proprietary rights in and to this material, related
- * documentation and any modifications thereto. Any use, reproduction,
- * disclosure or distribution of this material and related documentation
- * without an express license agreement from NVIDIA CORPORATION or
- * its affiliates is strictly prohibited.
-*/
-
-// Simple example of how to use GDS with nvcomp.
-// GDS (GPU Direct Storage) allows to read and write from/to NVMe drives
-// directly from the GPU, bypassing the CPU.
-//
-// For best performance, the I/O buffer should be registered but it is not
-// mandatory. Registration can be expensive but done only once, and allows the
-// I/O to be performed directly from the registered buffer. Otherwise, GDS will
-// use it's own intermediate buffer, at the expense of extra memory copies.
-// Similarly, I/Os with a base address or size which is not aligned on 4KB will
-// go through GDS's internal buffer and will be less efficient.
-//
-// For more details on GDS, included the supported GPUs, please see the
-// documentation. https://docs.nvidia.com/gpudirect-storage/
-//
-// To compile this GDS example, GDS must be installed, and the following
-// option must be passed when configuring cmake:
-// cmake -DBUILD_GDS_EXAMPLE=on <...>
-
 #include <fcntl.h>
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <stdexcept>
+#include <cstring>
+#include <iomanip>
+#include <cstdlib>
+#include <cstdint>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <map>
+#include <functional>
+#include <algorithm>
 
-#include </usr/local/cuda-12.3/targets/x86_64-linux/include/cufile.h>
+#include <cuda_runtime.h>
 #include <nvtx3/nvToolsExt.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "nvcomp.hpp"
 #include "nvcomp/lz4.hpp"
 
 using namespace nvcomp;
 
+//---------------------------------------------------------
+// CUDA error checking
+//---------------------------------------------------------
 #define CUDA_CHECK(func)                                                       \
   do {                                                                         \
     cudaError_t rt = (func);                                                   \
     if (rt != cudaSuccess) {                                                   \
-      std::cout << "API call failure \"" #func "\" with " << rt << " at "      \
-                << __FILE__ << ":" << __LINE__ << std::endl;                   \
-      throw;                                                                   \
+      std::cerr << "CUDA API call failure '" #func "' with error: "           \
+                << cudaGetErrorString(rt) << " at " << __FILE__                \
+                << ":" << __LINE__ << std::endl;                              \
+      exit(EXIT_FAILURE);                                                      \
     }                                                                          \
-  } while (0);
+  } while (0)
 
-// Kernel to initialize the input data with sequential bytes
-__global__ void initialize(uint8_t* data, size_t n)
-{
-  size_t i = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
-  if (i < n)
-    data[i] = i & 0xff;
+//---------------------------------------------------------
+// Helpers: TSV load, conversion
+//---------------------------------------------------------
+template <typename T>
+std::pair<std::vector<T>, size_t> loadTSVDataset(const std::string &fp) {
+  std::vector<T> arr;
+  std::ifstream f(fp);
+  std::string line;
+  size_t rows = 0;
+  if (!f.is_open()) throw std::runtime_error("Open failed: " + fp);
+  while (std::getline(f, line)) {
+    std::stringstream ss(line);
+    std::string val;
+    std::getline(ss, val, '\t'); // skip first column
+    while (std::getline(ss, val, '\t')) {
+      arr.push_back(static_cast<T>(std::stod(val)));
+    }
+    ++rows;
+  }
+  return {arr, rows};
 }
 
-// Kernel to compare 2 buffers. Invalid flag must be set to zero before.
-__global__ void
-compare(const uint8_t* ref, const uint8_t* val, int* invalid, size_t n)
-{
-  size_t i = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
-  int stride = gridDim.x * blockDim.x;
-  while (i < n) {
-    if (ref[i] != val[i])
-      *invalid = 1;
-    i += stride;
-  }
+std::vector<uint8_t> toBytes(const std::vector<float> &v) {
+  std::vector<uint8_t> b(v.size() * sizeof(float));
+  std::memcpy(b.data(), v.data(), b.size());
+  return b;
+}
+std::vector<uint8_t> toBytes(const std::vector<double> &v) {
+  std::vector<uint8_t> b(v.size() * sizeof(double));
+  std::memcpy(b.data(), v.data(), b.size());
+  return b;
 }
 
-void usage(const char* str)
-{
-  printf("Argument: %s <filename>\n", str);
-  exit(-1);
+//---------------------------------------------------------
+// Convert config to string
+//---------------------------------------------------------
+std::string configToString(const std::vector<std::vector<size_t>> &cfg) {
+  std::ostringstream ss;
+  ss << '"';
+  for (size_t i = 0; i < cfg.size(); ++i) {
+    ss << '[';
+    for (size_t j = 0; j < cfg[i].size(); ++j) {
+      ss << cfg[i][j];
+      if (j + 1 < cfg[i].size()) ss << ',';
+    }
+    ss << ']';
+    if (i + 1 < cfg.size()) ss << ',';
+  }
+  ss << '"';
+  return ss.str();
 }
 
-int main(int argc, char** argv)
+//---------------------------------------------------------
+// Split bytes into components
+//---------------------------------------------------------
+void splitBytesIntoComponents(
+  const std::vector<uint8_t> &in,
+  std::vector<std::vector<uint8_t>> &out,
+  const std::vector<std::vector<size_t>> &cfg,
+  int numThreads)
 {
-  if (argc != 2)
-    usage(argv[0]);
+  size_t elemBytes = 0;
+  for (auto &g : cfg) elemBytes += g.size();
+  size_t elems = in.size() / elemBytes;
 
-  // Open the file. Note: GDS requires O_DIRECT.
-  const char* filename = argv[1];
-  int fd = open(filename, O_RDWR | O_TRUNC | O_CREAT | O_DIRECT, 0666);
-  if (fd == -1) {
-    printf("Error, cannot create the file: %s\n", filename);
-    return -1;
-  }
-  cudaDeviceProp deviceProp;
-  CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, 0));
-  printf("Using device: %s\n", deviceProp.name);
-  int smcount = deviceProp.multiProcessorCount;
+  out.assign(cfg.size(), {});
+  for (size_t i = 0; i < cfg.size(); ++i)
+    out[i].resize(elems * cfg[i].size());
 
-  // Uncompressed data = 100 MB
-  const size_t n = 100000000;
-
-  // Device pointers for the data to be compressed / decompressed
-  uint8_t *d_input, *d_output;
-  cudaStream_t stream;
-  CUDA_CHECK(cudaMalloc(&d_input, n));
-  CUDA_CHECK(cudaMalloc(&d_output, n));
-  CUDA_CHECK(cudaStreamCreate(&stream));
-
-  // Initialize the input data (sequential bytes)
-  initialize<<<(n - 1) / 512 + 1, 512, 0, stream>>>(d_input, n);
-
-  // Using NVTX to highlight the different phases of the program in the Nsight
-  // Systems profiler
-  nvtxRangePushA("Compressor setup");
-
-  // Create an LZ4 compressor, get the max output size, and temp storage size
-  LZ4Manager compressor(1 << 16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, stream);
-  const CompressionConfig comp_config = compressor.configure_compression(n);
-  size_t lcompbuf = comp_config.max_compressed_buffer_size;
-
-  // The compressed output buffer is padded to the next multiple of 4KB
-  // for best I/O performance. Unaligned I/Os go through an extra
-  // memory copy (GDS's internal aligned registered buffer)
-  lcompbuf = ((lcompbuf - 1) / 4096 + 1) * 4096;
-  uint8_t* d_compressed;
-  CUDA_CHECK(cudaMalloc(&d_compressed, lcompbuf));
-
-  nvtxRangePop();
-  nvtxRangePushA("GDS setup");
-
-  // Initialize the cufile driver
-  CUfileError_t status = cuFileDriverOpen();
-  if (status.err != CU_FILE_SUCCESS) {
-    printf("Error: cuFileDriverOpen failed (%d)\n", status.err);
-    return -1;
-  }
-
-  // Register the file with GDS
-  CUfileDescr_t cf_descr;
-  memset(&cf_descr, 0, sizeof(CUfileDescr_t));
-  cf_descr.handle.fd = fd;
-  cf_descr.type = CU_FILE_HANDLE_TYPE_OPAQUE_FD;
-  CUfileHandle_t cf_handle;
-  status = cuFileHandleRegister(&cf_handle, &cf_descr);
-  if (status.err != CU_FILE_SUCCESS) {
-    printf("Error: cuFileHandleRegister failed (%d)\n", status.err);
-    return -1;
-  }
-
-  // Buffer registration is not mandatory but recommended for best performance.
-  // I/Os from/to unregistered buffers will go through GDS's internal registered
-  // buffer (extra copy).
-  // Let's ignore if it fails (e.g. not enough BAR memory on this GPU)
-  bool registered = true;
-  status = cuFileBufRegister(d_compressed, lcompbuf, 0);
-  if (status.err != CU_FILE_SUCCESS) {
-    printf("Warning: GDS buffer registration failed\n");
-    registered = false;
-  }
-
-  nvtxRangePop();
-  nvtxRangePushA("Compression");
-
-  // The compressed size must be device-accessible, using pinned memory.
-
-  // Compress the data (asynchronous)
-  compressor.compress(d_input, d_compressed, comp_config);
-  const size_t compressed_size = compressor.get_compressed_output_size(d_compressed);
-
-  // Align the compressed size to the next multiple of 4KB.
-  size_t aligned_compressed_size = ((compressed_size - 1) / 4096 + 1) * 4096;
-  printf(
-      "Data compressed from %lu Bytes to %lu Bytes, aligned to %lu Bytes\n",
-      n,
-      compressed_size,
-      aligned_compressed_size);
-
-  nvtxRangePop();
-  nvtxRangePushA("GDS Write");
-
-  // Write the data (padded to next 4KB), directly from the device, with GDS
-  ssize_t nb;
-  if ((nb = cuFileWrite(cf_handle, d_compressed, aligned_compressed_size, 0, 0)) != aligned_compressed_size) {
-    printf("Error, write returned %ld instead of %lu \n", nb, aligned_compressed_size);
-    return -1;
-  } else
-    printf("Wrote %ld bytes to file %s using GDS\n", nb, filename);
-
-  nvtxRangePop();
-  nvtxRangePushA("Cleaning up compressor");
-
-  // Erase the content of the compressed buffer
-  CUDA_CHECK(cudaMemsetAsync(d_compressed, 0xff, compressed_size, stream));
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-
-  nvtxRangePop();
-  nvtxRangePushA("GDS Read");
-
-  // Read the compressed data from the GDS file into the device buffer
-  if ((nb = cuFileRead(cf_handle, d_compressed, aligned_compressed_size, 0, 0)) != aligned_compressed_size) {
-    nvtxRangePop();
-    printf("Error, GDS read returned %ld instead of %lu \n", nb, aligned_compressed_size);
-    return -1;
-  } else {
-    nvtxRangePop();
-    printf("Read %ld bytes from file %s using GDS\n", nb, filename);
-  }
-
-  nvtxRangePushA("Decompressor setup");
-
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  // Decompressor, configured with the compressed data
-  const DecompressionConfig decomp_config
-      = compressor.configure_decompression(comp_config);
-  size_t ldecomp = decomp_config.decomp_data_size;
-  if (ldecomp != n) {
-    printf("Error: Uncompressed size does not match the original size\n");
-    return -1;
-  }
-
-  // Device-accessible flag to compare the data
-  int* dh_invalid;
-  CUDA_CHECK(cudaMallocHost(&dh_invalid, sizeof(int)));
-  *dh_invalid = 0;
-
-  nvtxRangePop();
-  nvtxRangePushA("Decompression and comparison");
-  printf("Decompressing\n");
-
-  // Decompress the data (asynchronous)
-  compressor.decompress(d_output, d_compressed, decomp_config);
-  // Compare the uncompressed data with the original, in the same stream
-  compare<<<2 * smcount, 1024, 0, stream>>>(d_input, d_output, dh_invalid, n);
-
-  // Sync the stream before we check the result
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  if (*dh_invalid)
-    printf("FAILED: Uncompressed data does not match the original\n");
-  else
-    printf("PASSED: Uncompressed data is identical to the input\n");
-
-  nvtxRangePop();
-  nvtxRangePushA("Final cleanup");
-
-  // Cleanup
-  if (registered) {
-    status = cuFileBufDeregister(d_compressed);
-    if (status.err != CU_FILE_SUCCESS) {
-      printf("Error: cuFileBufDeregister failed(%d)\n", status.err);
-      return -1;
+#ifdef _OPENMP
+  #pragma omp parallel for num_threads(numThreads)
+#endif
+  for (size_t e = 0; e < elems; ++e) {
+    for (size_t c = 0; c < cfg.size(); ++c) {
+      for (size_t j = 0; j < cfg[c].size(); ++j) {
+        size_t idx = e * elemBytes + (cfg[c][j] - 1);
+        out[c][e * cfg[c].size() + j] = in[idx];
+      }
     }
   }
-  close(fd);
-  status = cuFileDriverClose();
-  if (status.err != CU_FILE_SUCCESS) {
-    printf("Error: cuFileDriverClose failed(%d)\n", status.err);
-    return -1;
+}
+
+//---------------------------------------------------------
+// Timing helper
+//---------------------------------------------------------
+float measureCudaTime(std::function<void(cudaStream_t)> fn, cudaStream_t s) {
+  cudaEvent_t start, stop;
+  CUDA_CHECK(cudaEventCreate(&start));
+  CUDA_CHECK(cudaEventCreate(&stop));
+  CUDA_CHECK(cudaEventRecord(start, s));
+  fn(s);
+  CUDA_CHECK(cudaEventRecord(stop, s));
+  CUDA_CHECK(cudaEventSynchronize(stop));
+  float ms = 0;
+  CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
+  CUDA_CHECK(cudaEventDestroy(start));
+  CUDA_CHECK(cudaEventDestroy(stop));
+  return ms;
+}
+
+//---------------------------------------------------------
+// Validation kernel
+//---------------------------------------------------------
+__global__
+void compareBuffers(const uint8_t *a, const uint8_t *b, int *invalid, size_t n) {
+  size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t stride = blockDim.x * gridDim.x;
+  for (; idx < n; idx += stride) {
+    if (a[idx] != b[idx]) *invalid = 1;
   }
+}
 
-  // Deallocate internal memory structures of LZ4Manager
-  compressor.deallocate_gpu_mem();
+//---------------------------------------------------------
+// Directory utils
+//---------------------------------------------------------
+std::vector<std::string> getAllTsvFiles(const std::string &folder) {
+  std::vector<std::string> paths;
+  DIR *dp = opendir(folder.c_str());
+  if (!dp) return paths;
+  struct dirent *de;
+  while ((de = readdir(dp))) {
+    std::string f(de->d_name);
+    if (f.size() > 4 && f.substr(f.size() - 4) == ".tsv") {
+      std::string full = folder + "/" + f;
+      struct stat sb;
+      if (stat(full.c_str(), &sb) == 0 && S_ISREG(sb.st_mode))
+        paths.push_back(full);
+    }
+  }
+  closedir(dp);
+  return paths;
+}
+bool isDirectory(const std::string &p) {
+  struct stat sb;
+  return stat(p.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode);
+}
 
-  CUDA_CHECK(cudaFreeHost(dh_invalid));
-  CUDA_CHECK(cudaFree(d_input));
-  CUDA_CHECK(cudaFree(d_output));
-  CUDA_CHECK(cudaFree(d_compressed));
+//---------------------------------------------------------
+// Process one dataset
+//---------------------------------------------------------
+int runSingleDataset(const std::string &path, int precisionBits) {
+  // Load dataset and convert to bytes
+  std::vector<uint8_t> globalBytes;
+  if (precisionBits == 64) {
+    auto tmp = loadTSVDataset<double>(path);
+    globalBytes = toBytes(tmp.first);
+  } else {
+    auto tmp = loadTSVDataset<float>(path);
+    globalBytes = toBytes(tmp.first);
+  }
+  size_t totalBytes = globalBytes.size();
+
+  // Derive dataset name & CSV filename
+  std::string datasetName = path;
+  if (auto p = datasetName.find_last_of("/\\"); p != std::string::npos)
+    datasetName = datasetName.substr(p + 1);
+  if (auto d = datasetName.find_last_of('.'); d != std::string::npos)
+    datasetName = datasetName.substr(0, d);
+  std::string csvFilename = "/home/jamalids/Documents/" + datasetName + ".csv";
+
+
+  // Simple component config (replace with real ones as needed)
+  std::vector<std::vector<std::vector<size_t>>> candidateConfigs = {
+    {{1}, {2}, {3}, {4}}
+  };
+
+  // --- Part I: Whole-dataset Compression/Decompression ---
+  cudaStream_t stream;
+  CUDA_CHECK(cudaStreamCreate(&stream));
+  uint8_t *d_in = nullptr, *d_out = nullptr;
+  CUDA_CHECK(cudaMalloc(&d_in, totalBytes));
+  CUDA_CHECK(cudaMalloc(&d_out, totalBytes));
+  CUDA_CHECK(cudaMemcpy(d_in, globalBytes.data(), totalBytes, cudaMemcpyHostToDevice));
+
+  LZ4Manager wholeMgr(1 << 16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, stream);
+  auto wholeCfg = wholeMgr.configure_compression(totalBytes);
+  size_t maxWhole = ((wholeCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
+  uint8_t *d_whole = nullptr;
+  CUDA_CHECK(cudaMalloc(&d_whole, maxWhole));
+
+  float tC1 = measureCudaTime([&](cudaStream_t s) {
+    wholeMgr.compress(d_in, d_whole, wholeCfg);
+  }, stream);
+  size_t out1 = wholeMgr.get_compressed_output_size(d_whole);
+
+  auto wholeDecompCfg = wholeMgr.configure_decompression(wholeCfg);
+  float tD1 = measureCudaTime([&](cudaStream_t s) {
+    wholeMgr.decompress(d_out, d_whole, wholeDecompCfg);
+  }, stream);
+
+  int *h_invalid = nullptr;
+  CUDA_CHECK(cudaMallocHost(&h_invalid, sizeof(int)));
+  *h_invalid = 0;
+  compareBuffers<<<64, 256, 0, stream>>>(d_in, d_out, h_invalid, totalBytes);
+  CUDA_CHECK(cudaStreamSynchronize(stream));
+  std::cout << (*h_invalid ? "Whole FAIL\n" : "Whole PASS\n");
+
+  double thrC1 = (totalBytes / 1e6) / tC1;
+  double thrD1 = (totalBytes / 1e6) / tD1;
+  double rat1 = double(totalBytes) / out1;
+
+  wholeMgr.deallocate_gpu_mem();
+  CUDA_CHECK(cudaFree(d_in));
+  CUDA_CHECK(cudaFree(d_out));
+  CUDA_CHECK(cudaFree(d_whole));
+  CUDA_CHECK(cudaFreeHost(h_invalid));
   CUDA_CHECK(cudaStreamDestroy(stream));
 
-  printf("All done, exiting...\n");
-  nvtxRangePop();
+  // Prepare containers for CSV rows
+  std::vector<std::string> compRows, blockRows;
 
+  // --- Part II: Component-based Compression/Decompression ---
+  for (auto &cfg : candidateConfigs) {
+    std::vector<std::vector<uint8_t>> components;
+    splitBytesIntoComponents(globalBytes, components, cfg, 16);
+
+    double totalC2 = 0.0, totalD2 = 0.0;
+    size_t sum2 = 0;
+
+    for (auto &blk : components) {
+      cudaStream_t s2; CUDA_CHECK(cudaStreamCreate(&s2));
+      LZ4Manager mgr(1<<16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, s2);
+      auto cCfg = mgr.configure_compression(blk.size());
+      size_t mx = ((cCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
+      uint8_t *d_buf = nullptr;
+      CUDA_CHECK(cudaMalloc(&d_buf, mx));
+      uint8_t *d_i = nullptr, *d_o2 = nullptr;
+      CUDA_CHECK(cudaMalloc(&d_i, blk.size()));
+      CUDA_CHECK(cudaMalloc(&d_o2, blk.size()));
+      CUDA_CHECK(cudaMemcpy(d_i, blk.data(), blk.size(), cudaMemcpyHostToDevice));
+
+      float ctime = measureCudaTime([&](cudaStream_t s3) {
+        mgr.compress(d_i, d_buf, cCfg);
+      }, s2);
+      size_t cbytes = mgr.get_compressed_output_size(d_buf);
+
+      auto dCfg = mgr.configure_decompression(cCfg);
+      float dtime = measureCudaTime([&](cudaStream_t s3) {
+        mgr.decompress(d_o2, d_buf, dCfg);
+      }, s2);
+
+      totalC2 += ctime;
+      totalD2 += dtime;
+      sum2 += cbytes;
+
+      mgr.deallocate_gpu_mem();
+      CUDA_CHECK(cudaFree(d_i));
+      CUDA_CHECK(cudaFree(d_o2));
+      CUDA_CHECK(cudaFree(d_buf));
+      CUDA_CHECK(cudaStreamDestroy(s2));
+    }
+
+    double thrC2 = (totalBytes / 1e6) / totalC2;
+    double thrD2 = (totalBytes / 1e6) / totalD2;
+    double rat2 = double(totalBytes) / sum2;
+
+    std::ostringstream row2;
+    row2 << datasetName
+         << ",Component," << totalBytes << "," << sum2 << ","
+         << std::fixed << std::setprecision(2) << rat2 << ","
+         << totalC2 << "," << totalD2 << ","
+         << thrC2 << "," << thrD2 << ","
+         << configToString(cfg);
+    compRows.push_back(row2.str());
+  }
+
+  // --- Part III: Block‑aggregated Component Compression/Decompression ---
+  // const int numBlocks = 4;
+  // size_t blockSize = (totalBytes + numBlocks - 1) / numBlocks;
+
+  cudaDeviceProp prop;
+  CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+  int numBlocks = prop.multiProcessorCount;
+  numBlocks=numBlocks/8;
+  std::cout << "Launching with numBlocks = " << numBlocks << std::endl;
+
+
+
+  // Now split the data into 'numBlocks'
+  size_t blockSize = (totalBytes + numBlocks - 1) / numBlocks;
+
+
+  for (auto &cfg : candidateConfigs) {
+    double totalC3 = 0.0, totalD3 = 0.0;
+    size_t sum3 = 0;
+
+    for (int b = 0; b < numBlocks; ++b) {
+      size_t off = b * blockSize;
+      size_t sz  = std::min(blockSize, totalBytes - off);
+      std::vector<uint8_t> sub(globalBytes.begin() + off,
+                                globalBytes.begin() + off + sz);
+      std::vector<std::vector<uint8_t>> comps;
+      splitBytesIntoComponents(sub, comps, cfg, 16);
+
+      for (auto &blk : comps) {
+        cudaStream_t s3; CUDA_CHECK(cudaStreamCreate(&s3));
+        LZ4Manager mgr(1<<16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, s3);
+        auto cCfg = mgr.configure_compression(blk.size());
+        size_t mx = ((cCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
+        uint8_t *d_buf = nullptr;
+        CUDA_CHECK(cudaMalloc(&d_buf, mx));
+        uint8_t *d_i = nullptr, *d_o3 = nullptr;
+        CUDA_CHECK(cudaMalloc(&d_i, blk.size()));
+        CUDA_CHECK(cudaMalloc(&d_o3, blk.size()));
+        CUDA_CHECK(cudaMemcpy(d_i, blk.data(), blk.size(), cudaMemcpyHostToDevice));
+
+        float ctime = measureCudaTime([&](cudaStream_t s4) {
+          mgr.compress(d_i, d_buf, cCfg);
+        }, s3);
+        size_t cbytes = mgr.get_compressed_output_size(d_buf);
+
+        auto dCfg = mgr.configure_decompression(cCfg);
+        float dtime = measureCudaTime([&](cudaStream_t s4) {
+          mgr.decompress(d_o3, d_buf, dCfg);
+        }, s3);
+
+        totalC3 += ctime;
+        totalD3 += dtime;
+        sum3    += cbytes;
+
+        mgr.deallocate_gpu_mem();
+        CUDA_CHECK(cudaFree(d_i));
+        CUDA_CHECK(cudaFree(d_o3));
+        CUDA_CHECK(cudaFree(d_buf));
+        CUDA_CHECK(cudaStreamDestroy(s3));
+      }
+    }
+
+    double thrC3 = (totalBytes / 1e6) / totalC3;
+    double thrD3 = (totalBytes / 1e6) / totalD3;
+    double rat3  = double(totalBytes) / sum3;
+
+    std::ostringstream row3;
+    row3 << datasetName
+         << ",BlockAggregated," << totalBytes << "," << sum3 << ","
+         << std::fixed << std::setprecision(2) << rat3 << ","
+         << totalC3 << "," << totalD3 << ","
+         << thrC3 << "," << thrD3 << ","
+         << configToString(cfg);
+    blockRows.push_back(row3.str());
+  }
+
+  // --- Write all results to CSV ---
+  std::ofstream csv(csvFilename);
+  csv << "Dataset,Mode,TotalBytes,CompressedBytes,Ratio,CompTime,DecompTime,"
+         "CompThroughput,DecompThroughput,Config\n";
+  csv << datasetName << ",Whole," << totalBytes << "," << out1 << ","
+      << std::fixed << std::setprecision(2) << rat1 << ","
+      << tC1 << "," << tD1 << ","
+      << thrC1 << "," << thrD1 << ",\"whole\"\n";
+  for (auto &r : compRows)  csv << r << "\n";
+  for (auto &r : blockRows) csv << r << "\n";
+  csv.close();
+
+  return EXIT_SUCCESS;
+}
+
+//---------------------------------------------------------
+// Main entry
+//---------------------------------------------------------
+int main(int argc, char **argv) {
+  if (argc < 3) {
+    std::cerr << "Usage: " << argv[0] << " <file|folder> <32|64>\n";
+    return EXIT_FAILURE;
+  }
+  std::string path = argv[1];
+  int prec = std::stoi(argv[2]);
+
+  if (isDirectory(path)) {
+    for (auto &f : getAllTsvFiles(path)) {
+      std::cout << "=== Processing " << f << " ===\n";
+      runSingleDataset(f, prec);
+    }
+  } else {
+    runSingleDataset(path, prec);
+  }
   return 0;
 }
