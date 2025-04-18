@@ -204,153 +204,319 @@ int runSingleDataset(const std::string &path, int precisionBits) {
 
 
   //  component config
-  std::vector<std::vector<std::vector<size_t>>> candidateConfigs = {
-    {{1}, {2}, {3}, {4}}
-  };
+  // std::vector<std::vector<std::vector<size_t>>> candidateConfigs = {
+  //   {{1}, {2}, {3}, {4}}
+  // };
 
-  // --- Part I: Whole-dataset Compression/Decompression ---
-  cudaStream_t stream;
-  CUDA_CHECK(cudaStreamCreate(&stream));
-  uint8_t *d_in = nullptr, *d_out = nullptr;
-  CUDA_CHECK(cudaMalloc(&d_in, totalBytes));
-  CUDA_CHECK(cudaMalloc(&d_out, totalBytes));
-  CUDA_CHECK(cudaMemcpy(d_in, globalBytes.data(), totalBytes, cudaMemcpyHostToDevice));
+using ComponentConfig = std::vector<std::vector<std::vector<size_t>>>;
 
-  LZ4Manager wholeMgr(1 << 16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, stream);
-  auto wholeCfg = wholeMgr.configure_compression(totalBytes);
-  size_t maxWhole = ((wholeCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
-  uint8_t *d_whole = nullptr;
-  CUDA_CHECK(cudaMalloc(&d_whole, maxWhole));
+std::vector<std::pair<std::string, ComponentConfig>> candidateConfigs = {
+  { "acs_wht_f32", {
+      { {1,2}, {3},   {4}   }
 
-  float tC1 = measureCudaTime([&](cudaStream_t s) {
-    wholeMgr.compress(d_in, d_whole, wholeCfg);
-  }, stream);
-  size_t out1 = wholeMgr.get_compressed_output_size(d_whole);
+    }
+  },
+  { "citytemp_f32", {
+      { {1,2}, {3}, {4} }
+    }
+  },
+  { "hdr_night_f32", {
+      { {1,2}, {3}, {4} }
+    }
+  },
+  { "hdr_palermo_f32", {
+      { {1,2}, {3}, {4} }
+    }
+  },
+  { "hst_wfc3_ir_f32", {
+      { {1,2}, {3}, {4} }
+    }
+  },
+  { "hst_wfc3_uvis_f32", {
+      { {1,2,3}, {4} }
+    }
+  },
+  { "jw_mirimage_f32", {
+      { {1,2,3}, {4} }
+    }
+  },
+  { "rsim_f32", {
+      { {1,2,3}, {4} }
+    }
+  },
+  { "solar_wind_f32", {
+      { {1,2}, {3}, {4} }
+    }
+  },
+  { "spitzer_irac_f32", {
+      { {1,2,3}, {4} }
+    }
+  },
+  { "tpcds_catalog_f32", {
+      { {1}, {2}, {3}, {4} }
+    }
+  },
+  { "tpcds_store_f32", {
+      { {1,2}, {3}, {4} }
+    }
+  },
+  { "tpcds_web_f32", {
+      { {1}, {2}, {3}, {4} }
+    }
+  },
+  { "tpch_lineitem_f32", {
+      { {1,2,3}, {4} }
+    }
+  },
+  // wave_f32 has two possible groupings
+  { "wave_f32", {
+      { {1,2,3}, {4} }
 
-  auto wholeDecompCfg = wholeMgr.configure_decompression(wholeCfg);
-  float tD1 = measureCudaTime([&](cudaStream_t s) {
-    wholeMgr.decompress(d_out, d_whole, wholeDecompCfg);
-  }, stream);
+    }
+  },
+  // default fallback
+  { "default", {
+      { {1}, {2}, {3}, {4} }
+    }
+  },
 
-  int *h_invalid = nullptr;
-  CUDA_CHECK(cudaMallocHost(&h_invalid, sizeof(int)));
-  *h_invalid = 0;
-  compareBuffers<<<64, 256, 0, stream>>>(d_in, d_out, h_invalid, totalBytes);
-  CUDA_CHECK(cudaStreamSynchronize(stream));
-  std::cout << (*h_invalid ? "Whole FAIL\n" : "Whole PASS\n");
+  // -- 64‑bit datasets --
+  { "astro_mhd_f64", {
+      { {1,2,3,4,5,6}, {7,8} }
+    }
+  },
+  { "tpch_order_f64", {
+      { {5,6}, {1,2,3,4}, {7}, {8} }
+    }
+  },
+  { "astro_pt_f64", {
+      { {4,5}, {1,2,3}, {6}, {7}, {8} }
+    }
+  },
+  { "wesad_chest_f64", {
+      { {1,2,3,4,8}, {5,6,7} }
+    }
+  },
+  { "phone_gyro_f64", {
+      { {1,2,3,4,5,6,7}, {8} }
+    }
+  },
+  { "tpcxbb_store_f64", {
+      { {6,7}, {1,2,3,4,5}, {8} }
+    }
+  },
+  { "num_brain_f64", {
+      { {2,5}, {1,3,4}, {6}, {7}, {8} },
+      // alternative grouping:
+      { {1,2}, {3}, {6}, {4}, {5}, {7}, {8} }
+    }
+  },
+  { "msg_bt_f64", {
+      { {2,3}, {1}, {4}, {5}, {6}, {7}, {8} }
+    }
+  },
+  { "tpcxbb_web_f64", {
+      { {6,7}, {1,2,3,4,5}, {8} }
+    }
+  },
+  { "nyc_taxi2015_f64", {
+      { {1,2,3,8}, {4,5,6,7} }
+    }
+  }
+};
 
-  double thrC1 = (totalBytes / 1e6) / tC1;
-  double thrD1 = (totalBytes / 1e6) / tD1;
-  double rat1 = double(totalBytes) / out1;
+// --- Part I: Whole-dataset Compression/Decompression ---
+cudaStream_t stream;
+CUDA_CHECK(cudaStreamCreate(&stream));
+uint8_t *d_in = nullptr, *d_out = nullptr;
+CUDA_CHECK(cudaMalloc(&d_in, totalBytes));
+CUDA_CHECK(cudaMalloc(&d_out, totalBytes));
+CUDA_CHECK(cudaMemcpy(d_in, globalBytes.data(), totalBytes, cudaMemcpyHostToDevice));
 
-  wholeMgr.deallocate_gpu_mem();
-  CUDA_CHECK(cudaFree(d_in));
-  CUDA_CHECK(cudaFree(d_out));
-  CUDA_CHECK(cudaFree(d_whole));
-  CUDA_CHECK(cudaFreeHost(h_invalid));
-  CUDA_CHECK(cudaStreamDestroy(stream));
+LZ4Manager wholeMgr(1 << 16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, stream);
+auto wholeCfg = wholeMgr.configure_compression(totalBytes);
+size_t maxWhole = ((wholeCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
+uint8_t *d_whole = nullptr;
+CUDA_CHECK(cudaMalloc(&d_whole, maxWhole));
+
+// compress
+float tC1 = measureCudaTime([&](cudaStream_t s) {
+  wholeMgr.compress(d_in, d_whole, wholeCfg);
+}, stream);
+size_t out1 = wholeMgr.get_compressed_output_size(d_whole);
+
+// decompress
+auto wholeDecompCfg = wholeMgr.configure_decompression(wholeCfg);
+float tD1 = measureCudaTime([&](cudaStream_t s) {
+  wholeMgr.decompress(d_out, d_whole, wholeDecompCfg);
+}, stream);
+
+// verify
+int *h_invalid = nullptr;
+CUDA_CHECK(cudaMallocHost(&h_invalid, sizeof(int)));
+*h_invalid = 0;
+compareBuffers<<<64,256,0,stream>>>(d_in, d_out, h_invalid, totalBytes);
+CUDA_CHECK(cudaStreamSynchronize(stream));
+std::cout << (*h_invalid ? "Whole FAIL\n" : "Whole PASS\n");
+
+double thrC1 = (totalBytes/1e6)/tC1;
+double thrD1 = (totalBytes/1e6)/tD1;
+double rat1  = double(totalBytes)/out1;
+
+wholeMgr.deallocate_gpu_mem();
+CUDA_CHECK(cudaFree(d_in));
+CUDA_CHECK(cudaFree(d_out));
+CUDA_CHECK(cudaFree(d_whole));
+CUDA_CHECK(cudaFreeHost(h_invalid));
+CUDA_CHECK(cudaStreamDestroy(stream));
+
+std::vector<std::string> compRows, blockRows;
 
 
-  std::vector<std::string> compRows, blockRows;
+// --- Part II: Component-based Compression/Decompression ---
 
- // --- Part II: Component-based Compression/Decompression ---
+using ComponentConfig = std::vector<std::vector<std::vector<size_t>>>;
 
-for (auto &cfg : candidateConfigs) {
-  // 1) Split host bytes into components
+
+const ComponentConfig *cfgListPtr = nullptr;
+for (auto &e : candidateConfigs) {
+  if (e.first == datasetName) {
+    cfgListPtr = &e.second;
+    break;
+  }
+}
+if (!cfgListPtr) {
+  // fallback
+  for (auto &e : candidateConfigs) {
+    if (e.first == "default") {
+      cfgListPtr = &e.second;
+      break;
+    }
+  }
+}
+const auto &cfgList = *cfgListPtr;
+
+// Iterate each component grouping
+for (auto &cfg : cfgList) {
+  std::cout << "Selected config: " << configToString(cfg) << std::endl;
+
+  // 1) Split into N host‐side byte‐arrays
   std::vector<std::vector<uint8_t>> components;
   splitBytesIntoComponents(globalBytes, components, cfg, /*threads=*/16);
   size_t N = components.size();
 
-  // 2) Create one CUDA stream + LZ4Manager per component
+  // 2) One stream + LZ4Manager per part
   std::vector<cudaStream_t> streams(N);
   std::vector<std::unique_ptr<LZ4Manager>> mgrs;
   mgrs.reserve(N);
-  nvcompBatchedLZ4Opts_t opts;
-  opts.data_type = NVCOMP_TYPE_CHAR;
+  nvcompBatchedLZ4Opts_t opts{NVCOMP_TYPE_CHAR};
   for (size_t i = 0; i < N; ++i) {
     CUDA_CHECK(cudaStreamCreate(&streams[i]));
-    mgrs.emplace_back(
-      new LZ4Manager(
-        /*batchBytes=*/1 << 16,
-        opts,
-        streams[i]
-      )
-    );
+    mgrs.emplace_back(new LZ4Manager(1<<16, opts, streams[i]));
   }
 
-  // 3) Configure compression for each component
+  // 3) Configure each
   using CompCfg = decltype(mgrs[0]->configure_compression(0));
-  std::vector<CompCfg> cCfgs;
-  cCfgs.reserve(N);
+  std::vector<CompCfg> cCfgs; cCfgs.reserve(N);
   for (size_t i = 0; i < N; ++i) {
-    cCfgs.push_back(
-      mgrs[i]->configure_compression(components[i].size()));
+    cCfgs.push_back(mgrs[i]->configure_compression(components[i].size()));
   }
 
-  // 4) Allocate device input, output, and compressed buffers
-  std::vector<uint8_t*> d_in(N), d_out(N), d_buf(N);
+  // 4) Allocate & copy
+  std::vector<uint8_t*> d_in(N), d_buf(N), d_out(N);
   for (size_t i = 0; i < N; ++i) {
     size_t sz     = components[i].size();
-    size_t maxBuf = ((cCfgs[i].max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
-
+    size_t maxBuf = ((cCfgs[i].max_compressed_buffer_size - 1)/4096 + 1)*4096;
     CUDA_CHECK(cudaMalloc(&d_in[i],  sz));
-    CUDA_CHECK(cudaMalloc(&d_out[i], sz));
     CUDA_CHECK(cudaMalloc(&d_buf[i], maxBuf));
-
-    CUDA_CHECK(cudaMemcpy(
-      d_in[i],
-      components[i].data(),
-      sz,
-      cudaMemcpyHostToDevice
-    ));
+    CUDA_CHECK(cudaMalloc(&d_out[i], sz));
+    CUDA_CHECK(cudaMemcpy(d_in[i], components[i].data(), sz, cudaMemcpyHostToDevice));
   }
 
-  // 5) Time all N compress calls in one go
-  float tC2 = measureCudaTime([&](cudaStream_t) {
-    for (size_t i = 0; i < N; ++i) {
-      mgrs[i]->compress(d_in[i], d_buf[i], cCfgs[i]);
-    }
-  }, streams[0]);
+  // 5) Compress all N in one timed region
+  cudaEvent_t cStart, cEnd;
+  CUDA_CHECK(cudaEventCreate(&cStart));
+  CUDA_CHECK(cudaEventCreate(&cEnd));
+  CUDA_CHECK(cudaEventRecord(cStart,0));
+  for (size_t i=0;i<N;++i) {
+    mgrs[i]->compress(d_in[i],d_buf[i],cCfgs[i]);
+  }
+  CUDA_CHECK(cudaDeviceSynchronize());
+  CUDA_CHECK(cudaEventRecord(cEnd,0));
+  CUDA_CHECK(cudaEventSynchronize(cEnd));
+  float tC2=0;
+  CUDA_CHECK(cudaEventElapsedTime(&tC2,cStart,cEnd));
+  CUDA_CHECK(cudaEventDestroy(cStart));
+  CUDA_CHECK(cudaEventDestroy(cEnd));
 
-  // 6) Sum compressed sizes
-  size_t sum2 = 0;
-  for (size_t i = 0; i < N; ++i) {
+  // 6) Sum sizes
+  size_t sum2=0;
+  for (size_t i=0;i<N;++i) {
     sum2 += mgrs[i]->get_compressed_output_size(d_buf[i]);
   }
 
-  // 7) Time all N decompress calls in one go
-  float tD2 = measureCudaTime([&](cudaStream_t) {
-    for (size_t i = 0; i < N; ++i) {
-      auto dCfg = mgrs[i]->configure_decompression(cCfgs[i]);
-      mgrs[i]->decompress(d_out[i], d_buf[i], dCfg);
-    }
-  }, streams[0]);
+  // 7) Decompress all N in one timed region
+  cudaEvent_t dStart, dEnd;
+  CUDA_CHECK(cudaEventCreate(&dStart));
+  CUDA_CHECK(cudaEventCreate(&dEnd));
+  CUDA_CHECK(cudaEventRecord(dStart,0));
+  for (size_t i=0;i<N;++i) {
+    auto dCfg = mgrs[i]->configure_decompression(cCfgs[i]);
+    mgrs[i]->decompress(d_out[i],d_buf[i],dCfg);
+  }
+  CUDA_CHECK(cudaDeviceSynchronize());
+  CUDA_CHECK(cudaEventRecord(dEnd,0));
+  CUDA_CHECK(cudaEventSynchronize(dEnd));
+  float tD2=0;
+  CUDA_CHECK(cudaEventElapsedTime(&tD2,dStart,dEnd));
+  CUDA_CHECK(cudaEventDestroy(dStart));
+  CUDA_CHECK(cudaEventDestroy(dEnd));
 
-  // 8) Compute throughput and ratio
-  double thrC2 = (totalBytes / 1e6) / tC2;
-  double thrD2 = (totalBytes / 1e6) / tD2;
-  double rat2  = double(totalBytes) / sum2;
+  // 8) Verify
+  int *d_invalid=nullptr, h_invalid=0;
+  CUDA_CHECK(cudaMalloc(&d_invalid,sizeof(int)));
+  CUDA_CHECK(cudaMemset(d_invalid,0,sizeof(int)));
+  for (size_t i=0;i<N;++i) {
+    size_t sz = components[i].size();
+    int blocks = (sz+255)/256;
+    compareBuffers<<<blocks,256,0,streams[i]>>>(d_in[i],d_out[i],d_invalid,sz);
+  }
+  CUDA_CHECK(cudaDeviceSynchronize());
+  CUDA_CHECK(cudaMemcpy(&h_invalid,d_invalid,sizeof(int),cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaFree(d_invalid));
+  if (h_invalid) {
+    std::cerr<<"ERROR: Component-based mismatch!\n";
+  } else {
+    std::cout<<"Component-based decompression verified.\n";
+  }
 
-  // 9) Emit CSV row
+  // 9) Record metrics
+  double thrC2 = (totalBytes/1e6)/tC2;
+  double thrD2 = (totalBytes/1e6)/tD2;
+  double rat2  = double(totalBytes)/sum2;
   std::ostringstream row2;
-  row2 << datasetName
-       << ",Component," << totalBytes << "," << sum2 << ","
-       << std::fixed << std::setprecision(2) << rat2 << ","
-       << tC2 << "," << tD2 << ","
-       << thrC2 << "," << thrD2 << ","
-       << configToString(cfg);
+  row2<<datasetName<<",Component,"<<totalBytes<<","<<sum2<<","
+      <<std::fixed<<std::setprecision(2)<<rat2<<","
+      <<tC2<<","<<tD2<<","<<thrC2<<","<<thrD2<<","
+      <<configToString(cfg);
   compRows.push_back(row2.str());
 
   // 10) Cleanup
-  for (size_t i = 0; i < N; ++i) {
+  for (size_t i=0;i<N;++i) {
     mgrs[i]->deallocate_gpu_mem();
     CUDA_CHECK(cudaFree(d_in[i]));
-    CUDA_CHECK(cudaFree(d_out[i]));
     CUDA_CHECK(cudaFree(d_buf[i]));
+    CUDA_CHECK(cudaFree(d_out[i]));
     CUDA_CHECK(cudaStreamDestroy(streams[i]));
   }
 }
 
+// --- Part III: Block‑aggregated Component Compression/Decompression ---
+
+
+
+
+// --- Part III: Block‑aggregated Component Compression/Decompression ---
 
   // --- Write all results to CSV ---
   std::ofstream csv(csvFilename);

@@ -203,7 +203,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/usr/local/cuda-11.6/bin/nvcc"
+			"value" : "/usr/local/cuda-12.3/bin/nvcc"
 		},
 		{
 			"name" : "CMAKE_CUDA_FLAGS",
@@ -847,7 +847,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/"
+			"value" : "/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/;/usr/local/cuda-12.3/targets/x86_64-linux/include/;/usr/local/cuda-12.3/targets/x86_64-linux/lib/"
 		},
 		{
 			"name" : "CMAKE_PROJECT_DESCRIPTION",
@@ -1195,7 +1195,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/include/../../../extras/CUPTI/include"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/include"
 		},
 		{
 			"name" : "CUDAToolkit_rt_LIBRARY",
@@ -1227,7 +1227,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/lib64/libcudart.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart.so"
 		},
 		{
 			"name" : "CUDA_OpenCL_LIBRARY",
@@ -1243,7 +1243,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libOpenCL.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libOpenCL.so"
 		},
 		{
 			"name" : "CUDA_cuFile_LIBRARY",
@@ -1259,7 +1259,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "CUDA_cuFile_LIBRARY-NOTFOUND"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufile.so"
 		},
 		{
 			"name" : "CUDA_cuFile_rdma_LIBRARY",
@@ -1275,7 +1275,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "CUDA_cuFile_rdma_LIBRARY-NOTFOUND"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufile_rdma.so"
 		},
 		{
 			"name" : "CUDA_cuFile_rdma_static_LIBRARY",
@@ -1291,7 +1291,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "CUDA_cuFile_rdma_static_LIBRARY-NOTFOUND"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufile_rdma_static.a"
 		},
 		{
 			"name" : "CUDA_cuFile_static_LIBRARY",
@@ -1307,7 +1307,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "CUDA_cuFile_static_LIBRARY-NOTFOUND"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufile_static.a"
 		},
 		{
 			"name" : "CUDA_cublasLt_LIBRARY",
@@ -1323,7 +1323,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcublasLt.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcublasLt.so"
 		},
 		{
 			"name" : "CUDA_cublasLt_static_LIBRARY",
@@ -1339,7 +1339,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcublasLt_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcublasLt_static.a"
 		},
 		{
 			"name" : "CUDA_cublas_LIBRARY",
@@ -1355,7 +1355,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcublas.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcublas.so"
 		},
 		{
 			"name" : "CUDA_cublas_static_LIBRARY",
@@ -1371,7 +1371,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcublas_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcublas_static.a"
 		},
 		{
 			"name" : "CUDA_cuda_driver_LIBRARY",
@@ -1387,7 +1387,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so"
 		},
 		{
 			"name" : "CUDA_cudart_LIBRARY",
@@ -1403,7 +1403,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart.so"
 		},
 		{
 			"name" : "CUDA_cudart_static_LIBRARY",
@@ -1419,7 +1419,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a"
 		},
 		{
 			"name" : "CUDA_cudla_LIBRARY",
@@ -1451,7 +1451,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcufft.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufft.so"
 		},
 		{
 			"name" : "CUDA_cufft_static_LIBRARY",
@@ -1467,7 +1467,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcufft_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufft_static.a"
 		},
 		{
 			"name" : "CUDA_cufft_static_nocallback_LIBRARY",
@@ -1483,7 +1483,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcufft_static_nocallback.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufft_static_nocallback.a"
 		},
 		{
 			"name" : "CUDA_cufftw_LIBRARY",
@@ -1499,7 +1499,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcufftw.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufftw.so"
 		},
 		{
 			"name" : "CUDA_cufftw_static_LIBRARY",
@@ -1515,7 +1515,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcufftw_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcufftw_static.a"
 		},
 		{
 			"name" : "CUDA_culibos_LIBRARY",
@@ -1531,7 +1531,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libculibos.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libculibos.a"
 		},
 		{
 			"name" : "CUDA_cupti_LIBRARY",
@@ -1547,7 +1547,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/libcupti.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcupti.so"
 		},
 		{
 			"name" : "CUDA_cupti_static_LIBRARY",
@@ -1563,7 +1563,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/libcupti_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcupti_static.a"
 		},
 		{
 			"name" : "CUDA_curand_LIBRARY",
@@ -1579,7 +1579,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcurand.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcurand.so"
 		},
 		{
 			"name" : "CUDA_curand_static_LIBRARY",
@@ -1595,7 +1595,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcurand_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcurand_static.a"
 		},
 		{
 			"name" : "CUDA_cusolver_LIBRARY",
@@ -1611,7 +1611,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcusolver.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcusolver.so"
 		},
 		{
 			"name" : "CUDA_cusolver_lapack_static_LIBRARY",
@@ -1627,7 +1627,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcusolver_lapack_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcusolver_lapack_static.a"
 		},
 		{
 			"name" : "CUDA_cusolver_metis_static_LIBRARY",
@@ -1643,7 +1643,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libmetis_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcusolver_metis_static.a"
 		},
 		{
 			"name" : "CUDA_cusolver_static_LIBRARY",
@@ -1659,7 +1659,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcusolver_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcusolver_static.a"
 		},
 		{
 			"name" : "CUDA_cusparse_LIBRARY",
@@ -1675,7 +1675,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcusparse.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcusparse.so"
 		},
 		{
 			"name" : "CUDA_cusparse_static_LIBRARY",
@@ -1691,7 +1691,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcusparse_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcusparse_static.a"
 		},
 		{
 			"name" : "CUDA_nppc_LIBRARY",
@@ -1707,7 +1707,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppc.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppc.so"
 		},
 		{
 			"name" : "CUDA_nppc_static_LIBRARY",
@@ -1723,7 +1723,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppc_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppc_static.a"
 		},
 		{
 			"name" : "CUDA_nppial_LIBRARY",
@@ -1739,7 +1739,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppial.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppial.so"
 		},
 		{
 			"name" : "CUDA_nppial_static_LIBRARY",
@@ -1755,7 +1755,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppial_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppial_static.a"
 		},
 		{
 			"name" : "CUDA_nppicc_LIBRARY",
@@ -1771,7 +1771,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppicc.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppicc.so"
 		},
 		{
 			"name" : "CUDA_nppicc_static_LIBRARY",
@@ -1787,7 +1787,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppicc_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppicc_static.a"
 		},
 		{
 			"name" : "CUDA_nppicom_LIBRARY",
@@ -1835,7 +1835,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppidei.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppidei.so"
 		},
 		{
 			"name" : "CUDA_nppidei_static_LIBRARY",
@@ -1851,7 +1851,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppidei_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppidei_static.a"
 		},
 		{
 			"name" : "CUDA_nppif_LIBRARY",
@@ -1867,7 +1867,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppif.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppif.so"
 		},
 		{
 			"name" : "CUDA_nppif_static_LIBRARY",
@@ -1883,7 +1883,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppif_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppif_static.a"
 		},
 		{
 			"name" : "CUDA_nppig_LIBRARY",
@@ -1899,7 +1899,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppig.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppig.so"
 		},
 		{
 			"name" : "CUDA_nppig_static_LIBRARY",
@@ -1915,7 +1915,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppig_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppig_static.a"
 		},
 		{
 			"name" : "CUDA_nppim_LIBRARY",
@@ -1931,7 +1931,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppim.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppim.so"
 		},
 		{
 			"name" : "CUDA_nppim_static_LIBRARY",
@@ -1947,7 +1947,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppim_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppim_static.a"
 		},
 		{
 			"name" : "CUDA_nppist_LIBRARY",
@@ -1963,7 +1963,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppist.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppist.so"
 		},
 		{
 			"name" : "CUDA_nppist_static_LIBRARY",
@@ -1979,7 +1979,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppist_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppist_static.a"
 		},
 		{
 			"name" : "CUDA_nppisu_LIBRARY",
@@ -1995,7 +1995,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppisu.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppisu.so"
 		},
 		{
 			"name" : "CUDA_nppisu_static_LIBRARY",
@@ -2011,7 +2011,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppisu_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppisu_static.a"
 		},
 		{
 			"name" : "CUDA_nppitc_LIBRARY",
@@ -2027,7 +2027,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppitc.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppitc.so"
 		},
 		{
 			"name" : "CUDA_nppitc_static_LIBRARY",
@@ -2043,7 +2043,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnppitc_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnppitc_static.a"
 		},
 		{
 			"name" : "CUDA_npps_LIBRARY",
@@ -2059,7 +2059,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnpps.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnpps.so"
 		},
 		{
 			"name" : "CUDA_npps_static_LIBRARY",
@@ -2075,7 +2075,39 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnpps_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnpps_static.a"
+		},
+		{
+			"name" : "CUDA_nvJitLink_LIBRARY",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a library."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvJitLink.so"
+		},
+		{
+			"name" : "CUDA_nvJitLink_static_LIBRARY",
+			"properties" : 
+			[
+				{
+					"name" : "ADVANCED",
+					"value" : "1"
+				},
+				{
+					"name" : "HELPSTRING",
+					"value" : "Path to a library."
+				}
+			],
+			"type" : "FILEPATH",
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvJitLink_static.a"
 		},
 		{
 			"name" : "CUDA_nvToolsExt_LIBRARY",
@@ -2091,7 +2123,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvToolsExt.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvToolsExt.so"
 		},
 		{
 			"name" : "CUDA_nvgraph_LIBRARY",
@@ -2139,7 +2171,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvjpeg.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvjpeg.so"
 		},
 		{
 			"name" : "CUDA_nvjpeg_static_LIBRARY",
@@ -2155,7 +2187,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvjpeg_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvjpeg_static.a"
 		},
 		{
 			"name" : "CUDA_nvml_LIBRARY",
@@ -2171,7 +2203,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libnvidia-ml.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libnvidia-ml.so"
 		},
 		{
 			"name" : "CUDA_nvperf_host_LIBRARY",
@@ -2187,7 +2219,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/libnvperf_host.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvperf_host.so"
 		},
 		{
 			"name" : "CUDA_nvperf_host_static_LIBRARY",
@@ -2203,7 +2235,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/libnvperf_host_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvperf_host_static.a"
 		},
 		{
 			"name" : "CUDA_nvperf_target_LIBRARY",
@@ -2219,7 +2251,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/libnvperf_target.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvperf_target.so"
 		},
 		{
 			"name" : "CUDA_nvptxcompiler_static_LIBRARY",
@@ -2235,7 +2267,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvptxcompiler_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvptxcompiler_static.a"
 		},
 		{
 			"name" : "CUDA_nvrtc_LIBRARY",
@@ -2251,7 +2283,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvrtc.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvrtc.so"
 		},
 		{
 			"name" : "CUDA_nvrtc_builtins_LIBRARY",
@@ -2267,7 +2299,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvrtc-builtins.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvrtc-builtins.so"
 		},
 		{
 			"name" : "CUDA_nvrtc_builtins_static_LIBRARY",
@@ -2283,7 +2315,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvrtc-builtins_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvrtc-builtins_static.a"
 		},
 		{
 			"name" : "CUDA_nvrtc_static_LIBRARY",
@@ -2299,7 +2331,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvrtc_static.a"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libnvrtc_static.a"
 		},
 		{
 			"name" : "CUDA_pcsamplingutil_LIBRARY",
@@ -2315,7 +2347,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/usr/lib/x86_64-linux-gnu/libpcsamplingutil.so"
+			"value" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libpcsamplingutil.so"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_CUDAToolkit",
@@ -2327,7 +2359,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[/usr/local/cuda-11.6/targets/x86_64-linux/include][/usr/local/cuda-11.6/lib64/libcudart.so][/usr/local/cuda-11.6/bin][v11.6.124()]"
+			"value" : "[/usr/local/cuda-12.3/targets/x86_64-linux/include][/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart.so][/usr/local/cuda-12.3/bin][v12.3.52()]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Threads",

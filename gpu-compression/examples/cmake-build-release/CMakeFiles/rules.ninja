@@ -17,7 +17,7 @@
 rule CUDA_COMPILER__gdeflate_cpu_compression_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -25,7 +25,7 @@ rule CUDA_COMPILER__gdeflate_cpu_compression_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -36,7 +36,7 @@ rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression_Release
 rule CUDA_COMPILER__gdeflate_cpu_compression1_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -44,7 +44,7 @@ rule CUDA_COMPILER__gdeflate_cpu_compression1_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression1_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -55,7 +55,7 @@ rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression1_Release
 rule CUDA_COMPILER__gdeflate_cpu_compression2_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -63,7 +63,7 @@ rule CUDA_COMPILER__gdeflate_cpu_compression2_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression2_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -74,7 +74,7 @@ rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression2_Release
 rule CUDA_COMPILER__gdeflate_cpu_compressiongzip_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -82,7 +82,7 @@ rule CUDA_COMPILER__gdeflate_cpu_compressiongzip_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compressiongzip_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -93,7 +93,7 @@ rule CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compressiongzip_Release
 rule CUDA_COMPILER__nvcomp_gds_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -101,7 +101,7 @@ rule CUDA_COMPILER__nvcomp_gds_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__nvcomp_gds_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -112,7 +112,7 @@ rule CUDA_EXECUTABLE_LINKER__nvcomp_gds_Release
 rule CUDA_COMPILER__lz4_cpu_compression_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -120,7 +120,7 @@ rule CUDA_COMPILER__lz4_cpu_compression_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__lz4_cpu_compression_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -131,7 +131,7 @@ rule CUDA_EXECUTABLE_LINKER__lz4_cpu_compression_Release
 rule CUDA_COMPILER__lz4_cpu_decompression_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -139,7 +139,7 @@ rule CUDA_COMPILER__lz4_cpu_decompression_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__lz4_cpu_decompression_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -188,7 +188,7 @@ rule CXX_EXECUTABLE_LINKER__high_level_quickstart_example_Release
 rule CUDA_COMPILER__deflate_cpu_compression_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -217,7 +217,7 @@ rule CXX_EXECUTABLE_LINKER__deflate_cpu_compression_Release
 rule CUDA_COMPILER__deflate_cpu_decompression_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -225,7 +225,7 @@ rule CUDA_COMPILER__deflate_cpu_decompression_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__deflate_cpu_decompression_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 
@@ -236,7 +236,7 @@ rule CUDA_EXECUTABLE_LINKER__deflate_cpu_decompression_Release
 rule CUDA_COMPILER__gzip_gpu_decompression_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
-  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
+  command = ${LAUNCHER}${CODE_CHECK}/usr/local/cuda-12.3/bin/nvcc -forward-unknown-to-host-compiler $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -x cu -c $in -o $out
   description = Building CUDA object $out
 
 
@@ -244,7 +244,7 @@ rule CUDA_COMPILER__gzip_gpu_decompression_unscanned_Release
 # Rule for linking CUDA executable.
 
 rule CUDA_EXECUTABLE_LINKER__gzip_gpu_decompression_Release
-  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-11.6/targets/x86_64-linux/lib" && $POST_BUILD
+  command = $PRE_LINK && /usr/bin/g++ $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda-12.3/targets/x86_64-linux/lib" && $POST_BUILD
   description = Linking CUDA executable $TARGET_FILE
   restat = $RESTAT
 

@@ -52,8 +52,8 @@ build cmake_object_order_depends_target_gdeflate_cpu_compression: phony || .
 build CMakeFiles/gdeflate_cpu_compression.dir/gdeflate_cpu_compression.cu.o: CUDA_COMPILER__gdeflate_cpu_compression_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/gdeflate_cpu_compression.cu || cmake_object_order_depends_target_gdeflate_cpu_compression
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/gdeflate_cpu_compression.dir/gdeflate_cpu_compression.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compression.dir
   OBJECT_FILE_DIR = CMakeFiles/gdeflate_cpu_compression.dir
   TARGET_COMPILE_PDB = CMakeFiles/gdeflate_cpu_compression.dir/
@@ -67,9 +67,9 @@ build CMakeFiles/gdeflate_cpu_compression.dir/gdeflate_cpu_compression.cu.o: CUD
 #############################################
 # Link the executable gdeflate_cpu_compression
 
-build gdeflate_cpu_compression: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression_Release CMakeFiles/gdeflate_cpu_compression.dir/gdeflate_cpu_compression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/libz.so  -llz4  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build gdeflate_cpu_compression: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression_Release CMakeFiles/gdeflate_cpu_compression.dir/gdeflate_cpu_compression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/libz.so  -llz4  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compression.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -89,8 +89,8 @@ build cmake_object_order_depends_target_gdeflate_cpu_compression1: phony || .
 build CMakeFiles/gdeflate_cpu_compression1.dir/gdeflate_cpu_compression1.cu.o: CUDA_COMPILER__gdeflate_cpu_compression1_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/gdeflate_cpu_compression1.cu || cmake_object_order_depends_target_gdeflate_cpu_compression1
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/gdeflate_cpu_compression1.dir/gdeflate_cpu_compression1.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compression1.dir
   OBJECT_FILE_DIR = CMakeFiles/gdeflate_cpu_compression1.dir
   TARGET_COMPILE_PDB = CMakeFiles/gdeflate_cpu_compression1.dir/
@@ -104,9 +104,9 @@ build CMakeFiles/gdeflate_cpu_compression1.dir/gdeflate_cpu_compression1.cu.o: C
 #############################################
 # Link the executable gdeflate_cpu_compression1
 
-build gdeflate_cpu_compression1: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression1_Release CMakeFiles/gdeflate_cpu_compression1.dir/gdeflate_cpu_compression1.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build gdeflate_cpu_compression1: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression1_Release CMakeFiles/gdeflate_cpu_compression1.dir/gdeflate_cpu_compression1.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compression1.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -126,8 +126,8 @@ build cmake_object_order_depends_target_gdeflate_cpu_compression2: phony || .
 build CMakeFiles/gdeflate_cpu_compression2.dir/gdeflate_cpu_compression2.cu.o: CUDA_COMPILER__gdeflate_cpu_compression2_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/gdeflate_cpu_compression2.cu || cmake_object_order_depends_target_gdeflate_cpu_compression2
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/gdeflate_cpu_compression2.dir/gdeflate_cpu_compression2.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compression2.dir
   OBJECT_FILE_DIR = CMakeFiles/gdeflate_cpu_compression2.dir
   TARGET_COMPILE_PDB = CMakeFiles/gdeflate_cpu_compression2.dir/
@@ -141,9 +141,9 @@ build CMakeFiles/gdeflate_cpu_compression2.dir/gdeflate_cpu_compression2.cu.o: C
 #############################################
 # Link the executable gdeflate_cpu_compression2
 
-build gdeflate_cpu_compression2: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression2_Release CMakeFiles/gdeflate_cpu_compression2.dir/gdeflate_cpu_compression2.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build gdeflate_cpu_compression2: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compression2_Release CMakeFiles/gdeflate_cpu_compression2.dir/gdeflate_cpu_compression2.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compression2.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -163,8 +163,8 @@ build cmake_object_order_depends_target_gdeflate_cpu_compressiongzip: phony || .
 build CMakeFiles/gdeflate_cpu_compressiongzip.dir/gdeflate_cpu_compressiongzip.cu.o: CUDA_COMPILER__gdeflate_cpu_compressiongzip_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/gdeflate_cpu_compressiongzip.cu || cmake_object_order_depends_target_gdeflate_cpu_compressiongzip
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/gdeflate_cpu_compressiongzip.dir/gdeflate_cpu_compressiongzip.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compressiongzip.dir
   OBJECT_FILE_DIR = CMakeFiles/gdeflate_cpu_compressiongzip.dir
   TARGET_COMPILE_PDB = CMakeFiles/gdeflate_cpu_compressiongzip.dir/
@@ -178,9 +178,9 @@ build CMakeFiles/gdeflate_cpu_compressiongzip.dir/gdeflate_cpu_compressiongzip.c
 #############################################
 # Link the executable gdeflate_cpu_compressiongzip
 
-build gdeflate_cpu_compressiongzip: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compressiongzip_Release CMakeFiles/gdeflate_cpu_compressiongzip.dir/gdeflate_cpu_compressiongzip.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build gdeflate_cpu_compressiongzip: CUDA_EXECUTABLE_LINKER__gdeflate_cpu_compressiongzip_Release CMakeFiles/gdeflate_cpu_compressiongzip.dir/gdeflate_cpu_compressiongzip.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp_cpu.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/gdeflate_cpu_compressiongzip.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -200,8 +200,8 @@ build cmake_object_order_depends_target_nvcomp_gds: phony || .
 build CMakeFiles/nvcomp_gds.dir/nvcomp_gds.cu.o: CUDA_COMPILER__nvcomp_gds_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/nvcomp_gds.cu || cmake_object_order_depends_target_nvcomp_gds
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/nvcomp_gds.dir/nvcomp_gds.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/nvcomp_gds.dir
   OBJECT_FILE_DIR = CMakeFiles/nvcomp_gds.dir
   TARGET_COMPILE_PDB = CMakeFiles/nvcomp_gds.dir/
@@ -215,9 +215,9 @@ build CMakeFiles/nvcomp_gds.dir/nvcomp_gds.cu.o: CUDA_COMPILER__nvcomp_gds_unsca
 #############################################
 # Link the executable nvcomp_gds
 
-build nvcomp_gds: CUDA_EXECUTABLE_LINKER__nvcomp_gds_Release CMakeFiles/nvcomp_gds.dir/nvcomp_gds.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  -lcufile  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build nvcomp_gds: CUDA_EXECUTABLE_LINKER__nvcomp_gds_Release CMakeFiles/nvcomp_gds.dir/nvcomp_gds.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  -lcufile  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/nvcomp_gds.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -237,8 +237,8 @@ build cmake_object_order_depends_target_lz4_cpu_compression: phony || .
 build CMakeFiles/lz4_cpu_compression.dir/lz4_cpu_compression.cu.o: CUDA_COMPILER__lz4_cpu_compression_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/lz4_cpu_compression.cu || cmake_object_order_depends_target_lz4_cpu_compression
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/lz4_cpu_compression.dir/lz4_cpu_compression.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/lz4_cpu_compression.dir
   OBJECT_FILE_DIR = CMakeFiles/lz4_cpu_compression.dir
   TARGET_COMPILE_PDB = CMakeFiles/lz4_cpu_compression.dir/
@@ -252,9 +252,9 @@ build CMakeFiles/lz4_cpu_compression.dir/lz4_cpu_compression.cu.o: CUDA_COMPILER
 #############################################
 # Link the executable lz4_cpu_compression
 
-build lz4_cpu_compression: CUDA_EXECUTABLE_LINKER__lz4_cpu_compression_Release CMakeFiles/lz4_cpu_compression.dir/lz4_cpu_compression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/liblz4.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/liblz4.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build lz4_cpu_compression: CUDA_EXECUTABLE_LINKER__lz4_cpu_compression_Release CMakeFiles/lz4_cpu_compression.dir/lz4_cpu_compression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/liblz4.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/liblz4.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/lz4_cpu_compression.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -274,8 +274,8 @@ build cmake_object_order_depends_target_lz4_cpu_decompression: phony || .
 build CMakeFiles/lz4_cpu_decompression.dir/lz4_cpu_decompression.cu.o: CUDA_COMPILER__lz4_cpu_decompression_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/lz4_cpu_decompression.cu || cmake_object_order_depends_target_lz4_cpu_decompression
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/lz4_cpu_decompression.dir/lz4_cpu_decompression.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/lz4_cpu_decompression.dir
   OBJECT_FILE_DIR = CMakeFiles/lz4_cpu_decompression.dir
   TARGET_COMPILE_PDB = CMakeFiles/lz4_cpu_decompression.dir/
@@ -289,9 +289,9 @@ build CMakeFiles/lz4_cpu_decompression.dir/lz4_cpu_decompression.cu.o: CUDA_COMP
 #############################################
 # Link the executable lz4_cpu_decompression
 
-build lz4_cpu_decompression: CUDA_EXECUTABLE_LINKER__lz4_cpu_decompression_Release CMakeFiles/lz4_cpu_decompression.dir/lz4_cpu_decompression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/liblz4.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/liblz4.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build lz4_cpu_decompression: CUDA_EXECUTABLE_LINKER__lz4_cpu_decompression_Release CMakeFiles/lz4_cpu_decompression.dir/lz4_cpu_decompression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/liblz4.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/liblz4.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/lz4_cpu_decompression.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -312,7 +312,7 @@ build CMakeFiles/low_level_quickstart_example.dir/low_level_quickstart_example.c
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/low_level_quickstart_example.dir/low_level_quickstart_example.cpp.o.d
   FLAGS = -O3 -DNDEBUG -std=c++11 -fdiagnostics-color=always
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/low_level_quickstart_example.dir
   OBJECT_FILE_DIR = CMakeFiles/low_level_quickstart_example.dir
   TARGET_COMPILE_PDB = CMakeFiles/low_level_quickstart_example.dir/
@@ -326,9 +326,9 @@ build CMakeFiles/low_level_quickstart_example.dir/low_level_quickstart_example.c
 #############################################
 # Link the executable low_level_quickstart_example
 
-build low_level_quickstart_example: CXX_EXECUTABLE_LINKER__low_level_quickstart_example_Release CMakeFiles/low_level_quickstart_example.dir/low_level_quickstart_example.cpp.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+build low_level_quickstart_example: CXX_EXECUTABLE_LINKER__low_level_quickstart_example_Release CMakeFiles/low_level_quickstart_example.dir/low_level_quickstart_example.cpp.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
   FLAGS = -O3 -DNDEBUG
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a
   OBJECT_DIR = CMakeFiles/low_level_quickstart_example.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -349,7 +349,7 @@ build CMakeFiles/high_level_quickstart_example.dir/high_level_quickstart_example
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/high_level_quickstart_example.dir/high_level_quickstart_example.cpp.o.d
   FLAGS = -O3 -DNDEBUG -std=c++11 -fdiagnostics-color=always
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/high_level_quickstart_example.dir
   OBJECT_FILE_DIR = CMakeFiles/high_level_quickstart_example.dir
   TARGET_COMPILE_PDB = CMakeFiles/high_level_quickstart_example.dir/
@@ -363,9 +363,9 @@ build CMakeFiles/high_level_quickstart_example.dir/high_level_quickstart_example
 #############################################
 # Link the executable high_level_quickstart_example
 
-build high_level_quickstart_example: CXX_EXECUTABLE_LINKER__high_level_quickstart_example_Release CMakeFiles/high_level_quickstart_example.dir/high_level_quickstart_example.cpp.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+build high_level_quickstart_example: CXX_EXECUTABLE_LINKER__high_level_quickstart_example_Release CMakeFiles/high_level_quickstart_example.dir/high_level_quickstart_example.cpp.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
   FLAGS = -O3 -DNDEBUG
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a
   OBJECT_DIR = CMakeFiles/high_level_quickstart_example.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -385,8 +385,8 @@ build cmake_object_order_depends_target_deflate_cpu_compression: phony || .
 build CMakeFiles/deflate_cpu_compression.dir/deflate_cpu_compression.cu.o: CUDA_COMPILER__deflate_cpu_compression_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/deflate_cpu_compression.cu || cmake_object_order_depends_target_deflate_cpu_compression
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/deflate_cpu_compression.dir/deflate_cpu_compression.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/deflate_cpu_compression.dir
   OBJECT_FILE_DIR = CMakeFiles/deflate_cpu_compression.dir
   TARGET_COMPILE_PDB = CMakeFiles/deflate_cpu_compression.dir/
@@ -396,7 +396,7 @@ build CMakeFiles/deflate_cpu_compression.dir/example.cpp.o: CXX_COMPILER__deflat
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/deflate_cpu_compression.dir/example.cpp.o.d
   FLAGS = -O3 -DNDEBUG -std=c++11 -fdiagnostics-color=always
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/deflate_cpu_compression.dir
   OBJECT_FILE_DIR = CMakeFiles/deflate_cpu_compression.dir
   TARGET_COMPILE_PDB = CMakeFiles/deflate_cpu_compression.dir/
@@ -406,7 +406,7 @@ build CMakeFiles/deflate_cpu_compression.dir/BatchDataCPU.cpp.o: CXX_COMPILER__d
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/deflate_cpu_compression.dir/BatchDataCPU.cpp.o.d
   FLAGS = -O3 -DNDEBUG -std=c++11 -fdiagnostics-color=always
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/deflate_cpu_compression.dir
   OBJECT_FILE_DIR = CMakeFiles/deflate_cpu_compression.dir
   TARGET_COMPILE_PDB = CMakeFiles/deflate_cpu_compression.dir/
@@ -420,10 +420,10 @@ build CMakeFiles/deflate_cpu_compression.dir/BatchDataCPU.cpp.o: CXX_COMPILER__d
 #############################################
 # Link the executable deflate_cpu_compression
 
-build deflate_cpu_compression: CXX_EXECUTABLE_LINKER__deflate_cpu_compression_Release CMakeFiles/deflate_cpu_compression.dir/deflate_cpu_compression.cu.o CMakeFiles/deflate_cpu_compression.dir/example.cpp.o CMakeFiles/deflate_cpu_compression.dir/BatchDataCPU.cpp.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/lib/x86_64-linux-gnu/libz.so /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libdeflate.so /usr/lib/x86_64-linux-gnu/librt.a
+build deflate_cpu_compression: CXX_EXECUTABLE_LINKER__deflate_cpu_compression_Release CMakeFiles/deflate_cpu_compression.dir/deflate_cpu_compression.cu.o CMakeFiles/deflate_cpu_compression.dir/example.cpp.o CMakeFiles/deflate_cpu_compression.dir/BatchDataCPU.cpp.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/lib/x86_64-linux-gnu/libz.so /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libdeflate.so /usr/lib/x86_64-linux-gnu/librt.a
   FLAGS = -O3 -DNDEBUG
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/lib/x86_64-linux-gnu/libz.so  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/libdeflate.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
-  LINK_PATH = -L/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs   -L/usr/local/cuda-11.6/targets/x86_64-linux/lib
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/lib/x86_64-linux-gnu/libz.so  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/libdeflate.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+  LINK_PATH = -L/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs   -L/usr/local/cuda-12.3/targets/x86_64-linux/lib
   OBJECT_DIR = CMakeFiles/deflate_cpu_compression.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -443,8 +443,8 @@ build cmake_object_order_depends_target_deflate_cpu_decompression: phony || .
 build CMakeFiles/deflate_cpu_decompression.dir/deflate_cpu_decompression.cu.o: CUDA_COMPILER__deflate_cpu_decompression_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/deflate_cpu_decompression.cu || cmake_object_order_depends_target_deflate_cpu_decompression
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/deflate_cpu_decompression.dir/deflate_cpu_decompression.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/deflate_cpu_decompression.dir
   OBJECT_FILE_DIR = CMakeFiles/deflate_cpu_decompression.dir
   TARGET_COMPILE_PDB = CMakeFiles/deflate_cpu_decompression.dir/
@@ -458,9 +458,9 @@ build CMakeFiles/deflate_cpu_decompression.dir/deflate_cpu_decompression.cu.o: C
 #############################################
 # Link the executable deflate_cpu_decompression
 
-build deflate_cpu_decompression: CUDA_EXECUTABLE_LINKER__deflate_cpu_decompression_Release CMakeFiles/deflate_cpu_decompression.dir/deflate_cpu_decompression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/lib/x86_64-linux-gnu/libz.so /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libdeflate.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/lib/x86_64-linux-gnu/libz.so  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/libdeflate.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build deflate_cpu_decompression: CUDA_EXECUTABLE_LINKER__deflate_cpu_decompression_Release CMakeFiles/deflate_cpu_decompression.dir/deflate_cpu_decompression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/lib/x86_64-linux-gnu/libz.so /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libdeflate.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/lib/x86_64-linux-gnu/libz.so  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  /usr/lib/x86_64-linux-gnu/libdeflate.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/deflate_cpu_decompression.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -480,8 +480,8 @@ build cmake_object_order_depends_target_gzip_gpu_decompression: phony || .
 build CMakeFiles/gzip_gpu_decompression.dir/gzip_gpu_decompression.cu.o: CUDA_COMPILER__gzip_gpu_decompression_unscanned_Release /home/jamalids/development/big-data-compression/gpu-compression/examples/gzip_gpu_decompression.cu || cmake_object_order_depends_target_gzip_gpu_decompression
   DEFINES = -DTHRUST_CUB_WRAPPED_NAMESPACE=nvcomp
   DEP_FILE = CMakeFiles/gzip_gpu_decompression.dir/gzip_gpu_decompression.cu.o.d
-  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-11.6/targets/x86_64-linux/include
+  FLAGS = -O3 -DNDEBUG -std=c++11 "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  INCLUDES = -isystem /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/include -isystem /usr/local/cuda-12.3/targets/x86_64-linux/include
   OBJECT_DIR = CMakeFiles/gzip_gpu_decompression.dir
   OBJECT_FILE_DIR = CMakeFiles/gzip_gpu_decompression.dir
   TARGET_COMPILE_PDB = CMakeFiles/gzip_gpu_decompression.dir/
@@ -495,9 +495,9 @@ build CMakeFiles/gzip_gpu_decompression.dir/gzip_gpu_decompression.cu.o: CUDA_CO
 #############################################
 # Link the executable gzip_gpu_decompression
 
-build gzip_gpu_decompression: CUDA_EXECUTABLE_LINKER__gzip_gpu_decompression_Release CMakeFiles/gzip_gpu_decompression.dir/gzip_gpu_decompression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/lib/x86_64-linux-gnu/libz.so /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
-  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]"
-  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/lib/x86_64-linux-gnu/libz.so  /usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+build gzip_gpu_decompression: CUDA_EXECUTABLE_LINKER__gzip_gpu_decompression_Release CMakeFiles/gzip_gpu_decompression.dir/gzip_gpu_decompression.cu.o | /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1 /usr/lib/x86_64-linux-gnu/libz.so /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/librt.a
+  FLAGS = -O3 -DNDEBUG "--generate-code=arch=compute_60,code=[compute_60,sm_60]" "--generate-code=arch=compute_70,code=[sm_70]" "--generate-code=arch=compute_75,code=[sm_75]" "--generate-code=arch=compute_80,code=[compute_80,sm_80]" "--generate-code=arch=compute_86,code=[compute_86,sm_86]" "--generate-code=arch=compute_89,code=[compute_89,sm_89]" "--generate-code=arch=compute_90,code=[compute_90,sm_90]"
+  LINK_LIBRARIES = -Wl,-rpath,/home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib  /home/jamalids/nvcomp-linux-x86_64-4.1.1.1_cuda11-archive/lib/libnvcomp.so.4.1.1.1  /usr/lib/x86_64-linux-gnu/libz.so  /usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a  /usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so  -ldl  /usr/lib/x86_64-linux-gnu/librt.a  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
   OBJECT_DIR = CMakeFiles/gzip_gpu_decompression.dir
   POST_BUILD = :
   PRE_LINK = :

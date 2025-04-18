@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "deflate_cpu_decompression"
+			"path" : "lz4_cpu_compression"
 		}
 	],
 	"backtrace" : 1,
@@ -29,19 +29,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 131,
+				"line" : 96,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 133,
+				"line" : 98,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 135,
+				"line" : 100,
 				"parent" : 0
 			},
 			{
@@ -90,7 +90,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O3 -DNDEBUG -std=c++11 \"--generate-code=arch=compute_60,code=[compute_60,sm_60]\" \"--generate-code=arch=compute_70,code=[sm_70]\" \"--generate-code=arch=compute_75,code=[sm_75]\" \"--generate-code=arch=compute_80,code=[compute_80,sm_80]\" \"--generate-code=arch=compute_86,code=[compute_86,sm_86]\""
+					"fragment" : "-O3 -DNDEBUG -std=c++11 \"--generate-code=arch=compute_60,code=[compute_60,sm_60]\" \"--generate-code=arch=compute_70,code=[sm_70]\" \"--generate-code=arch=compute_75,code=[sm_75]\" \"--generate-code=arch=compute_80,code=[compute_80,sm_80]\" \"--generate-code=arch=compute_86,code=[compute_86,sm_86]\" \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" \"--generate-code=arch=compute_90,code=[compute_90,sm_90]\""
 				}
 			],
 			"defines" : 
@@ -110,7 +110,7 @@
 				{
 					"backtrace" : 2,
 					"isSystem" : true,
-					"path" : "/usr/local/cuda-11.6/targets/x86_64-linux/include"
+					"path" : "/usr/local/cuda-12.3/targets/x86_64-linux/include"
 				}
 			],
 			"language" : "CUDA",
@@ -128,13 +128,13 @@
 			]
 		}
 	],
-	"id" : "deflate_cpu_decompression::@6890427a1f51a3e7e1df",
+	"id" : "lz4_cpu_compression::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-O3 -DNDEBUG \"--generate-code=arch=compute_60,code=[compute_60,sm_60]\" \"--generate-code=arch=compute_70,code=[sm_70]\" \"--generate-code=arch=compute_75,code=[sm_75]\" \"--generate-code=arch=compute_80,code=[compute_80,sm_80]\" \"--generate-code=arch=compute_86,code=[compute_86,sm_86]\"",
+				"fragment" : "-O3 -DNDEBUG \"--generate-code=arch=compute_60,code=[compute_60,sm_60]\" \"--generate-code=arch=compute_70,code=[sm_70]\" \"--generate-code=arch=compute_75,code=[sm_75]\" \"--generate-code=arch=compute_80,code=[compute_80,sm_80]\" \"--generate-code=arch=compute_86,code=[compute_86,sm_86]\" \"--generate-code=arch=compute_89,code=[compute_89,sm_89]\" \"--generate-code=arch=compute_90,code=[compute_90,sm_90]\"",
 				"role" : "flags"
 			},
 			{
@@ -152,22 +152,17 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/lib/x86_64-linux-gnu/libz.so",
+				"fragment" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/libcudart_static.a",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/libcudart_static.a",
-				"role" : "libraries"
-			},
-			{
-				"backtrace" : 2,
-				"fragment" : "/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs/libcuda.so",
+				"fragment" : "/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs/libcuda.so",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "/usr/lib/x86_64-linux-gnu/libdeflate.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/liblz4.so",
 				"role" : "libraries"
 			},
 			{
@@ -203,8 +198,8 @@
 		],
 		"language" : "CUDA"
 	},
-	"name" : "deflate_cpu_decompression",
-	"nameOnDisk" : "deflate_cpu_decompression",
+	"name" : "lz4_cpu_compression",
+	"nameOnDisk" : "lz4_cpu_compression",
 	"paths" : 
 	{
 		"build" : ".",
@@ -225,7 +220,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "deflate_cpu_decompression.cu",
+			"path" : "lz4_cpu_compression.cu",
 			"sourceGroupIndex" : 0
 		}
 	],

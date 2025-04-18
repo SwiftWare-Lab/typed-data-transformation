@@ -20,8 +20,8 @@
 					],
 					"linkDirectories" : 
 					[
-						"/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs",
-						"/usr/local/cuda-11.6/targets/x86_64-linux/lib",
+						"/usr/local/cuda-12.3/targets/x86_64-linux/lib/stubs",
+						"/usr/local/cuda-12.3/targets/x86_64-linux/lib",
 						"/usr/lib/gcc/x86_64-linux-gnu/11",
 						"/usr/lib/x86_64-linux-gnu",
 						"/usr/lib",
@@ -40,8 +40,8 @@
 						"gcc"
 					]
 				},
-				"path" : "/usr/local/cuda-11.6/bin/nvcc",
-				"version" : "11.6.124"
+				"path" : "/usr/local/cuda-12.3/bin/nvcc",
+				"version" : "12.3.52"
 			},
 			"language" : "CUDA",
 			"sourceFileExtensions" : 
