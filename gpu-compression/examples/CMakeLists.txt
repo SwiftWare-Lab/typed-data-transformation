@@ -153,4 +153,3 @@ find_path(ZSTD_INCLUDE_DIR NAMES zstd.h
         /usr/local/include
 )
 target_link_libraries(gdeflate_cpu_compression PRIVATE lz4)
-

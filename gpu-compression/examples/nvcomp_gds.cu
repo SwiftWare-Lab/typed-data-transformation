@@ -15,6 +15,7 @@
 #include <map>
 #include <functional>
 #include <algorithm>
+#include <memory>
 
 #include <cuda_runtime.h>
 #include <nvtx3/nvToolsExt.h>
@@ -202,7 +203,7 @@ int runSingleDataset(const std::string &path, int precisionBits) {
   std::string csvFilename = "/home/jamalids/Documents/" + datasetName + ".csv";
 
 
-  // Simple component config (replace with real ones as needed)
+  //  component config
   std::vector<std::vector<std::vector<size_t>>> candidateConfigs = {
     {{1}, {2}, {3}, {4}}
   };
@@ -249,139 +250,107 @@ int runSingleDataset(const std::string &path, int precisionBits) {
   CUDA_CHECK(cudaFreeHost(h_invalid));
   CUDA_CHECK(cudaStreamDestroy(stream));
 
-  // Prepare containers for CSV rows
+
   std::vector<std::string> compRows, blockRows;
 
-  // --- Part II: Component-based Compression/Decompression ---
-  for (auto &cfg : candidateConfigs) {
-    std::vector<std::vector<uint8_t>> components;
-    splitBytesIntoComponents(globalBytes, components, cfg, 16);
+ // --- Part II: Component-based Compression/Decompression ---
 
-    double totalC2 = 0.0, totalD2 = 0.0;
-    size_t sum2 = 0;
+for (auto &cfg : candidateConfigs) {
+  // 1) Split host bytes into components
+  std::vector<std::vector<uint8_t>> components;
+  splitBytesIntoComponents(globalBytes, components, cfg, /*threads=*/16);
+  size_t N = components.size();
 
-    for (auto &blk : components) {
-      cudaStream_t s2; CUDA_CHECK(cudaStreamCreate(&s2));
-      LZ4Manager mgr(1<<16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, s2);
-      auto cCfg = mgr.configure_compression(blk.size());
-      size_t mx = ((cCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
-      uint8_t *d_buf = nullptr;
-      CUDA_CHECK(cudaMalloc(&d_buf, mx));
-      uint8_t *d_i = nullptr, *d_o2 = nullptr;
-      CUDA_CHECK(cudaMalloc(&d_i, blk.size()));
-      CUDA_CHECK(cudaMalloc(&d_o2, blk.size()));
-      CUDA_CHECK(cudaMemcpy(d_i, blk.data(), blk.size(), cudaMemcpyHostToDevice));
-
-      float ctime = measureCudaTime([&](cudaStream_t s3) {
-        mgr.compress(d_i, d_buf, cCfg);
-      }, s2);
-      size_t cbytes = mgr.get_compressed_output_size(d_buf);
-
-      auto dCfg = mgr.configure_decompression(cCfg);
-      float dtime = measureCudaTime([&](cudaStream_t s3) {
-        mgr.decompress(d_o2, d_buf, dCfg);
-      }, s2);
-
-      totalC2 += ctime;
-      totalD2 += dtime;
-      sum2 += cbytes;
-
-      mgr.deallocate_gpu_mem();
-      CUDA_CHECK(cudaFree(d_i));
-      CUDA_CHECK(cudaFree(d_o2));
-      CUDA_CHECK(cudaFree(d_buf));
-      CUDA_CHECK(cudaStreamDestroy(s2));
-    }
-
-    double thrC2 = (totalBytes / 1e6) / totalC2;
-    double thrD2 = (totalBytes / 1e6) / totalD2;
-    double rat2 = double(totalBytes) / sum2;
-
-    std::ostringstream row2;
-    row2 << datasetName
-         << ",Component," << totalBytes << "," << sum2 << ","
-         << std::fixed << std::setprecision(2) << rat2 << ","
-         << totalC2 << "," << totalD2 << ","
-         << thrC2 << "," << thrD2 << ","
-         << configToString(cfg);
-    compRows.push_back(row2.str());
+  // 2) Create one CUDA stream + LZ4Manager per component
+  std::vector<cudaStream_t> streams(N);
+  std::vector<std::unique_ptr<LZ4Manager>> mgrs;
+  mgrs.reserve(N);
+  nvcompBatchedLZ4Opts_t opts;
+  opts.data_type = NVCOMP_TYPE_CHAR;
+  for (size_t i = 0; i < N; ++i) {
+    CUDA_CHECK(cudaStreamCreate(&streams[i]));
+    mgrs.emplace_back(
+      new LZ4Manager(
+        /*batchBytes=*/1 << 16,
+        opts,
+        streams[i]
+      )
+    );
   }
 
-  // --- Part III: Block‑aggregated Component Compression/Decompression ---
-  // const int numBlocks = 4;
-  // size_t blockSize = (totalBytes + numBlocks - 1) / numBlocks;
-
-  cudaDeviceProp prop;
-  CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
-  int numBlocks = prop.multiProcessorCount;
-  numBlocks=numBlocks/8;
-  std::cout << "Launching with numBlocks = " << numBlocks << std::endl;
-
-
-
-  // Now split the data into 'numBlocks'
-  size_t blockSize = (totalBytes + numBlocks - 1) / numBlocks;
-
-
-  for (auto &cfg : candidateConfigs) {
-    double totalC3 = 0.0, totalD3 = 0.0;
-    size_t sum3 = 0;
-
-    for (int b = 0; b < numBlocks; ++b) {
-      size_t off = b * blockSize;
-      size_t sz  = std::min(blockSize, totalBytes - off);
-      std::vector<uint8_t> sub(globalBytes.begin() + off,
-                                globalBytes.begin() + off + sz);
-      std::vector<std::vector<uint8_t>> comps;
-      splitBytesIntoComponents(sub, comps, cfg, 16);
-
-      for (auto &blk : comps) {
-        cudaStream_t s3; CUDA_CHECK(cudaStreamCreate(&s3));
-        LZ4Manager mgr(1<<16, nvcompBatchedLZ4Opts_t{NVCOMP_TYPE_CHAR}, s3);
-        auto cCfg = mgr.configure_compression(blk.size());
-        size_t mx = ((cCfg.max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
-        uint8_t *d_buf = nullptr;
-        CUDA_CHECK(cudaMalloc(&d_buf, mx));
-        uint8_t *d_i = nullptr, *d_o3 = nullptr;
-        CUDA_CHECK(cudaMalloc(&d_i, blk.size()));
-        CUDA_CHECK(cudaMalloc(&d_o3, blk.size()));
-        CUDA_CHECK(cudaMemcpy(d_i, blk.data(), blk.size(), cudaMemcpyHostToDevice));
-
-        float ctime = measureCudaTime([&](cudaStream_t s4) {
-          mgr.compress(d_i, d_buf, cCfg);
-        }, s3);
-        size_t cbytes = mgr.get_compressed_output_size(d_buf);
-
-        auto dCfg = mgr.configure_decompression(cCfg);
-        float dtime = measureCudaTime([&](cudaStream_t s4) {
-          mgr.decompress(d_o3, d_buf, dCfg);
-        }, s3);
-
-        totalC3 += ctime;
-        totalD3 += dtime;
-        sum3    += cbytes;
-
-        mgr.deallocate_gpu_mem();
-        CUDA_CHECK(cudaFree(d_i));
-        CUDA_CHECK(cudaFree(d_o3));
-        CUDA_CHECK(cudaFree(d_buf));
-        CUDA_CHECK(cudaStreamDestroy(s3));
-      }
-    }
-
-    double thrC3 = (totalBytes / 1e6) / totalC3;
-    double thrD3 = (totalBytes / 1e6) / totalD3;
-    double rat3  = double(totalBytes) / sum3;
-
-    std::ostringstream row3;
-    row3 << datasetName
-         << ",BlockAggregated," << totalBytes << "," << sum3 << ","
-         << std::fixed << std::setprecision(2) << rat3 << ","
-         << totalC3 << "," << totalD3 << ","
-         << thrC3 << "," << thrD3 << ","
-         << configToString(cfg);
-    blockRows.push_back(row3.str());
+  // 3) Configure compression for each component
+  using CompCfg = decltype(mgrs[0]->configure_compression(0));
+  std::vector<CompCfg> cCfgs;
+  cCfgs.reserve(N);
+  for (size_t i = 0; i < N; ++i) {
+    cCfgs.push_back(
+      mgrs[i]->configure_compression(components[i].size()));
   }
+
+  // 4) Allocate device input, output, and compressed buffers
+  std::vector<uint8_t*> d_in(N), d_out(N), d_buf(N);
+  for (size_t i = 0; i < N; ++i) {
+    size_t sz     = components[i].size();
+    size_t maxBuf = ((cCfgs[i].max_compressed_buffer_size - 1) / 4096 + 1) * 4096;
+
+    CUDA_CHECK(cudaMalloc(&d_in[i],  sz));
+    CUDA_CHECK(cudaMalloc(&d_out[i], sz));
+    CUDA_CHECK(cudaMalloc(&d_buf[i], maxBuf));
+
+    CUDA_CHECK(cudaMemcpy(
+      d_in[i],
+      components[i].data(),
+      sz,
+      cudaMemcpyHostToDevice
+    ));
+  }
+
+  // 5) Time all N compress calls in one go
+  float tC2 = measureCudaTime([&](cudaStream_t) {
+    for (size_t i = 0; i < N; ++i) {
+      mgrs[i]->compress(d_in[i], d_buf[i], cCfgs[i]);
+    }
+  }, streams[0]);
+
+  // 6) Sum compressed sizes
+  size_t sum2 = 0;
+  for (size_t i = 0; i < N; ++i) {
+    sum2 += mgrs[i]->get_compressed_output_size(d_buf[i]);
+  }
+
+  // 7) Time all N decompress calls in one go
+  float tD2 = measureCudaTime([&](cudaStream_t) {
+    for (size_t i = 0; i < N; ++i) {
+      auto dCfg = mgrs[i]->configure_decompression(cCfgs[i]);
+      mgrs[i]->decompress(d_out[i], d_buf[i], dCfg);
+    }
+  }, streams[0]);
+
+  // 8) Compute throughput and ratio
+  double thrC2 = (totalBytes / 1e6) / tC2;
+  double thrD2 = (totalBytes / 1e6) / tD2;
+  double rat2  = double(totalBytes) / sum2;
+
+  // 9) Emit CSV row
+  std::ostringstream row2;
+  row2 << datasetName
+       << ",Component," << totalBytes << "," << sum2 << ","
+       << std::fixed << std::setprecision(2) << rat2 << ","
+       << tC2 << "," << tD2 << ","
+       << thrC2 << "," << thrD2 << ","
+       << configToString(cfg);
+  compRows.push_back(row2.str());
+
+  // 10) Cleanup
+  for (size_t i = 0; i < N; ++i) {
+    mgrs[i]->deallocate_gpu_mem();
+    CUDA_CHECK(cudaFree(d_in[i]));
+    CUDA_CHECK(cudaFree(d_out[i]));
+    CUDA_CHECK(cudaFree(d_buf[i]));
+    CUDA_CHECK(cudaStreamDestroy(streams[i]));
+  }
+}
+
 
   // --- Write all results to CSV ---
   std::ofstream csv(csvFilename);
