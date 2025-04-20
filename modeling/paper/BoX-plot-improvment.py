@@ -4,11 +4,12 @@ from scipy.stats import gmean
 
 # Define file paths and corresponding compression tool names
 files = {
-    'lz4': '/home/jamalids/Documents/combine-com-through/lz4.csv',
-    'snappy': '/home/jamalids/Documents/combine-com-through/snappy.csv',
-    'zlib': '/home/jamalids/Documents/combine-com-through/zlib.csv',
-    'zstd': '/home/jamalids/Documents/combine-com-through/zstd.csv',
-    'bzip': '/home/jamalids/Documents/combine-com-through/bzip.csv'
+    'Lz4': '/home/jamalids/Documents/combine-com-through/lz4.csv',
+    'Snappy': '/home/jamalids/Documents/combine-com-through/snappy.csv',
+    'Zlib': '/home/jamalids/Documents/combine-com-through/zlib.csv',
+    'Zstd': '/home/jamalids/Documents/combine-com-through/zstd.csv',
+    'Bzip': '/home/jamalids/Documents/combine-com-through/bzip.csv',
+    'Lempel-Ziv': '/home/jamalids/Documents/combine-com-through/fastlz.csv'
 }
 
 # Read and process each CSV
@@ -31,6 +32,7 @@ print("Columns in the combined DataFrame:", combined_df.columns)
 combined_df['RunType'] = combined_df['RunType'].replace({
     "Chunked_Decompose_Parallel": "TDT",
     "Chunk-decompose_Parallel": "TDT",
+    "Decompose_Chunk_Parallel": "TDT",
     "Full": "standard"
 })
 
@@ -52,11 +54,12 @@ grouped_ratio = df_filtered.groupby(['compression_tool', 'RunType'])['Compressio
 ax_ratio = grouped_ratio.plot(kind='bar', figsize=(10, 6))
 ax_ratio.set_xlabel("Compression Tool")
 ax_ratio.set_ylabel("Geometric Mean Compression Ratio")
-ax_ratio.set_title("Geometric Mean Compression Ratio by Compression Tool and RunType")
+#ax_ratio.set_title("Geometric Mean Compression Ratio by Compression Tool and RunType")
 plt.xticks(rotation=0)
 plt.legend(title="RunType")
 plt.tight_layout()
 plt.savefig("/home/jamalids/Documents/combine-com-through/combine.png")
+plt.savefig("/home/jamalids/Documents/fundation-plot-fastlz.pdf", format='pdf')
 plt.close()
 
 
@@ -71,7 +74,7 @@ grouped_comp = df_filtered.groupby(['compression_tool', 'RunType'])['Compression
 grouped_decomp = df_filtered.groupby(['compression_tool', 'RunType'])['DecompressionThroughput'] \
     .agg(compute_gmean).unstack()
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+fig, axes = plt.subplots(1, 2, figsize=(14, 10))
 
 grouped_comp.plot(kind='bar', ax=axes[0])
 axes[0].set_xlabel("Compression Tool")
@@ -393,3 +396,131 @@ for suffix in ['32', '64']:
     plt.savefig(out_path)
     plt.close()
     print(f"Saved geometric mean plot for {suffix} datasets to {out_path}")
+#############################################
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Set global font size
+plt.rcParams.update({'font.size': 16})  # You can increase this value as needed
+
+# Merge TDT and standard by dataset and tool
+pivoted = df_filtered.pivot_table(index=['DatasetName', 'compression_tool'],
+                                   columns='RunType',
+                                   values='CompressionRatio').dropna()
+
+# Compute percent improvement: ((TDT - standard) / standard) * 100
+pivoted['CRI'] = (pivoted['TDT'] - pivoted['standard']) / pivoted['standard'] * 100
+
+# Group CRI values by compression_tool
+cri_per_tool = pivoted.reset_index().groupby('compression_tool')['CRI'].apply(list)
+
+# Create boxplot
+plt.figure(figsize=(14, 10))
+plt.boxplot(cri_per_tool.values, labels=cri_per_tool.index, patch_artist=True,
+            boxprops=dict(facecolor='lightcoral', color='black'),
+            medianprops=dict(color='black'))
+
+plt.ylabel("Compression Ratio Improvement (%)", fontsize=18)
+plt.xlabel("Compression Tool", fontsize=18)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+# plt.title("Distribution of Compression Ratio Improvement (TDT vs Standard)", fontsize=20)
+
+plt.grid(axis='y')
+plt.tight_layout()
+
+# Save
+boxplot_path = "/home/jamalids/Documents/combine-com-through/CRI_boxplot.png"
+plt.savefig("/home/jamalids/Documents/combine-com-through/CRI_boxplot.pdf", format='pdf')
+plt.savefig(boxplot_path)
+plt.close()
+print(f"CRI boxplot saved to: {boxplot_path}")
+#############################3
+from scipy.stats import gmean
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# --- Assuming this from before ---
+# grouped_ratio = df.groupby(['Application', 'Tool'])['CR'].mean().unstack()
+
+# Compute geometric mean compression ratio per application
+gmean_df = grouped_ratio.dropna().groupby(level=0).agg(gmean)  # Rows: Application, Cols: Tools
+
+# Calculate % improvement (lower CR is better, so we expect negative values for TDT improvement)
+if 'standard' in gmean_df.columns and 'TDT' in gmean_df.columns:
+    gmean_df['Improvement (%)'] = (gmean_df['TDT'] - gmean_df['standard']) / gmean_df['standard'] * 100
+else:
+    raise ValueError("Both 'standard' and 'TDT' must be columns in your data.")
+
+# Save to CSV
+improvement_csv = "/home/jamalids/Documents/combine-com-through/gmean_cri_percentage_improvement.csv"
+gmean_df[['Improvement (%)']].to_csv(improvement_csv)
+print(f"✅ % improvement saved to: {improvement_csv}")
+
+# Plot
+plt.figure(figsize=(12, 6))
+x = np.arange(len(gmean_df.index))
+bars = plt.bar(x, gmean_df['Improvement (%)'], color='skyblue')
+
+# Add labels above bars
+for i, v in enumerate(gmean_df['Improvement (%)']):
+    plt.text(x[i], v + (1 if v >= 0 else -4), f"{v:.1f}%", ha='center', va='bottom' if v >= 0 else 'top', fontsize=8)
+
+plt.axhline(0, color='gray', linestyle='--', linewidth=1)
+plt.xticks(x, gmean_df.index, rotation=45, ha='right')
+plt.ylabel("TDT vs Standard (% Difference in GMean CR)")
+plt.xlabel("Application")
+plt.title("Percentage Change in Geometric Mean Compression Ratio (TDT vs Standard)")
+plt.tight_layout()
+
+# Save plot
+plot_path = "/home/jamalids/Documents/combine-com-through/gmean_cri_percentage_improvement_plot.png"
+plt.savefig(plot_path)
+plt.close()
+print(f"✅ Plot saved to: {plot_path}")
+#######################
+from scipy.stats import gmean
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# --- Assuming grouped_ratio already exists: grouped by ['Application', 'Tool'], unstacked ---
+
+# Step 1: Compute geometric mean compression ratio per application
+gmean_df = grouped_ratio.dropna().groupby(level=0).agg(gmean)  # Rows: Application, Cols: Tools
+
+# Step 2: Calculate % improvement of TDT over Standard
+if 'standard' in gmean_df.columns and 'TDT' in gmean_df.columns:
+    gmean_df['Improvement (%)'] = ((gmean_df['TDT'] - gmean_df['standard']) / gmean_df['standard']) * 100
+else:
+    raise ValueError("❌ Missing 'standard' or 'TDT' column in your data.")
+
+# Step 3: Save improvement values to CSV
+improvement_csv = "/home/jamalids/Documents/combine-com-through/gmean_cri_percentage_improvement.csv"
+gmean_df[['Improvement (%)']].to_csv(improvement_csv)
+print(f"✅ % improvement saved to: {improvement_csv}")
+
+# Step 4: Line Plot instead of Bar Plot
+plt.figure(figsize=(14, 6))
+x = np.arange(len(gmean_df.index))
+improvement_values = gmean_df['Improvement (%)'].values
+application_names = gmean_df.index.tolist()
+
+plt.plot(x, improvement_values, marker='o', linestyle='-', color='blue', label='TDT vs Standard')
+
+# Add horizontal 0% reference line
+plt.axhline(0, color='gray', linestyle='--', linewidth=1)
+
+# Axis setup
+plt.xticks(x, application_names, rotation=45, ha='right')
+plt.ylabel("Improvement GMean Compression Ratio ",fontsize=12)
+plt.xlabel("Application", fontsize=12)
+#plt.title("GMean Compression Ratio Improvement (TDT vs Standard)")
+plt.tight_layout()
+
+# Save line plot
+plot_path = "/home/jamalids/Documents/combine-com-through/cri.png"
+plt.savefig(plot_path)
+plt.close()
+print(f"✅ Line plot saved to: {plot_path}")

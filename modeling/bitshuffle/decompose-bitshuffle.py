@@ -10,6 +10,10 @@ import bitshuffle.h5
 # We use lz4.block to allow passing a compression level parameter (similar to your C++ code).
 import lz4.block
 
+# --- Import Blosc for byte shuffle using its built-in shuffle option ---
+import blosc
+
+
 #############################################
 # Original Bitshuffle HDF5 Functions
 #############################################
@@ -40,6 +44,7 @@ def create_hdf5_bitshuffle(filename, data, compressor_opts, dataset_name="data")
         )
     return data
 
+
 def read_hdf5_bitshuffle(filename, dataset_name="data"):
     """
     Read and return the dataset from an HDF5 file created with the Bitshuffle filter.
@@ -47,6 +52,7 @@ def read_hdf5_bitshuffle(filename, dataset_name="data"):
     with h5py.File(filename, "r") as f:
         data = f[dataset_name][...]
     return data
+
 
 #############################################
 # Raw Compression Functions (Without Preconditioning)
@@ -70,7 +76,7 @@ def raw_zstd_compress_file(filename, data, level=3):
         f.write(comp_bytes)
     return comp_bytes
 
-# --- Modified Raw LZ4 Compression Function ---
+
 def raw_lz4_compress_file(filename, data, compressionLevel=3):
     """
     Compress the raw data using the lz4.block API and write the compressed bytes to a file.
@@ -87,89 +93,89 @@ def raw_lz4_compress_file(filename, data, compressionLevel=3):
         f.write(comp_bytes)
     return comp_bytes
 
+
 #############################################
-# Added: Byte Shuffle Functions
+# New: Blosc-based “Byte Shuffle” Compression Functions
 #############################################
-
-def byte_shuffle(data_bytes, element_size):
-    """
-    Apply a byte-level shuffle to the input bytes.
-
-    The function reshapes the raw byte stream into a 2D array of shape
-    (num_elements, element_size), transposes it (so that the nth byte of every
-    element is contiguous), and then flattens it back.
-
-    Parameters:
-      data_bytes   : A bytes object.
-      element_size : The number of bytes per element (e.g., 4 for float32, 8 for float64).
-
-    Returns:
-      A NumPy array of type uint8 containing the shuffled bytes.
-    """
-    arr = np.frombuffer(data_bytes, dtype=np.uint8)
-    if arr.size % element_size != 0:
-        raise ValueError("Data size must be a multiple of the element size.")
-    num_elements = arr.size // element_size
-    reshaped = arr.reshape((num_elements, element_size))
-    transposed = reshaped.transpose()
-    return transposed.flatten()
+# Instead of applying our own shuffle (which we removed), we use Blosc’s built‑in
+# shuffle option. When calling blosc.compress(), you pass:
+#   - typesize: the element size (e.g., 4 for float32),
+#   - clevel: the desired compression level,
+#   - shuffle: set to blosc.SHUFFLE for a byte‑shuffle,
+#   - cname: the compressor name ("zstd" or "lz4").
 
 def raw_zstd_byteshuffle_compress_file(filename, data, level=3):
     """
-    Apply byte shuffle preconditioning to the raw data and compress using zstd.
+    Compress the raw data using Blosc with byte-shuffle preconditioning and the zstd codec.
+
+    Parameters:
+      filename : The output filename.
+      data     : A NumPy array (e.g., float32).
+      level    : Compression level.
+
+    Returns:
+      The compressed data as bytes.
     """
     data_bytes = data.tobytes()
-    shuffled = byte_shuffle(data_bytes, data.dtype.itemsize)
-    comp_bytes = zstd.compress(shuffled.tobytes(), level=level)
+    # Use Blosc's compress: typesize is data.dtype.itemsize, and shuffle=blosc.SHUFFLE gives byte-level shuffling.
+    comp_bytes = blosc.compress(data_bytes,
+                                typesize=data.dtype.itemsize,
+                                clevel=level,
+                                shuffle=blosc.SHUFFLE,
+                                cname="zstd")
     with open(filename, "wb") as f:
         f.write(comp_bytes)
     return comp_bytes
 
-# --- Modified Raw LZ4 Byte Shuffle Compression Function ---
+
 def raw_lz4_byteshuffle_compress_file(filename, data, compressionLevel=3):
     """
-    Apply byte shuffle preconditioning to the raw data and compress using the lz4.block API.
+    Compress the raw data using Blosc with byte-shuffle preconditioning and the lz4 codec.
 
-    If compressionLevel > 0, use high-compression mode with that level.
+    Parameters:
+      filename         : The output filename.
+      data             : A NumPy array (e.g., float32).
+      compressionLevel : Compression level.
+
+    Returns:
+      The compressed data as bytes.
     """
     data_bytes = data.tobytes()
-    shuffled = byte_shuffle(data_bytes, data.dtype.itemsize)
-    if compressionLevel > 0:
-        comp_bytes = lz4.block.compress(shuffled.tobytes(), mode="high_compression", compression=compressionLevel)
-    else:
-        comp_bytes = lz4.block.compress(shuffled.tobytes(), mode="default")
+    comp_bytes = blosc.compress(data_bytes,
+                                typesize=data.dtype.itemsize,
+                                clevel=compressionLevel,
+                                shuffle=blosc.SHUFFLE,
+                                cname="lz4")
     with open(filename, "wb") as f:
         f.write(comp_bytes)
     return comp_bytes
 
+
 #############################################
-# Process Dataset Function (Bitshuffle-based with added raw functions)
+# Process Dataset Function (Bitshuffle-based with added raw and Blosc byteshuffle functions)
 #############################################
 
 def process_dataset(tsv_path, out_dir, dtype="float32", target_column=1):
     """
     Process one dataset: read the TSV file, convert the desired column to the specified float type,
-    and write HDF5 files using Bitshuffle compression as well as raw compressed files using
-    the zstd and lz4 libraries directly—both with and without byte shuffle preconditioning.
-
-    This function creates six files:
+    and write files using:
       1. Bitshuffle+ZSTD HDF5 file.
       2. Bitshuffle+LZ4 HDF5 file.
       3. Raw ZSTD compressed binary file.
       4. Raw LZ4 compressed binary file.
-      5. Raw ZSTD+ByteShuffle compressed binary file.
-      6. Raw LZ4+ByteShuffle compressed binary file.
+      5. Raw ZSTD+ByteShuffle (via Blosc) compressed binary file.
+      6. Raw LZ4+ByteShuffle (via Blosc) compressed binary file.
     """
     dataset_name = os.path.basename(tsv_path).split('.')[0]
     # Read dataset using pandas.
     data_set = pd.read_csv(tsv_path, sep='\t')
-    data = data_set.values[:, 1].astype(dtype)
+    data = data_set.values[:, target_column].astype(dtype)
     original_size = data.nbytes
     print(f"Dataset: {dataset_name}  | Original data size: {original_size} bytes")
 
     # Bitshuffle parameters.
-    BLOCK_SIZE = 0   # Let Bitshuffle choose an optimal block size.
-    COMP_LEVEL = 3   # Compression level for ZSTD (for Bitshuffle mode).
+    BLOCK_SIZE = 0  # Let Bitshuffle choose an optimal block size.
+    COMP_LEVEL = 3  # Compression level for Bitshuffle (ZSTD)
 
     # Filenames for Bitshuffle-based HDF5 files.
     file_zstd = os.path.join(out_dir, f"{dataset_name}_bitshuffle_zstd.h5")
@@ -187,7 +193,7 @@ def process_dataset(tsv_path, out_dir, dtype="float32", target_column=1):
     size_raw_zstd = os.path.getsize(file_raw_zstd)
     size_raw_lz4 = os.path.getsize(file_raw_lz4)
 
-    # Filenames for raw compressed binary files using byte-shuffle preconditioning.
+    # Filenames for raw compressed binary files using Blosc-based byte shuffle preconditioning.
     file_raw_zstd_bs = os.path.join(out_dir, f"{dataset_name}_raw_zstd_byteshuffle.bin")
     file_raw_lz4_bs = os.path.join(out_dir, f"{dataset_name}_raw_lz4_byteshuffle.bin")
     raw_zstd_bs_bytes = raw_zstd_byteshuffle_compress_file(file_raw_zstd_bs, data, level=3)
@@ -226,6 +232,7 @@ def process_dataset(tsv_path, out_dir, dtype="float32", target_column=1):
         "raw_zstd_byteshuffle_ratio": ratio_raw_zstd_bs,
         "raw_lz4_byteshuffle_ratio": ratio_raw_lz4_bs,
     }
+
 
 #############################################
 # Main Function

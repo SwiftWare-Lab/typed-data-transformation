@@ -31,6 +31,39 @@ def blosc_comp(data, clevel=3, shuffle=blosc.SHUFFLE, codec='zstd'):
         data_bytes = data
 
     return blosc.compress(data_bytes, typesize=typesize, cname=codec, clevel=clevel, shuffle=shuffle)
+import blosc
+import numpy as np
+
+def blosc_comp_noshuff(data, clevel=3, codec='zstd'):
+    """
+    Compresses data using Blosc without any shuffle operation.
+
+    Parameters:
+      data        : The input data to compress. This can be a NumPy array
+                    (e.g. float32) or a raw bytes object.
+      clevel (int): Compression level (typically 1-9).
+      codec (str) : Compression codec to use (e.g. 'zstd', 'lz4', 'blosclz').
+
+    Returns:
+      The compressed data as a bytes object, with no shuffle filter applied.
+    """
+    # Determine typesize and get the raw bytes
+    if isinstance(data, np.ndarray):
+        typesize = data.dtype.itemsize  # e.g., 4 for float32
+        data_bytes = data.tobytes()
+    else:
+        typesize = 1
+        data_bytes = data
+
+    # Compress with Blosc, using no shuffle
+    comp_bytes = blosc.compress(
+        data_bytes,
+        typesize=typesize,
+        cname=codec,
+        clevel=clevel,
+        shuffle=blosc.NOSHUFFLE
+    )
+    return comp_bytes
 
 def blosc_comp_bit(data, clevel=3, shuffle=blosc.SHUFFLE, codec='zstd'):
     """

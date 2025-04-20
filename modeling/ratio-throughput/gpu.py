@@ -7,11 +7,7 @@ matplotlib.use('TkAgg')  # or use another backend if desired
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-# ====================================
-# 1. Read CSV files, fill NaNs, and combine
-# ====================================
-#directories = ['/home/jamalids/Documents/results1']
-directories = ['/home/jamalids/Documents/results-zstd/all']
+directories = ['/home/jamalids/Documents/gpu2']
 dataframes = []
 
 for directory_path in directories:
@@ -20,7 +16,7 @@ for directory_path in directories:
             file_path = os.path.join(directory_path, file)
             try:
                 # Read CSV file using semicolon as delimiter.
-                df = pd.read_csv(file_path, sep=';')
+                df = pd.read_csv(file_path, sep=',')
                 df.fillna(0, inplace=True)
                 # Ensure a "DatasetName" column exists.
                 if 'DatasetName' not in df.columns and 'dataset' in df.columns:
@@ -49,17 +45,22 @@ print(f'Combined CSV with all data saved to {all_data_output_path}')
 # ====================================
 # 2. Median Aggregation
 # ====================================
+
+
+# ====================================
+# 2. Median Aggregation
+# ====================================
 required_cols = [
-    'DatasetName', 'Threads', 'RunType', 'BlockSize', 'ConfigString',
-    'TotalTimeCompressed', 'TotalTimeDecompressed',
-    'CompressionThroughput', 'DecompressionThroughput', 'CompressionRatio'
+    'Dataset',  'Mode', 'Config',
+
+    'CompThroughput', 'DecompThroughput', 'Ratio'
 ]
 missing_cols = [col for col in required_cols if col not in combined_df.columns]
 if missing_cols:
     print("Missing columns in combined_df:", missing_cols)
     exit()
 
-group_columns = ['DatasetName', 'Threads', 'RunType', 'BlockSize', 'ConfigString']
+group_columns = ['Dataset', 'Mode',  'Config']
 median_df = combined_df.groupby(group_columns, as_index=False).median(numeric_only=True)
 
 median_output_path = '/home/jamalids/Documents/combined_median_rows.csv'
@@ -67,18 +68,18 @@ median_df.to_csv(median_output_path, index=False)
 print(f'Combined CSV with median-based values saved to {median_output_path}')
 
 # ====================================
-# 3. Select pairs per (DatasetName, Threads)
+# 3. Select pairs per (Dataset, Threads)
 # ====================================
 # selected_pairs = []
-# for (dataset, threads,BlockSize), group in median_df.groupby(['DatasetName', 'Threads','BlockSize']):
-#     decompose_rows = group[group['RunType'] == 'Decompose_Chunk_Parallel']
+# for (dataset, threads,BlockSize), group in median_df.groupby(['Dataset', 'Threads','BlockSize']):
+#     decompose_rows = group[group['Mode'] == 'TDT']
 #     if not decompose_rows.empty:
 #         sorted_decompose = decompose_rows.sort_values(
 #             by=['CompressionRatio', 'CompressionThroughput'], ascending=False
 #         )
 #         chosen_decompose = sorted_decompose.iloc[0]
 #         selected_pairs.append(chosen_decompose)
-#         full_rows = group[group['RunType'] == 'Full']
+#         full_rows = group[group['Mode'] == 'Full']
 #         if not full_rows.empty:
 #             corresponding_full = full_rows.iloc[0]
 #             selected_pairs.append(corresponding_full)
@@ -90,19 +91,19 @@ print(f'Combined CSV with median-based values saved to {median_output_path}')
 
 selected_pairs = []
 
-for (dataset, threads, blockSize), group in median_df.groupby(['DatasetName', 'Threads', 'BlockSize']):
-    # --- 1) Try to pick Decompose_Chunk_Parallel (if present) ---
-    decompose_rows = group[group['RunType'] == 'Decompose_Chunk_Parallel']
+for (dataset), group in median_df.groupby(['Dataset']):
+    # --- 1) Try to pick TDT (if present) ---
+    decompose_rows = group[group['Mode'] == 'TDT']
     if not decompose_rows.empty:
         sorted_decompose = decompose_rows.sort_values(
-            by=['CompressionRatio', 'CompressionThroughput'],
+            by=['Ratio', 'CompThroughput'],
             ascending=False
         )
         chosen_decompose = sorted_decompose.iloc[0]
         selected_pairs.append(chosen_decompose)
 
     # --- 2) Also pick the Full row (if present) ---
-    full_rows = group[group['RunType'] == 'Full']
+    full_rows = group[group['Mode'] == 'Full']
     if not full_rows.empty:
         # For "Full" you might or might not want to sort.
         # Here we just pick the first (or best) row:
@@ -117,71 +118,73 @@ print("Done. CSV with selected pairs saved.")
 
 # ====================================
 # 4. Create two final selections.
-# 4A. Final Selection A: For each DatasetName, choose the pair with maximum CompressionThroughput
-#     (using the "Decompose_Chunk_Parallel" row).
-# 4B. Final Selection B: For each DatasetName, choose the pair with maximum DecompressionThroughput
+# 4A. Final Selection A: For each Dataset, choose the pair with maximum CompressionThroughput
+#     (using the "TDT" row).
+# 4B. Final Selection B: For each Dataset, choose the pair with maximum DecompressionThroughput
 #     (using the "Full" row).
 # ====================================
 final_A = []
-chunked_df = selected_df[selected_df['RunType'] == 'Decompose_Chunk_Parallel']
+chunked_df = selected_df[selected_df['Mode'] == 'TDT']
 L2_value =24* 1024 *1024,
 chunked_df = chunked_df [chunked_df ['BlockSize'] == L2_value].copy()
 
 if not chunked_df.empty:
-    best_chunked = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionThroughput'].idxmax()]
+    best_chunked = chunked_df.loc[chunked_df.groupby('Dataset')['CompressionThroughput'].idxmax()]
     for idx, row in best_chunked.iterrows():
-        dataset = row['DatasetName']
+        dataset = row['Dataset']
         threads = row['Threads']
         final_A.append(row)
-        full_row = selected_df[(selected_df['DatasetName'] == dataset) &
+        full_row = selected_df[(selected_df['Dataset'] == dataset) &
                                (selected_df['Threads'] == threads) &
-                               (selected_df['RunType'] == 'Full')]
+                               (selected_df['Mode'] == 'Full')]
         if not full_row.empty:
             final_A.append(full_row.iloc[0])
 final_df_A = pd.DataFrame(final_A)
 final_output_path_A = '/home/jamalids/Documents/max_compression_throughput_pairs.csv'
 final_df_A.to_csv(final_output_path_A, index=False)
 print(f'CSV with pairs having maximum CompressionThroughput saved to {final_output_path_A}')
-############################################
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
+#
+# final_B = []
+#
+# full_rows = selected_df[selected_df['Mode'] == 'TDT']
+#
+# if not full_rows.empty:
+#     best_full = full_rows.loc[full_rows.groupby('Dataset')['DecompressionThroughput'].idxmax()]
+#     for idx, row in best_full.iterrows():
+#         dataset = row['Dataset']
+#         threads = row['Threads']
+#         final_B.append(row)
+#         chunked_row = selected_df[(selected_df['Dataset'] == dataset) &
+#                                   (selected_df['Threads'] == threads) &
+#                                   (selected_df['Mode'] == 'Full')]
+#         if not chunked_row.empty:
+#             final_B.append(chunked_row.iloc[0])
+# final_df_B = pd.DataFrame(final_B)
+# final_output_path_B = '/home/jamalids/Documents/max_decompression_throughput_pairs.csv'
+# final_df_B.to_csv(final_output_path_B, index=False)
+# print(f'CSV with pairs having maximum DecompressionThroughput saved to {final_output_path_B}')
 
-# === 1. Load max_compression_throughput_pairs.csv and entropy results ===
-df_pairs = pd.read_csv("/home/jamalids/Documents/max_compression_throughput_pairs.csv")
-df_entropy = pd.read_csv("/home/jamalids/Documents/float_level_entropy_results.csv")
-
-# === 2. Merge them by DatasetName ===
-merged = pd.merge(df_pairs, df_entropy, on='DatasetName', how='left')
-
-# === 3. Sort by Entropy ===
-merged_sorted = merged.sort_values(by='Entropy').reset_index(drop=True)
-
-# === 4. Reuse this sorted DataFrame for the next plots ===
-final_df_A = merged_sorted  # Now all your plots will be entropy-sorted
-final_output_path_A = '/home/jamalids/Documents/max_compression_throughput_pairs.csv'
-final_df_A.to_csv(final_output_path_A, index=False)
 # ====================================
 # Mapping run types to new labels:
 # "Full" -> "Standard Compression"
-# "Decompose_Chunk_Parallel" -> "TDT Compressions"
+# "TDT" -> "TDT Compressions"
 # ====================================
 run_type_mapping = {
     "Full": "Standard Compression",
-    "Decompose_Chunk_Parallel": "TDT Compressions"
+    "TDT": "TDT Compressions"
 }
 
 # ====================================
 # 5. Plotting: Create grouped bar plots for final selections
 # ====================================
 def create_and_save_plot(final_df, title_suffix, output_filename):
-    # Pivot the DataFrame so that the index is DatasetName and columns are RunType.
-    pivot_log_ratio = final_df.pivot(index='DatasetName', columns='RunType', values='CompressionRatio')
+    # Pivot the DataFrame so that the index is Dataset and columns are Mode.
+    pivot_log_ratio = final_df.pivot(index='Dataset', columns='Mode', values='CompressionRatio')
     pivot_log_ratio = np.log10(pivot_log_ratio)
-    pivot_comp = final_df.pivot(index='DatasetName', columns='RunType', values='CompressionThroughput')
-    pivot_decomp = final_df.pivot(index='DatasetName', columns='RunType', values='DecompressionThroughput')
+    pivot_comp = final_df.pivot(index='Dataset', columns='Mode', values='CompressionThroughput')
+    pivot_decomp = final_df.pivot(index='Dataset', columns='Mode', values='DecompressionThroughput')
     # Get Threads from the "Full" row.
-    threads_pivot = final_df.pivot(index='DatasetName', columns='RunType', values='Threads')
+    threads_pivot = final_df.pivot(index='Dataset', columns='Mode', values='Threads')
     if 'Full' in threads_pivot.columns:
         threads_per_dataset = threads_pivot['Full']
     else:
@@ -273,18 +276,18 @@ def safe_gmean(series):
     return np.exp(np.mean(np.log(positive_vals)))
 
 # Filter for the two RunTypes of interest.
-gmean_data = median_df[median_df['RunType'].isin(['Decompose_Chunk_Parallel', 'Full'])]
-gmean_df = gmean_data.groupby('RunType')['CompressionRatio'].apply(safe_gmean).reset_index()
-gmean_df.columns = ['RunType', 'GeometricMeanCompressionRatio']
+gmean_data = median_df[median_df['Mode'].isin(['TDT', 'Full'])]
+gmean_df = gmean_data.groupby('Mode')['CompressionRatio'].apply(safe_gmean).reset_index()
+gmean_df.columns = ['Mode', 'GeometricMeanCompressionRatio']
 
 # Replace run type names using the mapping.
-gmean_df['RunType'] = gmean_df['RunType'].map(run_type_mapping)
+gmean_df['Mode'] = gmean_df['Mode'].map(run_type_mapping)
 
 # Create a bar plot for the geometric means.
 plt.figure(figsize=(8, 6))
-bars = plt.bar(gmean_df['RunType'], gmean_df['GeometricMeanCompressionRatio'])
-plt.title("Geometric Mean of CompressionRatio by RunType")
-plt.xlabel("RunType")
+bars = plt.bar(gmean_df['Mode'], gmean_df['GeometricMeanCompressionRatio'])
+plt.title("Geometric Mean of CompressionRatio by Mode")
+plt.xlabel("Mode")
 plt.ylabel("Geometric Mean of CompressionRatio")
 for bar in bars:
     height = bar.get_height()
@@ -299,21 +302,21 @@ print(f'Geometric Mean plot saved to {gmean_output_path}')
 # ====================================
 # 6B. Dual-axis Plot: TotalValues vs. BlockSize
 # ====================================
-# This plot uses the best "Decompose_Chunk_Parallel" rows (i.e. TDT Compressions)
+# This plot uses the best "TDT" rows (i.e. TDT Compressions)
 # and shows the relation between TotalValues (primary axis) and BlockSize (secondary axis).
 
-chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
-best_chunked_df = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionRatio'].idxmax()].copy()
+chunked_df = median_df[median_df['Mode'] == 'TDT']
+best_chunked_df = chunked_df.loc[chunked_df.groupby('Dataset')['CompressionRatio'].idxmax()].copy()
 
 if 'TotalValues' not in best_chunked_df.columns:
     raise ValueError("The column 'TotalValues' does not exist in the data. Please check your combined CSV.")
 
 x = np.arange(len(best_chunked_df))
-dataset_labels = best_chunked_df['DatasetName']
+dataset_labels = best_chunked_df['Dataset']
 
 fig, ax1 = plt.subplots(figsize=(10, 6))
 bars = ax1.bar(x, best_chunked_df['TotalValues'], color='C0', alpha=0.7, label='TotalValues')
-ax1.set_xlabel("DatasetName")
+ax1.set_xlabel("Dataset")
 ax1.set_ylabel("TotalValues", color='C0')
 ax1.tick_params(axis='y', labelcolor='C0')
 ax1.set_xticks(x)
@@ -335,15 +338,15 @@ print(f'Dual-axis plot saved to {output_path}')
 # import matplotlib.pyplot as plt
 # import matplotlib.ticker as ticker
 #
-# # Filter for "Decompose_Chunk_Parallel" rows.
-# chunked_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
+# # Filter for "TDT" rows.
+# chunked_df = median_df[median_df['Mode'] == 'TDT']
 # # Further filter to only include rows with allowed BlockSize values.
 # # allowed_block_sizes = [655360, 1024000, 102400000]
 # # chunked_df = chunked_df[chunked_df['BlockSize'].isin(allowed_block_sizes)]
 #
-# # For each DatasetName, select the row with the maximum CompressionRatio.
-# best_chunked_df = chunked_df.loc[chunked_df.groupby('DatasetName')['CompressionRatio'].idxmax()][
-#     ['DatasetName', 'CompressionRatio', 'BlockSize']
+# # For each Dataset, select the row with the maximum CompressionRatio.
+# best_chunked_df = chunked_df.loc[chunked_df.groupby('Dataset')['CompressionRatio'].idxmax()][
+#     ['Dataset', 'CompressionRatio', 'BlockSize']
 # ]
 #
 # # Create numeric x positions.
@@ -352,11 +355,11 @@ print(f'Dual-axis plot saved to {output_path}')
 # # Create the primary axis for CompressionRatio.
 # fig, ax1 = plt.subplots(figsize=(10, 6))
 # bars = ax1.bar(x, best_chunked_df['CompressionRatio'], color='C0', alpha=0.7, label='Best Compression Ratio')
-# ax1.set_xlabel("DatasetName")
+# ax1.set_xlabel("Dataset")
 # ax1.set_ylabel("Best Compression Ratio", color='C0')
 # ax1.tick_params(axis='y', labelcolor='C0')
 # ax1.set_xticks(x)
-# ax1.set_xticklabels(best_chunked_df['DatasetName'], rotation=45, ha='right')
+# ax1.set_xticklabels(best_chunked_df['Dataset'], rotation=45, ha='right')
 #
 # # Create a secondary axis for BlockSize.
 # ax2 = ax1.twinx()
@@ -409,9 +412,9 @@ for thread in sorted(chunked_df['Threads'].unique()):
     # Filter the DataFrame for the current thread.
     thread_df = chunked_df[chunked_df['Threads'] == thread]
 
-    # For each DatasetName, select the row with the maximum CompressionRatio.
-    best_thread_df = thread_df.loc[thread_df.groupby('DatasetName')['CompressionRatio'].idxmax()][
-        ['DatasetName', 'CompressionRatio', 'BlockSize', 'CompressionThroughput']
+    # For each Dataset, select the row with the maximum CompressionRatio.
+    best_thread_df = thread_df.loc[thread_df.groupby('Dataset')['CompressionRatio'].idxmax()][
+        ['Dataset', 'CompressionRatio', 'BlockSize', 'CompressionThroughput']
     ]
 
     # Sort by BlockSize for consistent categorical ordering.
@@ -431,11 +434,11 @@ for thread in sorted(chunked_df['Threads'].unique()):
     fig, ax1 = plt.subplots(figsize=(10, 6))
     bars = ax1.bar(x, best_thread_df['CompressionRatio'], color='C0', alpha=0.7,
                    label='Best Compression Ratio')
-    ax1.set_xlabel("DatasetName")
+    ax1.set_xlabel("Dataset")
     ax1.set_ylabel("Best Compression Ratio", color='C0')
     ax1.tick_params(axis='y', labelcolor='C0')
     ax1.set_xticks(x)
-    ax1.set_xticklabels(best_thread_df['DatasetName'], rotation=45, ha='right')
+    ax1.set_xticklabels(best_thread_df['Dataset'], rotation=45, ha='right')
 
     # Create a secondary axis for BlockSize (plotted as a categorical variable).
     ax2 = ax1.twinx()
@@ -488,25 +491,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # ---------------------------------------------------
-# 1. Read the median CSV and filter for the desired RunType
+# 1. Read the median CSV and filter for the desired Mode
 # ---------------------------------------------------
 median_csv_path = '/home/jamalids/Documents/combined_median_rows.csv'
 median_df = pd.read_csv(median_csv_path)
 
-# Only consider rows where RunType is 'Decompose_Chunk_Parallel'
-median_df = median_df[median_df['RunType'] == 'Decompose_Chunk_Parallel']
+# Only consider rows where Mode is 'TDT'
+median_df = median_df[median_df['Mode'] == 'TDT']
 
 # ---------------------------------------------------
-# 2. Group by DatasetName and Threads and compute max and min for each metric
+# 2. Group by Dataset and Threads and compute max and min for each metric
 # ---------------------------------------------------
-grouped = median_df.groupby(['DatasetName', 'Threads']).agg({
+grouped = median_df.groupby(['Dataset', 'Threads']).agg({
     'CompressionThroughput': ['max', 'min'],
     'DecompressionThroughput': ['max', 'min'],
     'CompressionRatio': ['max', 'min']
 }).reset_index()
 
 # Flatten the MultiIndex columns
-grouped.columns = ['DatasetName', 'Threads',
+grouped.columns = ['Dataset', 'Threads',
                    'CT_max', 'CT_min',
                    'DT_max', 'DT_min',
                    'CR_max', 'CR_min']
@@ -527,9 +530,9 @@ for idx, thread_val in enumerate(thread_values):
     # Select groups for the current thread value
     df_thread = grouped[grouped['Threads'] == thread_val]
 
-    # Sort by DatasetName for consistent ordering on the x-axis
-    df_thread = df_thread.sort_values('DatasetName')
-    x = df_thread['DatasetName']
+    # Sort by Dataset for consistent ordering on the x-axis
+    df_thread = df_thread.sort_values('Dataset')
+    x = df_thread['Dataset']
 
     # Plot the differences for each metric
     ax.plot(x, df_thread['CT_diff'], marker='o', label='Compression Throughput Diff')
@@ -537,7 +540,7 @@ for idx, thread_val in enumerate(thread_values):
     ax.plot(x, df_thread['CR_diff'], marker='o', label='Compression Ratio Diff')
 
     ax.set_title(f"Threads = {thread_val}")
-    ax.set_xlabel('DatasetName')
+    ax.set_xlabel('Dataset')
     if idx == 0:
         ax.set_ylabel('Difference (max - min)')
 
@@ -559,11 +562,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # ---------------------------------------------------
-# 1. Read the median CSV (already created) and filter for RunType = 'Decompose_Chunk_Parallel'
+# 1. Read the median CSV (already created) and filter for Mode = 'TDT'
 # ---------------------------------------------------
 median_csv_path = '/home/jamalids/Documents/combined_median_rows.csv'
 df = pd.read_csv(median_csv_path)
-df = df[df['RunType'] == 'Decompose_Chunk_Parallel']
+df = df[df['Mode'] == 'TDT']
 
 # ---------------------------------------------------
 # 2. Define the two block sizes (L1 and L2) and filter the data accordingly
@@ -577,9 +580,9 @@ df_block = df[df['BlockSize'].isin([L1_value, L2_value])]
 # ---------------------------------------------------
 # 3. Pivot the data to have separate columns for L1 and L2 for each metric
 # ---------------------------------------------------
-pivot_ct = df_block.pivot_table(index=['DatasetName', 'Threads'], columns='BlockSize', values='CompressionThroughput')
-pivot_dt = df_block.pivot_table(index=['DatasetName', 'Threads'], columns='BlockSize', values='DecompressionThroughput')
-pivot_cr = df_block.pivot_table(index=['DatasetName', 'Threads'], columns='BlockSize', values='CompressionRatio')
+pivot_ct = df_block.pivot_table(index=['Dataset', 'Threads'], columns='BlockSize', values='CompressionThroughput')
+pivot_dt = df_block.pivot_table(index=['Dataset', 'Threads'], columns='BlockSize', values='DecompressionThroughput')
+pivot_cr = df_block.pivot_table(index=['Dataset', 'Threads'], columns='BlockSize', values='CompressionRatio')
 
 # ---------------------------------------------------
 # 4. Compute the difference (L2 - L1) for each metric
@@ -588,11 +591,11 @@ pivot_ct['Diff'] = pivot_ct.get(L2_value, float('nan')) - pivot_ct.get(L1_value,
 pivot_dt['Diff'] = pivot_dt.get(L2_value, float('nan')) - pivot_dt.get(L1_value, float('nan'))
 pivot_cr['Diff'] = pivot_cr.get(L2_value, float('nan')) - pivot_cr.get(L1_value, float('nan'))
 
-pivot_ct = pivot_ct.reset_index()[['DatasetName', 'Threads', 'Diff']].rename(columns={'Diff': 'CT_Diff'})
-pivot_dt = pivot_dt.reset_index()[['DatasetName', 'Threads', 'Diff']].rename(columns={'Diff': 'DT_Diff'})
-pivot_cr = pivot_cr.reset_index()[['DatasetName', 'Threads', 'Diff']].rename(columns={'Diff': 'CR_Diff'})
+pivot_ct = pivot_ct.reset_index()[['Dataset', 'Threads', 'Diff']].rename(columns={'Diff': 'CT_Diff'})
+pivot_dt = pivot_dt.reset_index()[['Dataset', 'Threads', 'Diff']].rename(columns={'Diff': 'DT_Diff'})
+pivot_cr = pivot_cr.reset_index()[['Dataset', 'Threads', 'Diff']].rename(columns={'Diff': 'CR_Diff'})
 
-merged_diff = pivot_ct.merge(pivot_dt, on=['DatasetName', 'Threads']).merge(pivot_cr, on=['DatasetName', 'Threads'])
+merged_diff = pivot_ct.merge(pivot_dt, on=['Dataset', 'Threads']).merge(pivot_cr, on=['Dataset', 'Threads'])
 
 # ---------------------------------------------------
 # 5. Plot the differences for each thread in separate subplots with the same y-axis scale
@@ -603,14 +606,14 @@ fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(18, 6), sharey=True)
 
 for idx, thread_val in enumerate(thread_values):
     ax = axes[idx]
-    df_thread = merged_diff[merged_diff['Threads'] == thread_val].sort_values('DatasetName')
-    x = df_thread['DatasetName']
+    df_thread = merged_diff[merged_diff['Threads'] == thread_val].sort_values('Dataset')
+    x = df_thread['Dataset']
     ax.plot(x, df_thread['CT_Diff'], marker='o', label='Compression Throughput Diff')
     ax.plot(x, df_thread['DT_Diff'], marker='o', label='Decompression Throughput Diff')
     ax.plot(x, df_thread['CR_Diff'], marker='o', label='Compression Ratio Diff')
 
     ax.set_title(f"Threads = {thread_val}")
-    ax.set_xlabel("DatasetName")
+    ax.set_xlabel("Dataset")
     if idx == 0:
         ax.set_ylabel("Difference (L3 - L2)")
     ax.tick_params(axis='x', rotation=90)
@@ -625,96 +628,50 @@ print(f"Block size difference plot saved to {output_path}")
 # ====================================
 # 7. Compressed Size Ratio Plot: (Standard / TDT)
 # ====================================
-# # Pivot the final_df_A so that each DatasetName has a row for each RunType.
-# pivot_cr = final_df_A.pivot(index='DatasetName', columns='RunType', values='CompressionRatio')
-#
-# # Drop any datasets that don't have both run types.
-# pivot_cr = pivot_cr.dropna(subset=['Full', 'Decompose_Chunk_Parallel'])
-#
-# # Merge entropy for sorting
-# entropy_map = final_df_A.drop_duplicates(subset=['DatasetName'])[['DatasetName', 'Entropy']]
-# pivot_cr = pivot_cr.merge(entropy_map, on='DatasetName', how='left')
-#
-# pivot_cr = pivot_cr.sort_values('Entropy')
-#
-# ratio_series = pivot_cr['Decompose_Chunk_Parallel'] / pivot_cr['Full']
-#
-# # Create the bar plot.
-# plt.figure(figsize=(10, 6))
-# x = np.arange(len(ratio_series))
-# plt.bar(x, ratio_series, width=0.5)
-# plt.xticks(x, ratio_series.index, rotation=45, ha='right')
-# plt.xlabel("DatasetName")
-# plt.ylabel("Compressed Size Ratio (TDT/Standard )")
-# plt.title("Ratio of Compressed Sizes: Standard Compression vs TDT Compressions using bzip")
-# for i, v in enumerate(ratio_series):
-#     plt.text(x[i], v + 0.01, f"{v:.2f}", ha='center', va='bottom')
-# plt.tight_layout()
-# compressed_ratio_plot_path = '/home/jamalids/Documents/plot_compressed_size_ratio.png'
-# plt.savefig(compressed_ratio_plot_path)
-# plt.close()
-# print(f'Compressed size ratio plot saved to {compressed_ratio_plot_path}')
-# ====================================
-# Sorted by Entropy: Compressed Size Ratio Plot
-# ====================================
-
-# Pivot (same as before)
-pivot_cr = final_df_A.pivot(index='DatasetName', columns='RunType', values='CompressionRatio')
-
-# Drop incomplete rows
-pivot_cr = pivot_cr.dropna(subset=['Full', 'Decompose_Chunk_Parallel'])
-
-# Merge entropy for sorting
-entropy_map = final_df_A.drop_duplicates(subset=['DatasetName'])[['DatasetName', 'Entropy']]
-pivot_cr = pivot_cr.merge(entropy_map, on='DatasetName', how='left')
-
-# Sort by Entropy
-pivot_cr = pivot_cr.sort_values('Entropy')
-
-# Compute ratio
-ratio_series = pivot_cr['Decompose_Chunk_Parallel'] / pivot_cr['Full']
-
-# Plot
-plt.figure(figsize=(10, 6))
-x = np.arange(len(ratio_series))
-plt.bar(x, ratio_series, width=0.5)
-plt.xticks(x, pivot_cr['DatasetName'], rotation=45, ha='right')
-plt.xlabel("DatasetName (sorted by Entropy)")
-plt.ylabel("Compressed Size Ratio (TDT / Standard)")
-plt.title("Ratio of Compressed Sizes vs Entropy (bzip)")
-
-for i, v in enumerate(ratio_series):
-    plt.text(x[i], v + 0.01, f"{v:.2f}", ha='center', va='bottom')
-
-plt.tight_layout()
-plt.savefig("/home/jamalids/Documents/plot_compressed_size_ratio_sorted_by_entropy.png")
-plt.close()
-print("✅ Compressed size ratio plot saved, sorted by entropy.")
-
-############################### ====================================
-# 8.Compression Throughput Plot: (Standard / TDT)
-# ====================================
-# Pivot the final_df_A so that each DatasetName has a row for each RunType.
-
-# ====================================
-# Mapping run types to new labels:
-
-pivot_cr = final_df_A.pivot(index='DatasetName', columns='RunType', values='CompressionThroughput')
-print("Pairs columns:", final_df_A.columns.tolist())
+# Pivot the final_df_A so that each Dataset has a row for each Mode.
+pivot_cr = final_df_A.pivot(index='Dataset', columns='Mode', values='CompressionRatio')
 
 # Drop any datasets that don't have both run types.
-pivot_cr = pivot_cr.dropna(subset=['Full', 'Decompose_Chunk_Parallel'])
+pivot_cr = pivot_cr.dropna(subset=['Full', 'TDT'])
 
 # Compute the ratio as: (CR for TDT) / (CR for Full)
 # This is equivalent to (compressed size standard) / (compressed size TDT)
-ratio_series = pivot_cr['Decompose_Chunk_Parallel'] / pivot_cr['Full']
+ratio_series = pivot_cr['TDT'] / pivot_cr['Full']
 
 # Create the bar plot.
 plt.figure(figsize=(10, 6))
 x = np.arange(len(ratio_series))
 plt.bar(x, ratio_series, width=0.5)
 plt.xticks(x, ratio_series.index, rotation=45, ha='right')
-plt.xlabel("DatasetName")
+plt.xlabel("Dataset")
+plt.ylabel("Compressed Size Ratio (TDT/Standard )")
+plt.title("Ratio of Compressed Sizes: Standard Compression vs TDT Compressions using bzip")
+for i, v in enumerate(ratio_series):
+    plt.text(x[i], v + 0.01, f"{v:.2f}", ha='center', va='bottom')
+plt.tight_layout()
+compressed_ratio_plot_path = '/home/jamalids/Documents/plot_compressed_size_ratio.png'
+plt.savefig(compressed_ratio_plot_path)
+plt.close()
+print(f'Compressed size ratio plot saved to {compressed_ratio_plot_path}')
+############################### ====================================
+# 8.Compression Throughput Plot: (Standard / TDT)
+# ====================================
+# Pivot the final_df_A so that each Dataset has a row for each Mode.
+pivot_cr = final_df_A.pivot(index='Dataset', columns='Mode', values='CompressionThroughput')
+
+# Drop any datasets that don't have both run types.
+pivot_cr = pivot_cr.dropna(subset=['Full', 'TDT'])
+
+# Compute the ratio as: (CR for TDT) / (CR for Full)
+# This is equivalent to (compressed size standard) / (compressed size TDT)
+ratio_series = pivot_cr['TDT'] / pivot_cr['Full']
+
+# Create the bar plot.
+plt.figure(figsize=(10, 6))
+x = np.arange(len(ratio_series))
+plt.bar(x, ratio_series, width=0.5)
+plt.xticks(x, ratio_series.index, rotation=45, ha='right')
+plt.xlabel("Dataset")
 plt.ylabel("Compressed Size Ratio (TDT/Standard )")
 plt.title("Ratio of Compression Throughput:TDT CompressionThroughput vs Standard Compression using bzip")
 for i, v in enumerate(ratio_series):
@@ -727,22 +684,22 @@ print(f'Compressed size ratio plot saved to {compressed_ratio_plot_path}')
 ############################### ====================================
 # 8.Compression Throughput Plot: (Standard / TDT)
 # ====================================
-# Pivot the final_df_A so that each DatasetName has a row for each RunType.
-pivot_cr = final_df_A.pivot(index='DatasetName', columns='RunType', values='DecompressionThroughput')
+# Pivot the final_df_A so that each Dataset has a row for each Mode.
+pivot_cr = final_df_A.pivot(index='Dataset', columns='Mode', values='DecompressionThroughput')
 
 # Drop any datasets that don't have both run types.
-pivot_cr = pivot_cr.dropna(subset=['Full', 'Decompose_Chunk_Parallel'])
+pivot_cr = pivot_cr.dropna(subset=['Full', 'TDT'])
 
 # Compute the ratio as: (CR for TDT) / (CR for Full)
 # This is equivalent to (compressed size standard) / (compressed size TDT)
-ratio_series = pivot_cr['Decompose_Chunk_Parallel'] / pivot_cr['Full']
+ratio_series = pivot_cr['TDT'] / pivot_cr['Full']
 
 # Create the bar plot.
 plt.figure(figsize=(10, 6))
 x = np.arange(len(ratio_series))
 plt.bar(x, ratio_series, width=0.5)
 plt.xticks(x, ratio_series.index, rotation=45, ha='right')
-plt.xlabel("DatasetName")
+plt.xlabel("Dataset")
 plt.ylabel("Compressed Size Ratio (TDT/Standard )")
 plt.title("Ratio of Decompression Throughput:  TDT Decompression Throughput vs Standard Compression using bzip")
 for i, v in enumerate(ratio_series):
