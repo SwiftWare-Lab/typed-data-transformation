@@ -23,180 +23,221 @@
 #include"lz4_parallel.h"
 std::vector<uint8_t> globalByteArray;
 
+// Map to store dataset names and their multiple possible configurations
+// std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
+//   {"acs_wht_f32", {
+//           {{1,2}, {3}, {4}} ,
+//           // {{1, 2,3}, {4}},
+//   }},
+//   {"g24_78_usb2_f32", {
+//           {{1}, {2,3}, {4}},
+//           {{1,2,3}, {4}},
+//   }},
+//   {"jw_mirimage_f32", {
+//           {{1,2}, {3}, {4}},
+//           {{1,2,3}, {4}},
+//   }},
+//   {"spitzer_irac_f32", {
+//           {{1,2}, {3}, {4}},
+//           {{1,2,3}, {4}},
+//   }},
+//   {"turbulence_f32", {
+//           {{1,2}, {3}, {4}},
+//           {{1,2,3}, {4}},
+//   }},
+//   {"wave_f32", {
+//           {{1,2}, {3}, {4}},
+//           {{1,2,3}, {4}},
+//   }},
+//   {"hdr_night_f32", {
+//           {{1,4}, {2}, {3}},
+//           {{1}, {2}, {3}, {4}},
+//           {{1,4}, {2,3}},
+//   }},
+//   {"ts_gas_f32", {
+//           {{1,2}, {3}, {4}},
+//   }},
+//   {"solar_wind_f32", {
+//           {{1}, {4}, {2}, {3}},
+//           {{1}, {2,3}, {4}},
+//   }},
+//   {"tpch_lineitem_f32", {
+//           {{1,2,3}, {4}},
+//           {{1,2}, {3}, {4}},
+//   }},
+//   {"tpcds_web_f32", {
+//           {{1,2,3}, {4}},
+//           {{1}, {2,3}, {4}},
+//   }},
+//   {"tpcds_store_f32", {
+//           {{1,2,3}, {4}},
+//           {{1}, {2,3}, {4}},
+//   }},
+//   {"tpcds_catalog_f32", {
+//           {{1,2,3}, {4}},
+//           {{1}, {2,3}, {4}},
+//   }},
+//   {"citytemp_f32", {
+//           {{1,4}, {2,3}},
+//           {{1}, {2}, {3}, {4}},
+//           {{1,2}, {3}, {4}}
+//   }},
+//   {"hst_wfc3_ir_f32", {
+//           {{1}, {2}, {3}, {4}},
+//           {{1,2}, {3}, {4}}
+//   }},
+//   {"hst_wfc3_uvis_f32", {
+//           {{1}, {2}, {3}, {4}},
+//           {{1,2}, {3}, {4}}
+//   }},
+//   {"rsim_f32", {
+//           {{1,2,3}, {4}},
+//           {{1,2}, {3}, {4}},
+// {{1,2,3,4}},
+//   }},
+//   {"astro_mhd_f64", {
+//           {{1,2,3,4,5,6}, {7}, {8}},
+//           {{1,2,3,4,5}, {6}, {7}, {8}}
+//   }},
+//   {"astro_pt_f64", {
+//           {{1,2,3,4,5,6}, {7}, {8}},
+//           {{1,2,3,4,5}, {6}, {7}, {8}}
+//   }},
+//   {"jane_street_f64", {
+//           {{1,2,3,4,5,6}, {7}, {8}},
+//           {{3,2,5,6,4,1}, {7}, {8}}
+//   }},
+//   {"msg_bt_f64", {
+//           {{1,2,3,4,5}, {6}, {7}, {8}},
+//           {{3,2,1,4,5,6}, {7}, {8}},
+//           {{3,2,1,4,5}, {6}, {7}, {8}}
+//   }},
+//   {"num_brain_f64", {
+//           {{1,2,3,4,5,6}, {7}, {8}},
+//           {{3,2,4,5,1,6}, {7}, {8}},
+// {{3,2,4,5,1,6,7,8}},
+//   }},
+//   {"num_control_f64", {
+//           {{1,2,3,4,5,6}, {7}, {8}},
+//           {{4,5}, {6,3}, {1,2}, {7}, {8}},
+//           {{4,5,6,3,1,2}, {7}, {8}},
+// {{4,5,6,3,1,2,7,8}},
+//   }},
+//   {"nyc_taxi2015_f64", {
+//           {{7,4,6}, {5}, {3,2,1,8}},
+//           {{7,4,6,5}, {3,2,1,8}},
+//           {{7,4,6}, {5}, {3,2,1}, {8}},
+//           {{7,4}, {6}, {5}, {3,2}, {1}, {8}},
+// {{7,4,6,5,3,2,1,8}},
+//   }},
+//   {"phone_gyro_f64", {
+//           {{4,6}, {5}, {3,2,1,7}, {8}},
+//           {{4,6}, {1}, {3,2}, {5}, {7}, {8}},
+//           {{6,4,3,2,1,7}, {5}, {8}},
+//   }},
+//   {"tpch_order_f64", {
+//           {{3,2,4,1}, {7}, {6,5}, {8}},
+//           {{3,2,4,1,7}, {6,5}, {8}},
+//   }},
+//   {"tpcxbb_store_f64", {
+//           {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
+//           {{4,2,3,1}, {5}, {7,6}, {8}},
+//           {{4,2,3,1,5}, {7,6}, {8}},
+//   }},
+//   {"tpcxbb_web_f64", {
+//           {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
+//           {{4,2,3,1}, {5}, {7,6}, {8}},
+//           {{4,2,3,1,5}, {7,6}, {8}},
+//   }},
+//   {"wesad_chest_f64", {
+//               {{7,5,6}, {8,4,1,3,2}},
+//           {{7,5}, {6}, {8,4,1}, {3,2}},
+//           {{7,5}, {6}, {8,4}, {1}, {3,2}},
+//           {{7,5}, {6}, {8,4,1,3,2}},
+// {{7,5,6,8,4,1,3,2}},
+//   }},
+//   {"default", {
+//           {{1}, {2}, {3}, {4}}
+//   }}
+// };
+#include <map>
+#include <string>
+#include <vector>
+
+// Overriding or appending new configs for certain datasets
+// while keeping the rest of the map intact.
+
 std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
+
+  // -----------------------------------------------------------
+  // Updated/overridden entries from your first new list:
+  // -----------------------------------------------------------
+
   {"acs_wht_f32", {
-          {{1,2}, {3}, {4}} ,
-          {{1, 2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"g24_78_usb2_f32", {
-        //  {{1}, {2,3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"jw_mirimage_f32", {
-         // {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"spitzer_irac_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"turbulence_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"wave_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-           {{1,2,3,4}},
-{{1}, {2}, {3}, {4}},
-  }},
-  {"hdr_night_f32", {
-          {{1,4}, {2}, {3}},
-          {{1}, {2}, {3}, {4}},
-          {{1,4}, {2,3}},
-{{1,4,2,3}},{{1}, {2}, {3}, {4}},
-  }},
-{"hdr_palermo_f32", {
-            {{1,4}, {2}, {3}},
-            {{1}, {2}, {3}, {4}},
-            {{1,4}, {2,3}},
-  {{1,4,2,3}},{{1}, {2}, {3}, {4}},
-}},
-  {"ts_gas_f32", {
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}},
-{{1}, {2}, {3}, {4}},
-  }},
-  {"solar_wind_f32", {
-          {{1}, {4}, {2}, {3}},
-{{1,4}, {2,3}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpch_lineitem_f32", {
-          {{1,2,3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpcds_web_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpcds_store_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpcds_catalog_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}}
+      // ((1,0),(2),(3))
+      { {1,0}, {2}, {3} }
   }},
   {"citytemp_f32", {
-          {{1,4}, {2,3}},
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}}
+      // ((1,0),(2),(3))
+      { {1,0}, {2}, {3} }
+  }},
+  {"hdr_night_f32", {
+      // ((1,0),(2),(3))
+      { {1,0}, {2}, {3} }
+  }},
+  {"hdr_palermo_f32", {
+      // ((1,0),(2),(3))
+      { {1,0}, {2}, {3} }
   }},
   {"hst_wfc3_ir_f32", {
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}}
+      // ((1,0),(2),(3))
+      { {1,0}, {2}, {3} }
   }},
   {"hst_wfc3_uvis_f32", {
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}}
+      // ((0,1,2),(3))
+      { {0,1,2}, {3} }
   }},
-  {"rsim_f32", {
-          {{1,2,3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}},
-  }},
-  {"astro_mhd_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{1,2,3,4,5}, {6}, {7}, {8}}
-  }},
-  {"astro_pt_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{1,2,3,4,5}, {6}, {7}, {8}}
-  }},
-  {"jane_street_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{3,2,5,6,4,1}, {7}, {8}},
-{{3,2,5,6,4,1,7,8}}
-  }},
-  {"msg_bt_f64", {
-          {{1,2,3,4,5}, {6}, {7}, {8}},
-          {{3,2,1,4,5,6}, {7}, {8}},
-          {{3,2,1,4,5}, {6}, {7}, {8}},
-{{3,2,1,4,5,6,7,8}}
-  }},
-  {"num_brain_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{3,2,4,5,1,6}, {7}, {8}},
-{{3,2,4,5,1,6,7,8}},
+  {"jw_mirimage_f32", {
+      // ((0),(1),(2),(3))
+      { {0}, {1}, {2}, {3} }
   }},
   {"num_control_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{4,5}, {6,3}, {1,2}, {7}, {8}},
-          {{4,5,6,3,1,2}, {7}, {8}},
-{{1,2,3,4,5,6}, {7}, {8}},
-{{4,5,6,3,1,2,7,8}},
+      // ((6),(1,4,2,3,5,0),(7))
+      { {6}, {1,4,2,3,5,0}, {7} }
   }},
-  {"nyc_taxi2015_f64", {
-          {{7,4,6}, {5}, {3,2,1,8}},
-          {{7,4,6,5}, {3,2,1,8}},
-{{4,5,6,7}, {1,2,3,8}},
-          {{7,4,6}, {5}, {3,2,1}, {8}},
-          {{7,4}, {6}, {5}, {3,2}, {1}, {8}},
-{{7,4,6,5,3,2,1,8}},
+  {"rsim_f32", {
+      // ((0,1),(2),(3))
+      { {0,1}, {2}, {3} }
   }},
-  {"phone_gyro_f64", {
-          {{4,6}, {8}, {3,2,1,7},{5}, },
-          {{4,6}, {1}, {3,2}, {5}, {7}, {8}},
-          {{6,4,3,2,1,7}, {5}, {8}},
-{{6,4,3,2,1,7,5}, {8}},
-{{1,2,3,4,5,6,7}, {8}},
-{{6,4,3,2,1,7}, {5,8}},
-{{6,4,3,2,1,7,5,8}},
+  {"solar_wind_f32", {
+      // ((0,1),(2),(3))
+      { {0,1}, {2}, {3} }
   }},
-  {"tpch_order_f64", {
-              {{1,2,3,4}, {7}, {6,5}, {8}},
-          {{3,2,4,1}, {7}, {6,5}, {8}},
-          {{3,2,4,1,7}, {6,5}, {8}},
-{{3,2,4,1,7,6,5,8}},
+  {"spitzer_irac_f32", {
+      // ((0,1,2),(3))
+      { {0,1,2}, {3} }
   }},
-  {"tpcxbb_store_f64", {
-          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3,1}, {5}, {7,6}, {8}},
-          {{4,2,3,1,5}, {7,6}, {8}},
-{{1,2,3,4,5}, {7,6}, {8}},
-{{4,2,3,1,5,7,6,8}},
+  {"tpcds_catalog_f32", {
+      // ((0),(1),(2),(3))
+      { {0}, {1}, {2}, {3} }
   }},
-  {"tpcxbb_web_f64", {
-              {{2,3,4}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3,1}, {5}, {7,6}, {8}},
-          {{4,2,3,1,5}, {7,6}, {8}},
-{{4,2,3,1,5,7,6,8}},
+  {"tpcds_store_f32", {
+      // ((0,1),(2),(3))
+      { {0,1}, {2}, {3} }
   }},
-  {"wesad_chest_f64", {
-              {{7,5,6}, {8,4,1,3,2}},
-{{7,5,6}, {1,2,3,4,8}},
-          {{7,5}, {6}, {8,4,1}, {3,2}},
-          {{7,5}, {6}, {8,4}, {1}, {3,2}},
-          {{7,5}, {6}, {8,4,1,3,2}},
-{{7,5,6,8,4,1,3,2}},
+  {"tpcds_web_f32", {
+      // ((0),(1),(2),(3))
+      { {0}, {1}, {2}, {3} }
   }},
+  {"tpch_lineitem_f32", {
+      // ((2,1,0),(3))
+      { {2,1,0}, {3} }
+  }},
+
+
+  // 'default' entry, unchanged
   {"default", {
-          {{1}, {2}, {3}, {4}}
+      {{1}, {2}, {3}, {4}}
   }}
 };
 
@@ -366,103 +407,6 @@ bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<doubl
   }
   return true;
 }
-//-----------------------------------------------------------------------------
-//coulmnorder
-//----------------------------------------------------------------------------
-// Modified version for floats to return column order data.
-// It also returns a pair of (rowCount, colCount) so you know the dimensions.
-std::pair<std::vector<float>, std::pair<size_t, size_t>> loadTSVDatasetColumn(const std::string& filePath) {
-  std::vector<std::vector<float>> rows;
-  std::ifstream file(filePath);
-  std::string line;
-  size_t rowCount = 0;
-  if (file.is_open()) {
-    while (std::getline(file, line)) {
-      std::stringstream ss(line);
-      std::string token;
-      std::getline(ss, token, '\t'); // skip first column if needed
-      std::vector<float> row;
-      while (std::getline(ss, token, '\t')) {
-        row.push_back(std::stof(token));
-      }
-      // Only add non-empty rows.
-      if (!row.empty()) {
-        rows.push_back(row);
-        rowCount++;
-      }
-    }
-    file.close();
-  } else {
-    std::cerr << "Unable to open file: " << filePath << std::endl;
-  }
-
-  if (rows.empty())
-    return {std::vector<float>(), {0, 0}};
-
-  size_t colCount = rows[0].size();
-  // Ensure all rows have the same number of columns.
-  for (const auto &r : rows) {
-    if (r.size() != colCount) {
-      throw std::runtime_error("Inconsistent number of columns in TSV file");
-    }
-  }
-
-  // Allocate a vector for the column-ordered data.
-  std::vector<float> colData(rowCount * colCount);
-  // For each column, copy values from every row.
-  for (size_t j = 0; j < colCount; j++) {
-    for (size_t i = 0; i < rowCount; i++) {
-      colData[j * rowCount + i] = rows[i][j];
-    }
-  }
-
-  return {colData, {rowCount, colCount}};
-}
-// Modified version for doubles to return column order data.
-// Returns a pair: the flat vector and a pair (rowCount, colCount)
-std::pair<std::vector<double>, std::pair<size_t, size_t>> loadTSVDatasetdoubleColumn(const std::string& filePath) {
-  std::vector<std::vector<double>> rows;
-  std::ifstream file(filePath);
-  std::string line;
-  size_t rowCount = 0;
-  if (file.is_open()) {
-    while (std::getline(file, line)) {
-      std::stringstream ss(line);
-      std::string token;
-      std::getline(ss, token, '\t'); // skip first column if desired
-      std::vector<double> row;
-      while (std::getline(ss, token, '\t')) {
-        row.push_back(std::stod(token));
-      }
-      if (!row.empty()) {
-        rows.push_back(row);
-        rowCount++;
-      }
-    }
-    file.close();
-  } else {
-    std::cerr << "Unable to open file: " << filePath << std::endl;
-  }
-
-  if (rows.empty())
-    return {std::vector<double>(), {0, 0}};
-
-  size_t colCount = rows[0].size();
-  for (const auto &r : rows) {
-    if (r.size() != colCount) {
-      throw std::runtime_error("Inconsistent number of columns in TSV file");
-    }
-  }
-
-  std::vector<double> colData(rowCount * colCount);
-  for (size_t j = 0; j < colCount; j++) {
-    for (size_t i = 0; i < rowCount; i++) {
-      colData[j * rowCount + i] = rows[i][j];
-    }
-  }
-
-  return {colData, {rowCount, colCount}};
-}
 
 // ----------------------------------------------------------------------------
 // Helper: Block a vector into blocks of a given blockSize (in bytes)
@@ -512,29 +456,21 @@ int main(int argc, char* argv[]) {
   std::string datasetName = extractDatasetName(datasetPath);
   std::cout << "Dataset Name: " << datasetName << std::endl;
   if (precisionBits == 64) {
-    //auto [doubleArray, rows] = loadTSVDatasetdouble(datasetPath);
-    auto [doubleArray, dims] = loadTSVDatasetdoubleColumn(datasetPath);
-    size_t rows1 = dims.first;
-    size_t colCount = dims.second;
+    auto [doubleArray, rows] = loadTSVDatasetdouble(datasetPath);
     if (doubleArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
       return 1;
     }
     globalByteArray = convertDoubleToBytes(doubleArray);
-    rowCount = rows1;
-    std::cout << "Loaded " << rows1 << " rows (64-bit) with "
+    rowCount = rows;
+    std::cout << "Loaded " << rows << " rows (64-bit) with "
               << doubleArray.size() << " total values.\n";
-  } else if (precisionBits == 32)
-    {
-   // auto [floatArray, rows] = loadTSVDataset(datasetPath);
-    auto [floatArray, dims] = loadTSVDatasetColumn(datasetPath);
-    size_t rows = dims.first;
-    size_t colCount = dims.second;
+  } else if (precisionBits == 32) {
+    auto [floatArray, rows] = loadTSVDataset(datasetPath);
     if (floatArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
       return 1;
     }
-
     globalByteArray = convertFloatToBytes(floatArray);
     rowCount = rows;
     std::cout << "Loaded " << rows << " rows (32-bit) with "
@@ -548,15 +484,16 @@ int main(int argc, char* argv[]) {
 
   // Define block sizes (in bytes) to test.
   std::vector<size_t> blockSizes = {
-    100 * 1024,
+
+// 100 * 1024,
     600 * 1024,
     640 * 1024,
     1000 * 1024,
-    10000 * 1024,
-    100000 * 1024,
-    132978*1024,
-
-    265956 * 1024,
+    // 10000 * 1024,
+    // 100000 * 1024,
+    // 132978*1024,
+    //
+    // 265956 * 1024,
   };
 
   // Open the CSV output file.

@@ -5,199 +5,136 @@
 #include "decompose.h"
 // Created by jamalids on 04/11/24.
 //
+#include "bzib_parallel.h"
+
+#include "lz4_parallel.h"
+#include "snappy_parallel.h"
+#include "zlib-parallel.h"
+#include "zstd_parallel.h"
+#include "bzib_parallel.h"
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <cxxopts.hpp>
 #include <fstream>
 #include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <chrono>
-#include <cstdint>
-#include <omp.h>
-#include <cstring>
 #include <map>
-#include <cmath>
-#include <cxxopts.hpp>
-#include "zstd_parallel.h"
-#include"snappy_parallel.h"
-#include "zlib-parallel.h"
-#include"lz4_parallel.h"
+#include <omp.h>
+#include <sstream>
+#include <string>
+#include <vector>
 std::vector<uint8_t> globalByteArray;
 
+// Map to store dataset names and their multiple possible configurations
 std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
-  {"acs_wht_f32", {
-          {{1,2}, {3}, {4}} ,
-          {{1, 2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"g24_78_usb2_f32", {
-        //  {{1}, {2,3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"jw_mirimage_f32", {
-         // {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"spitzer_irac_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"turbulence_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"wave_f32", {
-          {{1,2}, {3}, {4}},
-          {{1,2,3}, {4}},
-           {{1,2,3,4}},
-{{1}, {2}, {3}, {4}},
-  }},
-  {"hdr_night_f32", {
-          {{1,4}, {2}, {3}},
-          {{1}, {2}, {3}, {4}},
-          {{1,4}, {2,3}},
-{{1,4,2,3}},{{1}, {2}, {3}, {4}},
-  }},
-{"hdr_palermo_f32", {
-            {{1,4}, {2}, {3}},
-            {{1}, {2}, {3}, {4}},
-            {{1,4}, {2,3}},
-  {{1,4,2,3}},{{1}, {2}, {3}, {4}},
-}},
-  {"ts_gas_f32", {
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}},
-{{1}, {2}, {3}, {4}},
-  }},
-  {"solar_wind_f32", {
-          {{1}, {4}, {2}, {3}},
-{{1,4}, {2,3}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpch_lineitem_f32", {
-          {{1,2,3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpcds_web_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpcds_store_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}},{{1}, {2}, {3}, {4}},
-  }},
-  {"tpcds_catalog_f32", {
-          {{1,2,3}, {4}},
-          {{1}, {2,3}, {4}},
-{{1,2,3,4}}
-  }},
-  {"citytemp_f32", {
-          {{1,4}, {2,3}},
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}}
-  }},
-  {"hst_wfc3_ir_f32", {
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}}
-  }},
-  {"hst_wfc3_uvis_f32", {
-          {{1}, {2}, {3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}}
-  }},
-  {"rsim_f32", {
-          {{1,2,3}, {4}},
-          {{1,2}, {3}, {4}},
-{{1,2,3,4}},
-  }},
-  {"astro_mhd_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{1,2,3,4,5}, {6}, {7}, {8}}
-  }},
-  {"astro_pt_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{1,2,3,4,5}, {6}, {7}, {8}}
-  }},
-  {"jane_street_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{3,2,5,6,4,1}, {7}, {8}},
-{{3,2,5,6,4,1,7,8}}
-  }},
-  {"msg_bt_f64", {
-          {{1,2,3,4,5}, {6}, {7}, {8}},
-          {{3,2,1,4,5,6}, {7}, {8}},
-          {{3,2,1,4,5}, {6}, {7}, {8}},
-{{3,2,1,4,5,6,7,8}}
-  }},
-  {"num_brain_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{3,2,4,5,1,6}, {7}, {8}},
-{{3,2,4,5,1,6,7,8}},
-  }},
-  {"num_control_f64", {
-          {{1,2,3,4,5,6}, {7}, {8}},
-          {{4,5}, {6,3}, {1,2}, {7}, {8}},
-          {{4,5,6,3,1,2}, {7}, {8}},
-{{1,2,3,4,5,6}, {7}, {8}},
-{{4,5,6,3,1,2,7,8}},
-  }},
-  {"nyc_taxi2015_f64", {
-          {{7,4,6}, {5}, {3,2,1,8}},
-          {{7,4,6,5}, {3,2,1,8}},
-{{4,5,6,7}, {1,2,3,8}},
-          {{7,4,6}, {5}, {3,2,1}, {8}},
-          {{7,4}, {6}, {5}, {3,2}, {1}, {8}},
-{{7,4,6,5,3,2,1,8}},
-  }},
-  {"phone_gyro_f64", {
-          {{4,6}, {8}, {3,2,1,7},{5}, },
-          {{4,6}, {1}, {3,2}, {5}, {7}, {8}},
-          {{6,4,3,2,1,7}, {5}, {8}},
-{{6,4,3,2,1,7,5}, {8}},
-{{1,2,3,4,5,6,7}, {8}},
-{{6,4,3,2,1,7}, {5,8}},
-{{6,4,3,2,1,7,5,8}},
-  }},
-  {"tpch_order_f64", {
-              {{1,2,3,4}, {7}, {6,5}, {8}},
-          {{3,2,4,1}, {7}, {6,5}, {8}},
-          {{3,2,4,1,7}, {6,5}, {8}},
-{{3,2,4,1,7,6,5,8}},
-  }},
-  {"tpcxbb_store_f64", {
-          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3,1}, {5}, {7,6}, {8}},
-          {{4,2,3,1,5}, {7,6}, {8}},
-{{1,2,3,4,5}, {7,6}, {8}},
-{{4,2,3,1,5,7,6,8}},
-  }},
-  {"tpcxbb_web_f64", {
-              {{2,3,4}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3}, {1}, {5}, {7}, {6}, {8}},
-          {{4,2,3,1}, {5}, {7,6}, {8}},
-          {{4,2,3,1,5}, {7,6}, {8}},
-{{4,2,3,1,5,7,6,8}},
-  }},
-  {"wesad_chest_f64", {
-              {{7,5,6}, {8,4,1,3,2}},
-{{7,5,6}, {1,2,3,4,8}},
-          {{7,5}, {6}, {8,4,1}, {3,2}},
-          {{7,5}, {6}, {8,4}, {1}, {3,2}},
-          {{7,5}, {6}, {8,4,1,3,2}},
-{{7,5,6,8,4,1,3,2}},
-  }},
-  {"default", {
-          {{1}, {2}, {3}, {4}}
-  }}
+
+    // -- f32 datasets (mostly single solutions) --
+    {"acs_wht_f32", {
+        {{1,2}, {3}, {4}},
+          {{1},{2}, {3}, {4}}
+    }},
+    {"citytemp_f32", {
+        {{1,2}, {3}, {4}}
+    }},
+    {"hdr_night_f32", {
+        {{1,2}, {3}, {4}}
+    }},
+    {"hdr_palermo_f32", {
+        {{1,2}, {3}, {4}}
+    }},
+    {"hst_wfc3_ir_f32", {
+        {{1,2,}, {3}, {4}}
+    }},
+    {"hst_wfc3_uvis_f32", {
+        {{1,2,3}, {4}}
+    }},
+    {"jw_mirimage_f32", {
+        //{{1}, {2}, {3}, {4}}
+         {{1,2,3}, {4}},
+    }},
+    {"rsim_f32", {
+        {{1,2,3}, {4}}
+    }},
+    {"solar_wind_f32", {
+        {{1,2}, {3}, {4}}
+    }},
+    {"spitzer_irac_f32", {
+        {{1,2,3}, {4}}
+    }},
+    {"tpcds_catalog_f32", {
+        {{1}, {2}, {3}, {4}}
+    }},
+    {"tpcds_store_f32", {
+        {{1,2}, {3}, {4}}
+    }},
+    {"tpcds_web_f32", {
+        {{1}, {2}, {3}, {4}}
+    }},
+    {"tpch_lineitem_f32", {
+        {{1,2,3}, {4}}
+    }},
+
+    // wave_f32 has TWO solutions
+    {"wave_f32", {
+        {{1,2,3}, {4}},
+       // {{1,2}, {3}, {4}}
+    }},
+
+    // Default entry
+    {"default", {
+        {{1}, {2}, {3}, {4}}
+    }},
+
+    // -- f64 datasets (mostly two solutions each) --
+    {"astro_mhd_f64", {
+        // First solution
+        {{1,2,3,4,5,6}, {7,8}},
+        // Second solution
+      //  {{1,3,4}, {5}, {2}, {6}, {7}, {8}}
+    }},
+    {"tpch_order_f64", {
+        {{5,6}, {1,2,3,4}, {7}, {8}},
+    //    {{5}, {6}, {1,2,3}, {4}, {7}, {8}}
+    }},
+    {"astro_pt_f64", {
+       // {{1,2,3,4,5,6,7}, {8}},
+        {{4,5}, {1,2,3}, {6}, {7}, {8}}
+    }},
+    {"wesad_chest_f64", {
+        {{1,2,3,4,8}, {5,6,7}},
+      //  {{2,3}, {4}, {8}, {1}, {5}, {7}, {6}}
+    }},
+    {"phone_gyro_f64", {
+        {{1,2,3,4,5,6,7}, {8}},
+      //  {{2,3}, {1}, {7}, {4}, {6}, {5}, {8}}
+    }},
+    {"tpcxbb_store_f64", {
+        {{6,7}, {1,2,3,4,5}, {8}},
+     //   {{6}, {7}, {1,2,4}, {3}, {5}, {8}}
+    }},
+    {"num_brain_f64", {
+       // {{1,2,3,4,5,6,7}, {8}},
+        {{2,5}, {1,3,4}, {6}, {7}, {8}}
+    }},
+{"num_brain_f64", {
+  //  {{1,2,3,4,5,6,7}, {8}},
+     {{1,2}, {3}, {6},{4}, {5} ,{7}, {8}}
+
+      }},
+    {"msg_bt_f64", {
+     //   {{1,2,3,4,5,6,7}, {8}},
+       {{2,3}, {1}, {4}, {5}, {6}, {7}, {8}}
+    }},
+    {"tpcxbb_web_f64", {
+        {{6,7}, {1,2,3,4,5}, {8}},
+//  {{6}, {7}, {2,3,4}, {1}, {5}, {8}}
+    }},
+    {"nyc_taxi2015_f64", {
+        {{1,2,3,8}, {4,5,6,7}},
+// {{2,3}, {1}, {8}, {4}, {7}, {6}, {5}}
+    }}
+
 };
 
 
@@ -366,103 +303,6 @@ bool areVectorsEqualdouble(const std::vector<double>& a, const std::vector<doubl
   }
   return true;
 }
-//-----------------------------------------------------------------------------
-//coulmnorder
-//----------------------------------------------------------------------------
-// Modified version for floats to return column order data.
-// It also returns a pair of (rowCount, colCount) so you know the dimensions.
-std::pair<std::vector<float>, std::pair<size_t, size_t>> loadTSVDatasetColumn(const std::string& filePath) {
-  std::vector<std::vector<float>> rows;
-  std::ifstream file(filePath);
-  std::string line;
-  size_t rowCount = 0;
-  if (file.is_open()) {
-    while (std::getline(file, line)) {
-      std::stringstream ss(line);
-      std::string token;
-      std::getline(ss, token, '\t'); // skip first column if needed
-      std::vector<float> row;
-      while (std::getline(ss, token, '\t')) {
-        row.push_back(std::stof(token));
-      }
-      // Only add non-empty rows.
-      if (!row.empty()) {
-        rows.push_back(row);
-        rowCount++;
-      }
-    }
-    file.close();
-  } else {
-    std::cerr << "Unable to open file: " << filePath << std::endl;
-  }
-
-  if (rows.empty())
-    return {std::vector<float>(), {0, 0}};
-
-  size_t colCount = rows[0].size();
-  // Ensure all rows have the same number of columns.
-  for (const auto &r : rows) {
-    if (r.size() != colCount) {
-      throw std::runtime_error("Inconsistent number of columns in TSV file");
-    }
-  }
-
-  // Allocate a vector for the column-ordered data.
-  std::vector<float> colData(rowCount * colCount);
-  // For each column, copy values from every row.
-  for (size_t j = 0; j < colCount; j++) {
-    for (size_t i = 0; i < rowCount; i++) {
-      colData[j * rowCount + i] = rows[i][j];
-    }
-  }
-
-  return {colData, {rowCount, colCount}};
-}
-// Modified version for doubles to return column order data.
-// Returns a pair: the flat vector and a pair (rowCount, colCount)
-std::pair<std::vector<double>, std::pair<size_t, size_t>> loadTSVDatasetdoubleColumn(const std::string& filePath) {
-  std::vector<std::vector<double>> rows;
-  std::ifstream file(filePath);
-  std::string line;
-  size_t rowCount = 0;
-  if (file.is_open()) {
-    while (std::getline(file, line)) {
-      std::stringstream ss(line);
-      std::string token;
-      std::getline(ss, token, '\t'); // skip first column if desired
-      std::vector<double> row;
-      while (std::getline(ss, token, '\t')) {
-        row.push_back(std::stod(token));
-      }
-      if (!row.empty()) {
-        rows.push_back(row);
-        rowCount++;
-      }
-    }
-    file.close();
-  } else {
-    std::cerr << "Unable to open file: " << filePath << std::endl;
-  }
-
-  if (rows.empty())
-    return {std::vector<double>(), {0, 0}};
-
-  size_t colCount = rows[0].size();
-  for (const auto &r : rows) {
-    if (r.size() != colCount) {
-      throw std::runtime_error("Inconsistent number of columns in TSV file");
-    }
-  }
-
-  std::vector<double> colData(rowCount * colCount);
-  for (size_t j = 0; j < colCount; j++) {
-    for (size_t i = 0; i < rowCount; i++) {
-      colData[j * rowCount + i] = rows[i][j];
-    }
-  }
-
-  return {colData, {rowCount, colCount}};
-}
 
 // ----------------------------------------------------------------------------
 // Helper: Block a vector into blocks of a given blockSize (in bytes)
@@ -504,37 +344,29 @@ int main(int argc, char* argv[]) {
   std::string method      = result["method"].as<std::string>(); // "fastlz" or "zstd"
 
   // For convenience, we test only the user–supplied thread count.
-  std::vector<int> threadList = { userThreads };
-  int runCount = 1;
+  std::vector<int> threadList = { 8,userThreads };
+  int runCount = 5;
 
   // 1. Load dataset.
   size_t rowCount;
   std::string datasetName = extractDatasetName(datasetPath);
   std::cout << "Dataset Name: " << datasetName << std::endl;
   if (precisionBits == 64) {
-    //auto [doubleArray, rows] = loadTSVDatasetdouble(datasetPath);
-    auto [doubleArray, dims] = loadTSVDatasetdoubleColumn(datasetPath);
-    size_t rows1 = dims.first;
-    size_t colCount = dims.second;
+    auto [doubleArray, rows] = loadTSVDatasetdouble(datasetPath);
     if (doubleArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
       return 1;
     }
     globalByteArray = convertDoubleToBytes(doubleArray);
-    rowCount = rows1;
-    std::cout << "Loaded " << rows1 << " rows (64-bit) with "
+    rowCount = rows;
+    std::cout << "Loaded " << rows << " rows (64-bit) with "
               << doubleArray.size() << " total values.\n";
-  } else if (precisionBits == 32)
-    {
-   // auto [floatArray, rows] = loadTSVDataset(datasetPath);
-    auto [floatArray, dims] = loadTSVDatasetColumn(datasetPath);
-    size_t rows = dims.first;
-    size_t colCount = dims.second;
+  } else if (precisionBits == 32) {
+    auto [floatArray, rows] = loadTSVDataset(datasetPath);
     if (floatArray.empty()) {
       std::cerr << "Failed to load dataset from " << datasetPath << std::endl;
       return 1;
     }
-
     globalByteArray = convertFloatToBytes(floatArray);
     rowCount = rows;
     std::cout << "Loaded " << rows << " rows (32-bit) with "
@@ -548,15 +380,29 @@ int main(int argc, char* argv[]) {
 
   // Define block sizes (in bytes) to test.
   std::vector<size_t> blockSizes = {
-    100 * 1024,
-    600 * 1024,
-    640 * 1024,
-    1000 * 1024,
-    10000 * 1024,
-    100000 * 1024,
-    132978*1024,
+    // 100 * 1024,
+    // 600 * 1024,
+    // 640 * 1024,
+    // 1000 * 1024,
+    // 10000 * 1024,
+    // 100000 * 1024,
+    // 132978*1024,
+    //
+    // 265956 * 1024,
+   // 100 *1024,
 
-    265956 * 1024,
+    300 *1024,
+    400 *1024,
+    640* 1024,
+    768*1024,
+    1024*1024,
+    10*1024*1024,
+    24 *1024 *1024,
+    27*1024*1024,
+    30 *1024 *1024,
+    40 *1024 *1024,
+
+
   };
 
   // Open the CSV output file.
@@ -566,7 +412,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   file << "Index;DatasetName;Threads;BlockSize;ConfigString;RunType;CompressionRatio;"
-       << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput;TotalValues\n";
+       << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput;TotalValues;Num-Block\n";
 
   int recordIndex = 1;
   auto componentConfigurationsList = getComponentConfigurationsForDataset(datasetName);
@@ -642,7 +488,7 @@ int main(int argc, char* argv[]) {
 
           file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
                << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-               << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+               << compThroughput << ";" << decompThroughput << ";" << rowCount << ";" << numBlocks <<"\n";
         }
 
         // ------------------------------
@@ -668,7 +514,7 @@ int main(int argc, char* argv[]) {
 
           file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
                << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";" << pi_full.total_time_decompressed << ";"
-               << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+               << compThroughput << ";" << decompThroughput << ";" << rowCount <<";" << 1<< "\n";
         }
 
         // ------------------------------
@@ -736,7 +582,7 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
                  << "Decompose_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-                 << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+                 << compThroughput << ";" << decompThroughput << ";" << rowCount << ";" << numBlocks<< "\n";
           }
           // (ii) Decompose-Then-Chunk Version:
           for (size_t bs : blockSizes) {
@@ -744,6 +590,7 @@ int main(int argc, char* argv[]) {
             size_t totalSize = globalByteArray.size();
             ProfilingInfo pi_chunk;
             pi_chunk.config_string = configStr;
+            size_t numBlocks = (totalSize + bs - 1) / bs;
             std::vector<std::vector<std::vector<uint8_t>>> compressedBlocks;
             omp_set_num_threads(numThreads);
             double compStartOverall = omp_get_wtime();
@@ -776,7 +623,7 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
                  << "Decompose_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                 << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+                 << compThroughput << ";" << decompThroughput << ";" << rowCount << ";" << numBlocks <<"\n";
           }
         }
       } else if (method == "zstd") {
@@ -843,7 +690,7 @@ int main(int argc, char* argv[]) {
               file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                    << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
                    << totalCompTime << ";" << totalDecompTime << ";"
-                   << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+                   << compThroughput << ";" << decompThroughput << ";" << rowCount << ";" << numBlocks <<"\n";
           }
 
           // ------------------------------
@@ -868,7 +715,7 @@ int main(int argc, char* argv[]) {
               file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
                    << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                    << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
-                   << ";" << rowCount << "\n";
+                   << ";" << rowCount << ";" << 1 <<"\n";
           }
 
           // ------------------------------
@@ -955,7 +802,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
         file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
              << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
-             << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+             << compThroughput << ";" << decompThroughput << ";" << rowCount <<";" << numBlocks << "\n";
     }
 }
            //----------------------------------------
@@ -1009,16 +856,19 @@ for (const auto& componentConfig : componentConfigurationsList) {
     file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
          << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
          << totalCompTime << ";" << totalDecompTime << ";"
-         << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+         << compThroughput << ";" << decompThroughput << ";" << rowCount << ";" << 1<<"\n";
 }
 
           // ------------------------------
           // D. Decompose-Then-Chunk Parallel Compression (Zstd)
           // ------------------------------
+          size_t totalSize = globalByteArray.size();
           for (const auto& componentConfig : componentConfigurationsList) {
               std::string configStr = configToString1(componentConfig);
               std::cout << "\nConfig with " << componentConfig.size() << " sub-config(s): " << configStr << "\n";
+
               for (size_t bs : blockSizes) {
+                  size_t numBlocks = (totalSize + bs - 1) / bs;
                   std::cout << "Testing (Zstd) with chunk block size = " << bs << " bytes." << std::endl;
                   size_t totalSize = globalByteArray.size();
                   ProfilingInfo pi_chunk;
@@ -1051,6 +901,292 @@ for (const auto& componentConfig : componentConfigurationsList) {
                       std::cout << "[INFO] (Zstd) Final reconstructed data matches the original." << std::endl;
                   else
                       std::cerr << "[ERROR] (Zstd) Final reconstructed data does NOT match the original." << std::endl;
+                  double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
+                  auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
+                      totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
+                  file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+                       << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
+                       << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
+                       << compThroughput << ";" << decompThroughput << ";" << rowCount <<";" << numBlocks<< "\n";
+              }
+          }
+      }
+      /////////////////////////////////////
+      ///bzip
+      ///////////////////////////
+      else if (method == "bzip") {
+          // =========================
+          //Bzip – Run tests using the bzip routines.
+          // =========================
+
+          // ------------------------------
+          // A. FULL COMPRESSION WITH BLOCKING - PARALLEL (bzip)
+          // ------------------------------
+          for (size_t bs : blockSizes) {
+              std::cout << "Testing (bzip) with block size = " << bs << " bytes." << std::endl;
+              size_t totalSize = globalByteArray.size();
+              size_t numBlocks = (totalSize + bs - 1) / bs;
+              size_t totalCompressedSize = 0;
+              double totalCompTime = 0.0, totalDecompTime = 0.0;
+              std::vector<std::vector<uint8_t>> compressedBlocks(numBlocks);
+              std::vector<double> blockCompTimes(numBlocks, 0.0);
+              std::vector<double> blockDecompTimes(numBlocks, 0.0);
+              std::vector<size_t> blockCompressedSizes(numBlocks, 0);
+              ProfilingInfo pi_parallel;
+              pi_parallel.config_string = "N/A";
+              omp_set_num_threads(numThreads);
+              auto compStartOverall = std::chrono::high_resolution_clock::now();
+      #pragma omp parallel for
+              for (int i = 0; i < static_cast<int>(numBlocks); i++) {
+                  size_t start = i * bs;
+                  size_t end = std::min(start + bs, totalSize);
+                  size_t blockLength = end - start;
+                  std::vector<uint8_t> blockData(globalByteArray.begin() + start, globalByteArray.begin() + end);
+                  auto startTime = std::chrono::high_resolution_clock::now();
+                  size_t cSize = compressWithbzip2(blockData, compressedBlocks[i], 3);
+                  auto endTime = std::chrono::high_resolution_clock::now();
+                  blockCompTimes[i] = std::chrono::duration<double>(endTime - startTime).count();
+                  blockCompressedSizes[i] = cSize;
+      #pragma omp atomic
+                  totalCompressedSize += cSize;
+              }
+              auto compEndOverall = std::chrono::high_resolution_clock::now();
+              totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
+              std::vector<uint8_t> finalReconstructed(totalSize, 0);
+              double decompStartOverall = omp_get_wtime();
+      #pragma omp parallel for
+              for (int i = 0; i < static_cast<int>(numBlocks); i++) {
+                  size_t start = i * bs;
+                  size_t end = std::min(start + bs, totalSize);
+                  size_t blockLength = end - start;
+                  std::vector<uint8_t> decompBlock;
+                  double startTime = omp_get_wtime();
+                  decompressWithbzip2(compressedBlocks[i], decompBlock, blockLength);
+                  double endTime = omp_get_wtime();
+                  blockDecompTimes[i] = endTime - startTime;
+                  std::copy(decompBlock.begin(), decompBlock.end(), finalReconstructed.begin() + start);
+              }
+              double decompEndOverall = omp_get_wtime();
+              totalDecompTime = decompEndOverall - decompStartOverall;
+              if (finalReconstructed == globalByteArray)
+                  std::cout << "[INFO] (bzip) Reconstructed data matches the original (PARALLEL)." << std::endl;
+              else
+                  std::cerr << "[ERROR] (bzip) Reconstructed data does NOT match the original (PARALLEL)." << std::endl;
+              double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+              auto [compThroughput, decompThroughput] =
+                  calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
+              file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+                   << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
+                   << totalCompTime << ";" << totalDecompTime << ";"
+                   << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+          }
+
+          // ------------------------------
+          // B. FULL COMPRESSION WITHOUT BLOCKING (Non-blocking) using bzip
+          // ------------------------------
+          {
+              ProfilingInfo pi_full;
+              pi_full.type = "Full Compression (Non-blocking)";
+              std::vector<uint8_t> compressedData, decompressedData;
+              auto start = std::chrono::high_resolution_clock::now();
+              size_t compressedSize = bzibCompression(globalByteArray, pi_full, compressedData);
+              auto end = std::chrono::high_resolution_clock::now();
+              pi_full.total_time_compressed = std::chrono::duration<double>(end - start).count();
+              decompressedData.resize(globalByteArray.size());
+              start = std::chrono::high_resolution_clock::now();
+            size_t totalSize = globalByteArray.size();
+              bzibDecompression(compressedData, decompressedData,totalSize);
+              end = std::chrono::high_resolution_clock::now();
+              pi_full.total_time_decompressed = std::chrono::duration<double>(end - start).count();
+              double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
+              auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
+                  totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
+              file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+                   << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
+                   << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
+                   << ";" << rowCount << "\n";
+          }
+
+          // ------------------------------
+// C. Decomposed Compression with Blocking Parallel (bzip)
+// ------------------------------
+for (const auto& componentConfig : componentConfigurationsList) {
+    std::string configStr = configToString1(componentConfig);
+    std::cout << "\nConfig with " << componentConfig.size()
+              << " sub-config(s): " << configStr << "\n";
+    for (size_t bs : blockSizes) {
+        std::cout << "Testing (bzip) with block size = " << bs << " bytes." << std::endl;
+        size_t totalSize = globalByteArray.size();
+        size_t numBlocks = (totalSize + bs - 1) / bs;
+
+        // Prepare a vector of block views.
+        struct BlockView { const uint8_t* data; size_t size; };
+        std::vector<BlockView> fullBlocks;
+        fullBlocks.reserve(numBlocks);
+        for (size_t i = 0; i < numBlocks; i++) {
+            size_t start = i * bs;
+            size_t end = std::min(start + bs, totalSize);
+            fullBlocks.push_back({ globalByteArray.data() + start, end - start });
+        }
+
+        size_t totalCompressedSize = 0;
+        double totalCompTime = 0.0, totalDecompTime = 0.0;
+        std::vector<double> blockCompTimes(numBlocks, 0.0);
+        std::vector<double> blockDecompTimes(numBlocks, 0.0);
+        std::vector<size_t> blockCompressedSizes(numBlocks, 0);
+        ProfilingInfo pi_parallel;
+        pi_parallel.config_string = configStr;
+        omp_set_num_threads(numThreads);
+
+        // This vector will hold, for each block, the per–component compressed data.
+        std::vector<std::vector<std::vector<uint8_t>>> allCompressedBlocks(numBlocks);
+
+        // --- Compression Phase: Use the fused bzip decomposed parallel compression ---
+        auto compStartOverall = std::chrono::high_resolution_clock::now();
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < static_cast<int>(numBlocks); i++) {
+            auto startTime = std::chrono::high_resolution_clock::now();
+
+            std::vector<std::vector<uint8_t>> compComponents;
+            size_t cSize = bzipFusedDecomposedParallel(fullBlocks[i].data, fullBlocks[i].size,
+                                                       pi_parallel, compComponents,
+                                                       componentConfig, numThreads);
+            auto endTime = std::chrono::high_resolution_clock::now();
+            blockCompTimes[i] = std::chrono::duration<double>(endTime - startTime).count();
+            blockCompressedSizes[i] = cSize;
+#pragma omp atomic
+            totalCompressedSize += cSize;
+            allCompressedBlocks[i] = std::move(compComponents);
+        }
+        auto compEndOverall = std::chrono::high_resolution_clock::now();
+        totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
+
+        // --- Decompression Phase: Use the bzip decomposed parallel decompression function ---
+        std::vector<uint8_t> finalReconstructed(totalSize, 0);
+        double decompStartOverall = omp_get_wtime();
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < static_cast<int>(numBlocks); i++) {
+            // Allocate a temporary vector to hold the decompressed block.
+            std::vector<uint8_t> decompBlock(fullBlocks[i].size, 0);
+            auto startTime = omp_get_wtime();
+            bzipDecomposedParallelDecompression(allCompressedBlocks[i], pi_parallel,
+                                                componentConfig, numThreads,
+                                                fullBlocks[i].size, decompBlock.data());
+            auto endTime = omp_get_wtime();
+            blockDecompTimes[i] = endTime - startTime;
+            // Copy the decompressed block into its proper position.
+            std::copy(decompBlock.begin(), decompBlock.end(),
+                      finalReconstructed.begin() + i * bs);
+        }
+        double decompEndOverall = omp_get_wtime();
+        totalDecompTime = decompEndOverall - decompStartOverall;
+
+        if (finalReconstructed == globalByteArray)
+            std::cout << "[INFO] (bzip) Reconstructed data matches the original (PARALLEL)." << std::endl;
+        else
+            std::cerr << "[ERROR] (bzip) Reconstructed data does NOT match the original (PARALLEL)." << std::endl;
+
+        double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
+        auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
+        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+             << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
+             << totalCompTime << ";" << totalDecompTime << ";"
+             << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+    }
+}
+ //----------------------------------------
+ //--- Decomposed Compression without Chunking (Zstd) ---
+ //---------------------------------------------
+
+for (const auto& componentConfig : componentConfigurationsList) {
+    std::string configStr = configToString1(componentConfig);
+    std::cout << "\nConfig with " << componentConfig.size()
+              << " sub-config(s): " << configStr << "\n";
+    std::cout << "Testing (Zstd) without chunking." << std::endl;
+
+    size_t totalSize = globalByteArray.size();
+    size_t totalCompressedSize = 0;
+    double totalCompTime = 0.0, totalDecompTime = 0.0;
+
+    // Create a separate ProfilingInfo structure for the non-chunked test.
+    ProfilingInfo pi_nonchunked;
+    pi_nonchunked.config_string = configStr;
+
+    // --- Compression Phase: Compress the entire data in one go ---
+    std::vector<std::vector<uint8_t>> compComponents; // Per–component compressed data.
+    auto compStartOverall = std::chrono::high_resolution_clock::now();
+    size_t cSize = bzipFusedDecomposedParallel(globalByteArray.data(), totalSize,
+                                               pi_nonchunked, compComponents,
+                                               componentConfig, numThreads);
+    auto compEndOverall = std::chrono::high_resolution_clock::now();
+    totalCompTime = std::chrono::duration<double>(compEndOverall - compStartOverall).count();
+    totalCompressedSize = cSize;
+
+    // --- Decompression Phase: Decompress the entire data ---
+    std::vector<uint8_t> finalReconstructed(totalSize, 0);
+    auto decompStartOverall = std::chrono::high_resolution_clock::now();
+    bzipDecomposedParallelDecompression(compComponents, pi_nonchunked,
+                                        componentConfig, numThreads,
+                                        totalSize, finalReconstructed.data());
+    auto decompEndOverall = std::chrono::high_resolution_clock::now();
+    totalDecompTime = std::chrono::duration<double>(decompEndOverall - decompStartOverall).count();
+
+    // Verify that the decompressed data matches the original.
+    if (finalReconstructed == globalByteArray)
+        std::cout << "[INFO] (bzip) Reconstructed data matches the original (NON-CHUNKED)." << std::endl;
+    else
+        std::cerr << "[ERROR] (bzip) Reconstructed data does NOT match the original (NON-CHUNKED)." << std::endl;
+
+    // Calculate the compression ratio and throughput.
+    double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
+    auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
+
+    // Record the results (using "N/A" or similar for block size since no chunking is used).
+    file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
+         << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
+         << totalCompTime << ";" << totalDecompTime << ";"
+         << compThroughput << ";" << decompThroughput << ";" << rowCount << "\n";
+}
+
+          // ------------------------------
+          // D. Decompose-Then-Chunk Parallel Compression (bzip)
+          // ------------------------------
+          for (const auto& componentConfig : componentConfigurationsList) {
+              std::string configStr = configToString1(componentConfig);
+              std::cout << "\nConfig with " << componentConfig.size() << " sub-config(s): " << configStr << "\n";
+              for (size_t bs : blockSizes) {
+                  std::cout << "Testing (bzip) with chunk block size = " << bs << " bytes." << std::endl;
+                  size_t totalSize = globalByteArray.size();
+                  ProfilingInfo pi_chunk;
+                  pi_chunk.config_string = configStr;
+                  std::vector<std::vector<std::vector<uint8_t>>> compressedBlocks;
+                  omp_set_num_threads(numThreads);
+                  double compStartOverall = omp_get_wtime();
+                  size_t totalCompressedSize = bzipDecomposedThenChunkedParallelCompression(
+                                                    globalByteArray.data(), globalByteArray.size(),
+                                                    pi_chunk,
+                                                    compressedBlocks,
+                                                    componentConfig,
+                                                    numThreads,
+                                                    bs);
+                  double compEndOverall = omp_get_wtime();
+                  pi_chunk.total_time_compressed = compEndOverall - compStartOverall;
+                  std::vector<uint8_t> finalReconstructed(totalSize);
+                  double decompStartOverall = omp_get_wtime();
+                  bzipDecomposedThenChunkedParallelDecompression(
+                                                    compressedBlocks,
+                                                    pi_chunk,
+                                                    componentConfig,
+                                                    numThreads,
+                                                    globalByteArray.size(),
+                                                    bs,
+                                                    finalReconstructed.data());
+                  double decompEndOverall = omp_get_wtime();
+                  pi_chunk.total_time_decompressed = decompEndOverall - decompStartOverall;
+                  if (finalReconstructed == globalByteArray)
+                      std::cout << "[INFO] (bzip) Final reconstructed data matches the original." << std::endl;
+                  else
+                      std::cerr << "[ERROR] (bzip) Final reconstructed data does NOT match the original." << std::endl;
                   double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
                   auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                       totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);

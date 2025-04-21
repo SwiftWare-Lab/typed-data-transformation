@@ -17,6 +17,11 @@ module load gcc/13.3
 module load cmake/3.27.7
 
 # Define directories
+
+
+
+
+
 DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
 RESULTS_DIR="/home/jamalids/Documents/results1"
 EXECUTABLE="./build/external_tools/parallel-test"
@@ -34,6 +39,7 @@ cd ..
 # Check if executable was built
 if [ ! -f "$EXECUTABLE" ]; then
     echo "Error: Executable not found: $EXECUTABLE"
+
     exit 1
 fi
 
@@ -50,7 +56,7 @@ for dataset in "$DATASET_DIR"/*; do
         start_time=$(date +%s.%N)
 
 
-        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 64 --method=snappy
+        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 64 --method=zstd
 
         end_time=$(date +%s.%N)
         elapsed_time=$(echo "$end_time - $start_time" | bc)

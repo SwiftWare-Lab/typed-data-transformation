@@ -62,7 +62,7 @@ inline void decompressWithFastLZ1(
 // Optimized In-Place Reordering for Decomposition-Based Compression
 // Uses SIMD (AVX2) for faster memory operations and OpenMP for parallel execution
 //-----------------------------------------------------------------------------
-inline void splitBytesIntoComponentsNested(
+inline void splitBytesIntoComponentsNested1(
     const std::vector<uint8_t>& byteArray,
     std::vector<std::vector<uint8_t>>& outputComponents,
     const std::vector<std::vector<size_t>>& allComponentSizes,
@@ -147,6 +147,7 @@ inline void reassembleBytesFromComponentsNested(
 }
 
 
+
 //////////////////////////////
 inline void fastlzDecomposedParallelDecompression(
     const std::vector<std::vector<uint8_t>>& compressedComponents,
@@ -205,7 +206,7 @@ inline void fastlzDecomposedParallelDecompression(
 // This function fuses the splitting (reordering) and compression steps
 // into one routine for potential performance benefits.
 /////////////////////////////////////////////
-inline size_t fastlzFusedDecomposedParallel(
+inline size_t fastlzFusedDecomposedParallel1(
     const uint8_t* data, size_t dataSize,
     ProfilingInfo &pi,
     std::vector<std::vector<uint8_t>>& compressedComponents,
@@ -311,6 +312,118 @@ inline size_t fastlzFusedDecomposedParallel(
 
     return totalCompressedSize;
 }
+
+//
+inline size_t fastlzFusedDecomposedParallel(
+    const uint8_t* data,
+    size_t dataSize,
+    ProfilingInfo &pi,
+    std::vector<std::vector<uint8_t>>& compressedComponents,
+    const std::vector<std::vector<size_t>>& allComponentSizes,
+    int numThreads
+) {
+    // ----------------------------------------------------------------------
+    // 1. Calculate the "bytes per element" and "numElements."
+    // ----------------------------------------------------------------------
+    size_t totalBytesPerElement = 0;
+    for (const auto& group : allComponentSizes) {
+        totalBytesPerElement += group.size();
+    }
+    const size_t numElements = dataSize / totalBytesPerElement;
+
+    // We only want ONE final compressed vector, so resize accordingly.
+    compressedComponents.resize(1);
+
+    // ----------------------------------------------------------------------
+    // 2. Prepare for parallel splitting into a SINGLE large buffer.
+    //    We want to place each component’s data in a back-to-back fashion.
+    // ----------------------------------------------------------------------
+    // The total size of all uncompressed data is dataSize, i.e. the same
+    // as the original input. But we want to store them in "component-order":
+    //   comp0’s bytes (for all elements), then comp1’s bytes, etc.
+    // Let’s figure out the offsets where each component’s data will go.
+    std::vector<size_t> componentOffsets(allComponentSizes.size());
+    {
+        size_t currentOffset = 0;
+        for (size_t i = 0; i < allComponentSizes.size(); i++) {
+            size_t compUncompressedSize = allComponentSizes[i].size() * numElements;
+            componentOffsets[i] = currentOffset;
+            currentOffset += compUncompressedSize;
+        }
+    }
+    // The final concatenated buffer will be size = dataSize.
+    // Because sum_of(allComponentSizes[i].size()) * numElements = dataSize.
+    std::vector<uint8_t> concatenatedUncompressed(dataSize);
+
+    // Prepare local timing arrays (one entry per component).
+    std::vector<double> splitTimes(allComponentSizes.size(), 0.0);
+
+    // ----------------------------------------------------------------------
+    // 3. Parallel splitting: fill the big "concatenatedUncompressed" buffer.
+    // ----------------------------------------------------------------------
+    double overallSplitStart = omp_get_wtime();
+    omp_set_num_threads(numThreads);
+
+#pragma omp parallel for schedule(static)
+    for (int compIdx = 0; compIdx < static_cast<int>(allComponentSizes.size()); compIdx++) {
+        double t1 = omp_get_wtime();
+
+        const auto& groupIndices = allComponentSizes[compIdx];
+        const size_t groupSize = groupIndices.size();
+
+        // Where this component’s data begins in the final concatenated buffer.
+        size_t compOffset = componentOffsets[compIdx];
+
+        // Extract data from `data` -> write into concatenatedUncompressed[compOffset + ...]
+        for (size_t elem = 0; elem < numElements; elem++) {
+            size_t writePos = compOffset + elem * groupSize;
+            // The base index of the 'elem'-th element in the original interleaved data
+            size_t baseIndex = elem * totalBytesPerElement;
+
+            for (size_t sub = 0; sub < groupSize; sub++) {
+                size_t idxInElem = groupIndices[sub] - 1;  // if 1-based
+                concatenatedUncompressed[writePos + sub] = data[baseIndex + idxInElem];
+            }
+        }
+
+        double t2 = omp_get_wtime();
+        splitTimes[compIdx] = (t2 - t1);
+    }
+    double overallSplitEnd = omp_get_wtime();
+    double maxSplitTime = 0.0;
+    for (auto st : splitTimes) {
+        if (st > maxSplitTime) maxSplitTime = st;
+    }
+
+    // ----------------------------------------------------------------------
+    // 4. Compress the entire "concatenatedUncompressed" as ONE component.
+    // ----------------------------------------------------------------------
+    double compStart = omp_get_wtime();
+    std::vector<uint8_t> compData;
+    size_t cSize = compressWithFastLZ1(
+        concatenatedUncompressed.data(), // pointer to big uncompressed buffer
+        concatenatedUncompressed.size(),
+        compData
+    );
+    double compEnd = omp_get_wtime();
+    double compressTime = compEnd - compStart;
+
+    compressedComponents[0] = std::move(compData);
+
+    // ----------------------------------------------------------------------
+    // 5. Calculate times and return total compressed size
+    // ----------------------------------------------------------------------
+    double overallEnd = omp_get_wtime();
+    double overallTime = overallEnd - overallSplitStart;
+    // (If you truly want from the beginning, you can do a separate high-level start time)
+
+    pi.split_time = maxSplitTime;
+    pi.compress_time = compressTime;
+    pi.total_time_compressed = overallTime;
+
+    return cSize; // total compressed bytes
+}
+
 //-----------------------------------------------------------------------------
 // Compute Overall Compression Ratio
 //-----------------------------------------------------------------------------
