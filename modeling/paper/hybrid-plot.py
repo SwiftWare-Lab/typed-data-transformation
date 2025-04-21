@@ -7,7 +7,7 @@ matplotlib.use('TkAgg')  # or use another backend if desired
 import matplotlib.pyplot as plt
 import re
 ###################
-directories = ['/home/jamalids/Documents/results1_zlib']
+directories = ['/home/jamalids/Documents/results-zstd/all']
 dataframes = []
 
 for directory_path in directories:
@@ -91,7 +91,7 @@ selected_df.to_csv('/home/jamalids/Documents/selected_pairs.csv', index=False)
 print("Done. CSV with selected pairs saved.")
 final_A = []
 chunked_df = selected_df[selected_df['RunType'] == 'Chunked_Decompose_Parallel']
-L2_value =24* 1024 *1024,
+L2_value =300 *1024,
 chunked_df = chunked_df [chunked_df ['BlockSize'] == L2_value].copy()
 
 if not chunked_df.empty:

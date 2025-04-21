@@ -149,7 +149,7 @@ import numpy as np
 
 # === 1. Load max_compression_throughput_pairs.csv and entropy results ===
 df_pairs = pd.read_csv("/home/jamalids/Documents/max_compression_throughput_pairs.csv")
-df_entropy = pd.read_csv("/home/jamalids/Documents/float_level_entropy_results.csv")
+df_entropy = pd.read_csv("/home/jamalids/Documents/datasetname/float_level_entropy_results.csv")
 
 # === 2. Merge them by DatasetName ===
 merged = pd.merge(df_pairs, df_entropy, on='DatasetName', how='left')
