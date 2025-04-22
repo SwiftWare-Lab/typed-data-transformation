@@ -7,7 +7,7 @@ matplotlib.use('TkAgg')  # or use another backend if desired
 import matplotlib.pyplot as plt
 import re
 ###################
-directories = ['/home/jamalids/Documents/results-fastlz']
+directories = ['/home/jamalids/Documents/results1']
 dataframes = []
 
 for directory_path in directories:
@@ -57,12 +57,7 @@ if missing_cols:
 
 group_columns = ['DatasetName', 'Threads', 'RunType', 'BlockSize', 'ConfigString']
 median_df = combined_df.groupby(group_columns, as_index=False).median(numeric_only=True)
-median_df['RunType'] = combined_df['RunType'].replace({
 
-   # "Chunk-decompose_Parallel": "Chunked_Decompose_Parallel",
-    "Decompose_Chunk_Parallel": "Chunked_Decompose_Parallel"
-
-})
 median_output_path = '/home/jamalids/Documents/combined_median_rows.csv'
 median_df.to_csv(median_output_path, index=False)
 print(f'Combined CSV with median-based values saved to {median_output_path}')
@@ -176,64 +171,3 @@ plt.setp(axes[1].xaxis.get_majorticklabels(), rotation=45, ha='right')
 
 plt.tight_layout()
 plt.savefig('/home/jamalids/Documents/Throughput.png')
-plt.show()
-#######################3
-from scipy.stats import gmean
-import matplotlib.pyplot as plt
-import pandas as pd
-
-# Load the CSV file
-file_path = '/home/jamalids/Documents/combined_median_rows.csv'
-df = pd.read_csv(file_path)
-
-# Filter for Chunked_Decompose_Parallel and Threads == 16
-chunked_df = df[(df['RunType'] == 'Chunked_Decompose_Parallel') & (df['Threads'] == 16)]
-
-# Compute geometric mean by BlockSize
-gmean_chunked = chunked_df.groupby('BlockSize').agg({
-    'CompressionRatio': gmean,
-    'CompressionThroughput': gmean,
-    'DecompressionThroughput': gmean
-}).reset_index()
-
-# Convert BlockSize to string for clear x-axis labels
-gmean_chunked['BlockSize'] = gmean_chunked['BlockSize'].astype(str)
-
-# Compute Full Baseline: apply gmean to each column directly (instead of deprecated .agg)
-full_df = df[(df['RunType'] == 'Full') & (df['Threads'] == 16)]
-gmean_full = full_df[['CompressionRatio', 'CompressionThroughput', 'DecompressionThroughput']].apply(gmean)
-
-# Extract scalar values using .item()
-baseline_cr = gmean_full['CompressionRatio'].item()
-baseline_ct = gmean_full['CompressionThroughput'].item()
-baseline_dct = gmean_full['DecompressionThroughput'].item()
-
-# Plotting
-fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 10), sharex=True)
-
-# Compression Ratio plot
-axes[0].plot(gmean_chunked['BlockSize'], gmean_chunked['CompressionRatio'], marker='o', color='blue', label='GMean CompressionRatio')
-axes[0].axhline(baseline_cr, color='red', linestyle='--', label='Full Baseline CompressionRatio')
-axes[0].set_ylabel('GMean CompressionRatio')
-axes[0].set_title('GMean Compression Ratio vs BlockSize')
-axes[0].legend()
-axes[0].grid(True)
-
-# Throughput plot
-axes[1].plot(gmean_chunked['BlockSize'], gmean_chunked['CompressionThroughput'], marker='o', color='green', label='GMean TDT CompressionThroughput')
-axes[1].plot(gmean_chunked['BlockSize'], gmean_chunked['DecompressionThroughput'], marker='^', color='purple', label='GMean TDT DecompressionThroughput')
-axes[1].axhline(baseline_ct, color='red', linestyle='--', label='GMean Standard CompressionThroughput')
-axes[1].axhline(baseline_dct, color='black', linestyle='--', label='GMean Standard DecompressionThroughput')
-axes[1].set_ylabel('GMean Throughput')
-axes[1].set_xlabel('BlockSize')
-axes[1].set_title('GMean Compression & Decompression Throughput vs BlockSize using Zstd')
-axes[1].legend()
-axes[1].grid(True)
-
-# Rotate x-axis labels
-plt.setp(axes[1].xaxis.get_majorticklabels(), rotation=45, ha='right')
-
-# Save and show
-plt.tight_layout()
-plt.savefig('/home/jamalids/Documents/Throughput.png')
-plt.show()
