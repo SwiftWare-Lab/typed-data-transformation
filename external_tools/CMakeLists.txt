@@ -131,3 +131,28 @@ target_include_directories(parallel-test
         ${lz4_SOURCE_DIR}/lib
         ${bzip2_SOURCE_DIR}
 )
+############################
+set(HALF_HPP_DIR ${CMAKE_SOURCE_DIR}/external/half)
+set(HALF_HPP_FILE ${HALF_HPP_DIR}/half.hpp)
+
+file(MAKE_DIRECTORY ${HALF_HPP_DIR})
+
+if(NOT EXISTS ${HALF_HPP_FILE})
+    message(STATUS "Downloading half.hpp from GitHub...")
+    file(DOWNLOAD
+            https://raw.githubusercontent.com/halffloat/half/master/half.hpp
+            ${HALF_HPP_FILE}
+            SHOW_PROGRESS
+            STATUS status
+            LOG log
+    )
+
+    list(GET status 0 status_code)
+    list(GET status 1 status_string)
+    if(NOT status_code EQUAL 0)
+        message(FATAL_ERROR "Failed to download half.hpp: ${status_string}\nLog:\n${log}")
+    endif()
+endif()
+
+include_directories(${CMAKE_SOURCE_DIR}/external/half)
+
