@@ -182,7 +182,8 @@ bool isDirectory(const std::string &p) {
 //---------------------------------------------------------
 // Process one dataset
 //---------------------------------------------------------
-int runSingleDataset(const std::string &path, int precisionBits) {
+int runSingleDataset(const std::string &path, int precisionBits, int runId){
+
   // Load dataset and convert to bytes
   std::vector<uint8_t> globalBytes;
   if (precisionBits == 64) {
@@ -495,7 +496,7 @@ for (auto &cfg : cfgList) {
   double thrD2 = (totalBytes/1e6)/tD2;
   double rat2  = double(totalBytes)/sum2;
   std::ostringstream row2;
-  row2<<datasetName<<",Component,"<<totalBytes<<","<<sum2<<","
+  row2<<runId<<","<<datasetName<<",Component,"<<totalBytes<<","<<sum2<<","
       <<std::fixed<<std::setprecision(2)<<rat2<<","
       <<tC2<<","<<tD2<<","<<thrC2<<","<<thrD2<<","
       <<configToString(cfg);
@@ -519,10 +520,8 @@ for (auto &cfg : cfgList) {
 // --- Part III: Block‑aggregated Component Compression/Decompression ---
 
   // --- Write all results to CSV ---
-  std::ofstream csv(csvFilename);
-  csv << "Dataset,Mode,TotalBytes,CompressedBytes,Ratio,CompTime,DecompTime,"
-         "CompThroughput,DecompThroughput,Config\n";
-  csv << datasetName << ",Whole," << totalBytes << "," << out1 << ","
+  std::ofstream csv(csvFilename, std::ios::app);
+  csv << runId << "," << datasetName << ",Whole," << totalBytes << "," << out1 << ","
       << std::fixed << std::setprecision(2) << rat1 << ","
       << tC1 << "," << tD1 << ","
       << thrC1 << "," << thrD1 << ",\"whole\"\n";
@@ -533,6 +532,10 @@ for (auto &cfg : cfgList) {
   return EXIT_SUCCESS;
 }
 
+
+//---------------------------------------------------------
+// Main entry
+//---------------------------------------------------------
 //---------------------------------------------------------
 // Main entry
 //---------------------------------------------------------
@@ -544,13 +547,44 @@ int main(int argc, char **argv) {
   std::string path = argv[1];
   int prec = std::stoi(argv[2]);
 
+  const int runs = 5;
+
   if (isDirectory(path)) {
     for (auto &f : getAllTsvFiles(path)) {
-      std::cout << "=== Processing " << f << " ===\n";
-      runSingleDataset(f, prec);
+      std::string datasetName = f;
+      if (auto p = datasetName.find_last_of("/\\"); p != std::string::npos)
+        datasetName = datasetName.substr(p + 1);
+      if (auto d = datasetName.find_last_of('.'); d != std::string::npos)
+        datasetName = datasetName.substr(0, d);
+      std::string csvFilename = "/home/jamalids/Documents/" + datasetName + ".csv";
+
+      std::ofstream csv(csvFilename);
+      csv << "RUN,Dataset,Mode,TotalBytes,CompressedBytes,Ratio,CompTime,DecompTime,"
+             "CompThroughput,DecompThroughput,Config\n";
+      csv.close();
+
+      for (int r = 1; r <= runs; ++r) {
+        std::cout << "=== Run " << r << " for " << f << " ===\n";
+        runSingleDataset(f, prec, r);
+      }
     }
   } else {
-    runSingleDataset(path, prec);
+    std::string datasetName = path;
+    if (auto p = datasetName.find_last_of("/\\"); p != std::string::npos)
+      datasetName = datasetName.substr(p + 1);
+    if (auto d = datasetName.find_last_of('.'); d != std::string::npos)
+      datasetName = datasetName.substr(0, d);
+    std::string csvFilename = "/home/jamalids/Documents/" + datasetName + ".csv";
+
+    std::ofstream csv(csvFilename);
+    csv << "RUN,Dataset,Mode,TotalBytes,CompressedBytes,Ratio,CompTime,DecompTime,"
+           "CompThroughput,DecompThroughput,Config\n";
+    csv.close();
+
+    for (int r = 1; r <= runs; ++r) {
+      std::cout << "=== Run " << r << " for " << path << " ===\n";
+      runSingleDataset(path, prec, r);
+    }
   }
   return 0;
 }
