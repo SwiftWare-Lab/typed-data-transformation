@@ -7,7 +7,7 @@ matplotlib.use('Agg')  # or use another backend if desired
 import matplotlib.pyplot as plt
 import re
 ###################
-#directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results1_zlib']
+#directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results1-bzip/all']
 directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-zstd/all']
 dataframes = []
 

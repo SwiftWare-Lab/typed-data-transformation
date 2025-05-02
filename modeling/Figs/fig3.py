@@ -39,6 +39,21 @@ for tool, path in files.items():
     dfs.append(df)
 
 combined_df = pd.concat(dfs, ignore_index=True)
+# ------------------------------------------------------------------
+# Exclude specific precision-suffixed datasets
+# ------------------------------------------------------------------
+bad_datasets = [
+    "ts_gas_f32",
+    "phone_gyro_f64",
+    "nyc_taxi2015_f64",
+    "jane_street_f64",
+    "gas_price_f64",
+    "tpch_lineitem_f32",
+]
+
+combined_df = combined_df[~combined_df["DatasetName"].isin(bad_datasets)].copy()
+# ------------------------------------------------------------------
+
 combined_df['RunType'] = combined_df['RunType'].replace({
     "Chunked_Decompose_Parallel": "TDT",
     "Chunk-decompose_Parallel":  "TDT",

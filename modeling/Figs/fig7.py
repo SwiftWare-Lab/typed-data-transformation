@@ -1,59 +1,59 @@
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import numpy as np
-#
-#
-#
-# # Define file paths and corresponding compression tool names
-# files = {
-#     'lz4': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/lz4.csv',
-#     'snappy': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/snappy.csv',
-#     'zlib': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/zlib.csv',
-#     'zstd': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/zstd.csv',
-#     'bzip': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/bzip.csv',
-#     'FastLZ': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/fastlz.csv',
-#     'nvCOMP': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/nvcomp.csv'
-# }
-#
-# # Read and process each CSV
-# dfs = []
-# for comp_tool, path in files.items():
-#     df = pd.read_csv(path)
-#     # Add new column with the compression tool name
-#     df['compression_tool'] = comp_tool
-#     dfs.append(df)
-#
-# # Combine all dataframes into one
-# combined_df = pd.concat(dfs, ignore_index=True)
-#
-# # Print the DataFrame columns to check available metric columns
-# print("Columns in the combined DataFrame:", combined_df.columns)
-#
-# # Replace RunType values:
-# # "Chunked_Decompose_Parallel" or "Chunk-decompose_Parallel" become "TDT"
-# # "Full" becomes "standard"
-# combined_df['RunType'] = combined_df['RunType'].replace({
-#     "Chunked_Decompose_Parallel": "TDT",
-#     "Chunk-decompose_Parallel": "TDT",
-#     "Decompose_Chunk_Parallel": "TDT",
-#     "Component":"TDT",
-#     "Whole":"standard",
-#     "Full": "standard",
-#     "Chunked_parallel":"standard"
-# })
-#
-# # Save the combined DataFrame to a CSV file
-# # combined_csv_path = "/mnt/c/Users/jamalids/Downloads/figs/combine-com-through/combine-all.csv/combine.csv"
-# # combined_df.to_csv(combined_csv_path, index=False)
-# # print(f"Combined CSV saved to: {combined_csv_path}")
-#
-# # === 1. Load max_compression_throughput_pairs.csv and entropy results ===
-# df_pairs = combined_df
-# df_entropy =  pd.read_csv("/mnt/c/Users/jamalids/Downloads/figs/DatasetIdMapping.csv")
-#
-# # === 2. Merge them by DatasetName ===
-# df = pd.merge(df_pairs, df_entropy, on='DatasetName', how='inner')
-# df.to_csv(("/mnt/c/Users/jamalids/Downloads/figs/nwrge.csv"))
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+
+# Define file paths and corresponding compression tool names
+files = {
+    'lz4': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/lz4.csv',
+    'snappy': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/snappy.csv',
+    'zlib': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/zlib.csv',
+    'zstd': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/zstd.csv',
+    'bzip': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/bzip.csv',
+    'FastLZ': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/fastlz.csv',
+    'nvCOMP': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/nvcomp.csv'
+}
+
+# Read and process each CSV
+dfs = []
+for comp_tool, path in files.items():
+    df = pd.read_csv(path)
+    # Add new column with the compression tool name
+    df['compression_tool'] = comp_tool
+    dfs.append(df)
+
+# Combine all dataframes into one
+combined_df = pd.concat(dfs, ignore_index=True)
+
+# Print the DataFrame columns to check available metric columns
+print("Columns in the combined DataFrame:", combined_df.columns)
+
+# Replace RunType values:
+# "Chunked_Decompose_Parallel" or "Chunk-decompose_Parallel" become "TDT"
+# "Full" becomes "standard"
+combined_df['RunType'] = combined_df['RunType'].replace({
+    "Chunked_Decompose_Parallel": "TDT",
+    "Chunk-decompose_Parallel": "TDT",
+    "Decompose_Chunk_Parallel": "TDT",
+    "Component":"TDT",
+    "Whole":"standard",
+    "Full": "standard",
+    "Chunked_parallel":"standard"
+})
+
+# Save the combined DataFrame to a CSV file
+# combined_csv_path = "/mnt/c/Users/jamalids/Downloads/figs/combine-com-through/combine-all.csv/combine.csv"
+# combined_df.to_csv(combined_csv_path, index=False)
+# print(f"Combined CSV saved to: {combined_csv_path}")
+
+# === 1. Load max_compression_throughput_pairs.csv and entropy results ===
+df_pairs = combined_df
+df_entropy =  pd.read_csv("/mnt/c/Users/jamalids/Downloads/figs/DatasetIdMapping.csv")
+
+# === 2. Merge them by DatasetName ===
+df = pd.merge(df_pairs, df_entropy, on='DatasetName', how='inner')
+df.to_csv(("/mnt/c/Users/jamalids/Downloads/figs/nwrge.csv"))
 # ######
 # ############################################################
 # import pandas as pd

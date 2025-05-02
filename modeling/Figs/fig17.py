@@ -34,8 +34,8 @@ gmean_df = grouped.agg({
 
 gmean_df['RunType'] = gmean_df['RunType'].replace({
     'Full': 'standard',
-    'Chunked_Decompose_Parallel': 'first chunk then decompose',
-    'Decompose_Chunk_Parallel': 'first decompose then chunk',
+    'Chunked_Decompose_Parallel': 'first Block then decompose',
+    'Decompose_Chunk_Parallel': 'first decompose then Block',
     'full': 'standard'
 })
 
@@ -60,7 +60,7 @@ for i, runtype in enumerate(pivot_df['DecompressionThroughput'].columns):
     ax2.bar(x + i * bar_width, pivot_df['DecompressionThroughput'][runtype], width=bar_width, label=runtype)
 
 ax2.set_ylabel("Throughput")
-ax2.set_xlabel("Compression Tool")
+#ax2.set_xlabel("Compression Tool")
 ax2.set_title("Geometric Mean Decompression Throughput")
 #ax2.grid(True)
 
@@ -94,16 +94,16 @@ for i, runtype in enumerate(pivot_df['CompressionThroughput'].columns):
 
 ax1.set_ylabel("Throughput")
 ax1.set_title("Average Compression Throughput")
-ax1.grid(True)
+#ax1.grid(True)
 
 # Decompression Throughput
 for i, runtype in enumerate(pivot_df['DecompressionThroughput'].columns):
     ax2.bar(x + i * bar_width, pivot_df['DecompressionThroughput'][runtype], width=bar_width, label=runtype)
 
 ax2.set_ylabel("Throughput")
-ax2.set_xlabel("Compression Tool")
+#ax2.set_xlabel("Compression Tool")
 ax2.set_title("Average Decompression Throughput")
-ax2.grid(True)
+#ax2.grid(True)
 
 ax2.set_xticks(x + bar_width)
 ax2.set_xticklabels(pivot_df.index, rotation=45, ha='right')
@@ -114,3 +114,4 @@ ax2.legend(ncol=1)
 plt.tight_layout()
 plt.savefig("/mnt/c/Users/jamalids/Downloads/Throughput-average.pdf", bbox_inches='tight')
 plt.close()
+#####################################################

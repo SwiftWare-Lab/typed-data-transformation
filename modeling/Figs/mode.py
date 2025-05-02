@@ -7,8 +7,8 @@ matplotlib.use('Agg')  # or use another backend if desired
 import matplotlib.pyplot as plt
 import re
 ###################
-#directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-zstd/all']
-directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-lz4']
+#directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results1-bzip/all']
+directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/statistic-all']
 dataframes = []
 
 for directory_path in directories:
@@ -78,8 +78,8 @@ for (dataset, threads, blockSize), group in median_df.groupby(['DatasetName', 'T
         selected_pairs.append(chosen_decompose)
 
     # --- 2) Also pick the Full row (if present) ---
-    #full_rows = group[group['RunType'] == 'Full']
-    full_rows = group[(group['RunType'] == 'Chunked_parallel') & (group['BlockSize'] == 31457280)]
+    full_rows = group[group['RunType'] == 'Full']
+
 
     if not full_rows.empty:
         # For "Full" you might or might not want to sort.
@@ -94,8 +94,9 @@ selected_df.to_csv('/mnt/c/Users/jamalids/Downloads/figs/results/selected_pairs.
 print("Done. CSV with selected pairs saved.")
 final_A = []
 chunked_df = selected_df[selected_df['RunType'] == 'Chunked_Decompose_Parallel']
-#L2_value =1024 *1024,
-L2_value =786432 #lz4
+L2_value =10*1024 *1024#,bzip
+#L2_value =25165824 #zlib
+#L2_value =786432 #lz4
 chunked_df = chunked_df [chunked_df ['BlockSize'] == L2_value].copy()
 
 if not chunked_df.empty:
@@ -106,8 +107,7 @@ if not chunked_df.empty:
         final_A.append(row)
         full_row = selected_df[(selected_df['DatasetName'] == dataset) &
                                (selected_df['Threads'] == threads) &
-                               (selected_df['RunType'] == 'Chunked_parallel')]
-                              # (selected_df['RunType'] == 'Full')]
+                               (selected_df['RunType'] == 'Full')]
         if not full_row.empty:
             final_A.append(full_row.iloc[0])
 final_df_A = pd.DataFrame(final_A)
@@ -120,50 +120,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # === 1. Load max_compression_throughput_pairs.csv and entropy results ===
-df_pairs = pd.read_csv("/mnt/c/Users/jamalids/Downloads/figs/results/max_compression_throughput_pairs.csv")
-df_entropy = pd.read_csv(("/mnt/c/Users/jamalids/Downloads/figs/DatasetIdMapping.csv"))
-
-# === 2. Merge them by DatasetName ===
-# df = pd.merge(df_pairs, df_entropy, on='DatasetName', how='left')
-# final_df_A = df.copy()
+#df_pairs = pd.read_csv("/mnt/c/Users/jamalids/Downloads/figs/results/max_compression_throughput_pairs.csv")
+# df_entropy = pd.read_csv(("/mnt/c/Users/jamalids/Downloads/figs/DatasetIdMapping.csv"))
+#
+# final_df_A = pd.merge(df_pairs, df_entropy[['DatasetName', 'DatasetID', 'Entropy', 'Domain']], on='DatasetName', how='left')
+#
 # pivot_cr = final_df_A.pivot(index='DatasetName', columns='RunType', values='CompressionRatio')
 # pivot_cr = pivot_cr.dropna(subset=['Full', 'Chunked_Decompose_Parallel'])
 #
-# # Extract metadata for sorting and labeling
-# meta_info = final_df_A.drop_duplicates(subset=['DatasetName'])[['DatasetName', 'Entropy', 'Domain']]
-# pivot_cr = pivot_cr.merge(meta_info, on='DatasetName', how='left')
 #
-# # ✅ Sort by Domain then Entropy
-# pivot_cr = pivot_cr.sort_values(by=['Domain', 'Entropy'])
 #
-# # ✅ Add short Dataset IDs like D1, D2, ...
+# pivot_cr = pivot_cr.merge(df_entropy[['DatasetName', 'DatasetID', 'Entropy', 'Domain']], on='DatasetName', how='inner')
+# #pivot_cr = pivot_cr.sort_values(by=['Domain', 'Entropy']).reset_index(drop=True)
+# pivot_cr["DatasetID_SortKey"] = pivot_cr["DatasetID"].str.extract(r'D(\d+)').astype(int)
+# pivot_cr = pivot_cr.sort_values(by="DatasetID_SortKey")
 #
-# pivot_cr['DatasetID'] = ['D' + str(i + 1) for i in range(len(pivot_cr))]
-final_df_A = pd.merge(df_pairs, df_entropy[['DatasetName', 'DatasetID', 'Entropy', 'Domain']], on='DatasetName', how='left')
-
-pivot_cr = final_df_A.pivot(index='DatasetName', columns='RunType', values='CompressionRatio')
-#pivot_cr = pivot_cr.dropna(subset=['Full', 'Chunked_Decompose_Parallel'])
-pivot_cr = pivot_cr.dropna(subset=['Chunked_parallel', 'Chunked_Decompose_Parallel'])
+#
+# # Compute compression ratio (TDT / Full)
+# ratio_series = pivot_cr['Chunked_Decompose_Parallel'] / pivot_cr['Full']
+#
 
 
-
-pivot_cr = pivot_cr.merge(df_entropy[['DatasetName', 'DatasetID', 'Entropy', 'Domain']], on='DatasetName', how='inner')
-#pivot_cr = pivot_cr.sort_values(by=['Domain', 'Entropy']).reset_index(drop=True)
-pivot_cr["DatasetID_SortKey"] = pivot_cr["DatasetID"].str.extract(r'D(\d+)').astype(int)
-pivot_cr = pivot_cr.sort_values(by="DatasetID_SortKey")
-
-
-# Compute compression ratio (TDT / Full)
-#ratio_series = pivot_cr['Chunked_Decompose_Parallel'] / pivot_cr['Full']
-ratio_series = pivot_cr['Chunked_Decompose_Parallel'] / pivot_cr['Chunked_parallel']
-
-
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
-# Set font configuration
+# VLDB-style font configuration (with fallback options)
 mpl.rcParams.update({
     "text.usetex": False,
     "font.family": "serif",
@@ -177,57 +159,41 @@ mpl.rcParams.update({
     "ps.fonttype": 42,
 })
 
-# === Prepare Data ===
-# df_pairs and df_entropy are already merged and prepared
-# You have 'pivot_cr' and 'ratio_series' ready
+# Load CSVs
+statistic_df = pd.read_csv('/mnt/c/Users/jamalids/Downloads/figs/results/statistic-zstd.csv')
+dynamic_df = pd.read_csv('/mnt/c/Users/jamalids/Downloads/figs/results/dynamic-zstd.csv')
 
-sorted_df = pivot_cr.copy()
-#sorted_df["Ratio"] = sorted_df["Chunked_Decompose_Parallel"] / sorted_df["Full"]
-sorted_df["Ratio"] = sorted_df["Chunked_Decompose_Parallel"] / sorted_df["Chunked_parallel"]
+# Filter for relevant RunType
+statistic_filtered = statistic_df[statistic_df['RunType'] == 'Chunked_Decompose_Parallel']
+dynamic_filtered = dynamic_df[dynamic_df['RunType'] == 'Chunked_Decompose_Parallel']
 
+# Rename compression ratio columns
+statistic_filtered = statistic_filtered[['DatasetName', 'CompressionRatio']].rename(
+    columns={'CompressionRatio': 'Static_CompressionRatio'}
+)
+dynamic_filtered = dynamic_filtered[['DatasetName', 'CompressionRatio']].rename(
+    columns={'CompressionRatio': 'Dynamic_CompressionRatio'}
+)
 
-# === Step 3: Plot ===
-fig, ax = plt.subplots(figsize=(6.8, 3))
+# Merge static and dynamic
+merged_df = pd.merge(statistic_filtered, dynamic_filtered, on='DatasetName', how='inner')
 
-# Set your bar color for Zstd plot
-#bar_color = "#1f77b4"  # Example color, you can change
+# Add DatasetID and sort
+df_entropy = pd.read_csv('/mnt/c/Users/jamalids/Downloads/figs/DatasetIdMapping.csv')
+merged_df = pd.merge(merged_df, df_entropy[['DatasetName', 'DatasetID']], on='DatasetName', how='left')
+merged_df['SortKey'] = merged_df['DatasetID'].str.extract(r'D(\d+)').astype(int)
+merged_df = merged_df.sort_values(by='SortKey')
 
-bar_color = "#d62728"
-bars = ax.bar(sorted_df["DatasetID"], sorted_df["Ratio"],
-              width=0.8, color=bar_color, edgecolor="black", linewidth=0.3)
+# Plot
+plt.figure(figsize=(6.8, 3))  # double-column figure width for VLDB
+plt.plot(merged_df['DatasetID'], merged_df['Static_CompressionRatio'], marker='o', label='Static Mode')
+plt.plot(merged_df['DatasetID'], merged_df['Dynamic_CompressionRatio'], marker='x', label='Dynamic Mode')
 
-# Labels
-#ax.set_xlabel(r"Dataset ID", labelpad=6)
-ax.set_ylabel(r"TDT / Standard CR (LZ4)", labelpad=6)
-
-# X ticks
-if len(sorted_df) > 40:
-    step = 5
-    ticks = sorted_df["DatasetID"][::step]
-    ax.set_xticks(ticks)
-    ax.set_xticklabels(ticks, rotation=45)
-else:
-    ax.set_xticks(sorted_df["DatasetID"])
-    ax.set_xticklabels(sorted_df["DatasetID"], rotation=45)
-
-# Value labels
-# for i, bar in enumerate(bars):
-#     height = bar.get_height()
-#     if height < 10:
-#         ax.text(bar.get_x() + bar.get_width() / 2, height + 0.03, f"{height:.2f}",
-#                 ha="center", va="bottom", fontsize=6)
-
-# Remove top and right spines
-ax.axhline(y=1, color='black', linestyle='--', linewidth=1)
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-
-fig.tight_layout(pad=0.5)
-
-# === Save ===
-output_base = "/mnt/c/Users/jamalids/Downloads/figs/results/lz"
-fig.savefig(f"{output_base}.pdf", bbox_inches="tight", dpi=300)
-fig.savefig(f"{output_base}.png", bbox_inches="tight", dpi=300)
-plt.close(fig)
-
-print(f"✅ Plot and dataset ID mapping saved successfully!")
+#plt.xlabel('Dataset ID')
+plt.ylabel('CR')
+plt.yscale('log')
+plt.xticks(rotation=90)
+#plt.grid(True, linestyle='--', linewidth=0.4)
+plt.legend(loc='best')
+plt.tight_layout()
+plt.savefig('/mnt/c/Users/jamalids/Downloads/figs/mode.pdf', bbox_inches='tight')

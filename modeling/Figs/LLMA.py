@@ -7,7 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import re
 ###################
-directories = ["/mnt/c/Users/jamalids/Downloads/figs/results/zlib-llama"]
+directories = ["/mnt/c/Users/jamalids/Downloads/figs/results/bzip-llama1"]
 dataframes = []
 
 for directory_path in directories:
@@ -110,6 +110,6 @@ final_cols = [
 aggregated = aggregated[final_cols]
 
 # Step 5: Save to CSV with semicolon separator
-aggregated.to_csv("/mnt/c/Users/jamalids/Downloads/figs/llama.csv", sep=';', index=False)
+aggregated.to_csv("/mnt/c/Users/jamalids/Downloads/figs/LLama.csv", sep=';', index=False)
 
 print("✅ Final CSV saved to final_median_throughput_ratio.csv")

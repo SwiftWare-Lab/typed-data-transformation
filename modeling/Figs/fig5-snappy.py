@@ -7,8 +7,49 @@ matplotlib.use('Agg')  # or use another backend if desired
 import matplotlib.pyplot as plt
 import re
 ###################
-#directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-zstd/all']
-directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-snappy']
+# #directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-zstd/all']
+# directories = ['/mnt/c/Users/jamalids/Downloads/figs/results/results-snappy']
+# dataframes = []
+#
+# for directory_path in directories:
+#     for file in os.listdir(directory_path):
+#         if file.endswith('.csv'):
+#             file_path = os.path.join(directory_path, file)
+#             try:
+#                 # Read CSV file using semicolon as delimiter.
+#                 df = pd.read_csv(file_path, sep=',')
+#                 df.fillna(0, inplace=True)
+#                 # Ensure a "DatasetName" column exists.
+#                 if 'DatasetName' not in df.columns and 'dataset' in df.columns:
+#                     df.rename(columns={'dataset': 'DatasetName'}, inplace=True)
+#                 if 'DatasetName' not in df.columns:
+#                     df['DatasetName'] = os.path.basename(file_path).replace('.csv', '')
+#                 dataframes.append(df)
+#             except Exception as e:
+#                 print(f"Error reading {file_path}: {e}")
+#
+# if not dataframes:
+#     print("No CSV files were processed. Please check the directories.")
+#     exit()
+#
+# combined_df = pd.concat(dataframes, ignore_index=True)
+# combined_df.fillna(0, inplace=True)
+# if 'Index' in combined_df.columns:
+#     combined_df.drop(columns=['Index'], inplace=True)
+#
+# print("Columns in combined_df:", combined_df.columns.tolist())
+#
+# all_data_output_path = '/mnt/c/Users/jamalids/Downloads/figs/results/combined_all_data.csv'
+# combined_df.to_csv(all_data_output_path, index=False)
+# print(f'Combined CSV with all data saved to {all_data_output_path}')
+
+import os
+import pandas as pd
+import csv
+
+# Specify the directories you want to load CSVs from
+directories = ['/mnt/c/Users/jamalids/Downloads/results-snappy/results-snappy']
+#directories = ['/mnt/c/Users/jamalids/Downloads/results-snappy']
 dataframes = []
 
 for directory_path in directories:
@@ -16,34 +57,49 @@ for directory_path in directories:
         if file.endswith('.csv'):
             file_path = os.path.join(directory_path, file)
             try:
-                # Read CSV file using semicolon as delimiter.
-                df = pd.read_csv(file_path, sep=',')
+                # Try to detect the delimiter automatically
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    sample = f.read(1024)
+                    try:
+                        delimiter = csv.Sniffer().sniff(sample).delimiter
+                    except Exception:
+                        delimiter = ','  # fallback to comma
+                        print(f"⚠️ Could not detect delimiter for {file}; using fallback ','")
+
+                # Read the CSV with detected or fallback delimiter
+                df = pd.read_csv(file_path, sep=delimiter)
                 df.fillna(0, inplace=True)
-                # Ensure a "DatasetName" column exists.
+
+                # Ensure a "DatasetName" column exists
                 if 'DatasetName' not in df.columns and 'dataset' in df.columns:
                     df.rename(columns={'dataset': 'DatasetName'}, inplace=True)
                 if 'DatasetName' not in df.columns:
                     df['DatasetName'] = os.path.basename(file_path).replace('.csv', '')
+
                 dataframes.append(df)
             except Exception as e:
-                print(f"Error reading {file_path}: {e}")
+                print(f"❌ Error reading {file_path}: {e}")
 
+# Combine and clean the data
 if not dataframes:
-    print("No CSV files were processed. Please check the directories.")
+    print("❌ No CSV files were processed. Please check the directories.")
     exit()
 
 combined_df = pd.concat(dataframes, ignore_index=True)
 combined_df.fillna(0, inplace=True)
+
 if 'Index' in combined_df.columns:
     combined_df.drop(columns=['Index'], inplace=True)
 
-print("Columns in combined_df:", combined_df.columns.tolist())
+# Save the combined DataFrame
+output_path = '/mnt/c/Users/jamalids/Downloads/figs/results/combined_all_data.csv'
+combined_df.to_csv(output_path, index=False)
 
-all_data_output_path = '/mnt/c/Users/jamalids/Downloads/figs/results/combined_all_data.csv'
-combined_df.to_csv(all_data_output_path, index=False)
-print(f'Combined CSV with all data saved to {all_data_output_path}')
+print("✅ Combined CSV with all data saved to:", output_path)
+print("✅ Final columns:", combined_df.columns.tolist())
 
-# ====================================
+
+# # ====================================
 # 2. Median Aggregation
 # ====================================
 required_cols = [

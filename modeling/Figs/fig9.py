@@ -25,7 +25,7 @@ files = {
     'zlib':   '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/zlib.csv',
     'zstd':   '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/zstd.csv',
     'bzip':   '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/bzip.csv',
-    'FastLZ': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/fastlz.csv',
+    #'FastLZ': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/fastlz.csv',
     'nvCOMP': '/mnt/c/Users/jamalids/Downloads/figs/results/fig7/nvcomp.csv'
 }
 
@@ -79,7 +79,7 @@ for tool, col in base_colors.items():
     final_palette[f'{tool} (TDT)']      = col
     final_palette[f'{tool} (standard)'] = sns.light_palette(col, n_colors=6, input="hex")[3]
 
-tool_order = ['lz4', 'snappy', 'zlib', 'zstd', 'FastLZ', 'bzip', 'nvCOMP']    # nvCOMP last
+tool_order = ['lz4', 'snappy', 'zlib', 'zstd',  'bzip', 'nvCOMP']    # nvCOMP last
 hue_order  = [f'{t} ({rt})' for t in tool_order for rt in ['TDT', 'standard']]  # adjacent pairs
 
 gmean_df['Tool_RunType'] = (
@@ -101,8 +101,8 @@ for suffix in ['32', '64', '16']:
     )
     if {'TDT', 'standard'}.issubset(grouped.columns):
         grouped['Improvement (%)'] = (
-            (grouped['TDT'] - grouped['standard']) /
-            grouped['standard'] * 100
+            (grouped['TDT'] ) /
+            grouped['standard']
         )
         grouped['Precision'] = suffix_label_map[suffix]
         improvement_data.append(grouped[['Improvement (%)', 'Precision']]
@@ -114,8 +114,8 @@ if improvement_data:
     sns.barplot(data=improvement_df, x='Precision', y='Improvement (%)',
                 hue='compression_tool', hue_order=tool_order,
                 palette=[base_colors[t] for t in tool_order], ax=ax)
-    ax.set_ylabel("Improvement(%)in GMean CR")
-    ax.set_xlabel("Precision")
+    ax.set_ylabel("Improvementin GMean CR")
+   # ax.set_xlabel("Precision")
     ax.axhline(0, color='gray', linestyle='--', linewidth=0.8)
     ax.legend(title="Compression Tool", bbox_to_anchor=(1.02,1),
               loc='upper left', frameon=False)
