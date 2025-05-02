@@ -96,7 +96,7 @@ add_executable(parallel-test
         #        FASTLZ_PARALLEL.h
         #        FASTLZ_PARALLEL.cpp
         decompose.h
-        decompose-new.cpp
+        decompose-new1.cpp
         lz4_parallel.h
         # parallel-lz4.cpp
         snappy_parallel.h

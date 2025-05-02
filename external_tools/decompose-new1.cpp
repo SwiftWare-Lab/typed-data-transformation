@@ -36,116 +36,204 @@ using fp16 = half_float::half;
 #include <stdexcept>
 std::vector<uint8_t> globalByteArray;
 
-// Map to store dataset names and their multiple possible configurations
-std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
+// // Map to store dataset names and their multiple possible configurations
+// std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap = {
+//
+//     // -- f32 datasets (mostly single solutions) --
+//     {"acs_wht_f32", {
+//         {{1,2}, {3}, {4}},
+//
+//     }},
+//     {"citytemp_f32", {
+//         {{1,2}, {3}, {4}}
+//     }},
+//     {"hdr_night_f32", {
+//         {{1,2}, {3}, {4}}
+//     }},
+//     {"hdr_palermo_f32", {
+//         {{1,2}, {3}, {4}}
+//     }},
+//     {"hst_wfc3_ir_f32", {
+//         {{1,2,}, {3}, {4}}
+//     }},
+//     {"hst_wfc3_uvis_f32", {
+//         {{1,2,3}, {4}}
+//     }},
+//     {"jw_mirimage_f32", {
+//         //{{1}, {2}, {3}, {4}}
+//          {{1,2,3}, {4}},
+//     }},
+//     {"rsim_f32", {
+//         {{1,2,3}, {4}}
+//     }},
+//     {"solar_wind_f32", {
+//         {{1,2}, {3}, {4}}
+//     }},
+//     {"spitzer_irac_f32", {
+//         {{1,2,3}, {4}}
+//     }},
+//     {"tpcds_catalog_f32", {
+//         {{1}, {2}, {3}, {4}},
+//
+//          {{2,3}, {1},{4}}
+//     }},
+//     {"tpcds_store_f32", {
+//         {{1,2}, {3}, {4}},
+//        {{2,3}, {1},{4}}
+//     }},
+//     {"tpcds_web_f32", {
+//         //{{1}, {2}, {3}, {4}},
+// {{2,3}, {1},{4}}
+//     }},
+//     {"tpch_lineitem_f32", {
+//         {{1,2,3}, {4}},
+// {{2,1}, {4},{3}},
+//           {{2,3}, {1},{4}}
+//     }},
+//
+//     // wave_f32 has TWO solutions
+//     {"wave_f32", {
+//         {{1,2,3}, {4}},
+//        // {{1,2}, {3}, {4}}
+//     }},
+//
+//     // Default entry
+//     {"default", {
+//         {{1}, {2}}
+//     }},
+//
+//     // -- f64 datasets (mostly two solutions each) --
+//     {"astro_mhd_f64", {
+//         // First solution
+//         {{1,2,3,4,5,6}, {7,8}},
+// {{1,2,3,4,5,6}, {7},{8}},
+// {{1,2,3,4,5,6,7},{8}},
+//         // Second solution
+//       //  {{1,3,4}, {5}, {2}, {6}, {7}, {8}}
+//     }},
+//     {"tpch_order_f64", {
+//         {{5,6}, {1,2,3,4}, {7}, {8}},
+// {{6,7}, {1,2,3,4,5}, {8}},
+//
+// {{5},{6,7}, {1,2,3,4}, {8}},
+// {{5},{6},{7}, {1,2,3,4}, {8}},
+// {{6,7}, {1,2,3,4,5}, {8}},
+//     }},
+//     {"astro_pt_f64", {
+//        // {{1,2,3,4,5,6,7}, {8}},
+//         {{4,5}, {1,2,3}, {6}, {7}, {8}},
+//       // First solution
+// {{1,2,3,4,5,6}, {7,8}},
+// {{1,2,3,4,5,6}, {7},{8}},
+// {{1,2,3,4,5,6,7},{8}},
+//     }},
+//     {"wesad_chest_f64", {
+//         {{1,2,3,4,8}, {5,6,7}},
+//       //  {{2,3}, {4}, {8}, {1}, {5}, {7}, {6}}
+// {{4,5,6,7}, {1,2,3}, {8}},
+// {{5,6,7}, {1,2,3,4}, {8}},
+// {{5},{6},{7}, {1,2,3}, {8},{4}},
+//     }},
+//     {"phone_gyro_f64", {
+//         {{1,2,3,4,5,6,7}, {8}},
+//       //  {{2,3}, {1}, {7}, {4}, {6}, {5}, {8}}
+// {{4,5,6,7}, {1,2,3}, {8}},
+// {{5,6,7}, {1,2,3,4}, {8}},
+// {{5},{6},{7}, {1,2,3}, {8},{4}},
+//     }},
+//     {"tpcxbb_store_f64", {
+//         {{6,7}, {1,2,3,4,5}, {8}},
+// {{5,6,7}, {1,2,3,4}, {8}},
+//
+// {{5},{6,7}, {1,2,3,4}, {8}},
+// {{5},{6},{7}, {1,2,3,4}, {8}},
+//      //   {{6}, {7}, {1,2,4}, {3}, {5}, {8}}
+//     }},
+//     {"num_brain_f64", {
+//        // {{1,2,3,4,5,6,7}, {8}},
+//         {{2,5}, {1,3,4}, {6}, {7}, {8}},
+//       // First solution
+// {{1,2,3,4,5,6}, {7,8}},
+// {{1,2,3,4,5,6}, {7},{8}},
+// {{1,2,3,4,5,6,7},{8}},
+//     }},
+// {"num_control_f64", {
+//   //  {{1,2,3,4,5,6,7}, {8}},
+//      {{1,2}, {3}, {6},{4}, {5} ,{7}, {8}},
+// {{1,2,3,4,5,6}, {7,8}},
+// {{1,2,3,4,5,6}, {7},{8}},
+// {{1,2,3,4,5,6,7},{8}},
+//
+//       }},
+//     {"msg_bt_f64", {
+//      //   {{1,2,3,4,5,6,7}, {8}},
+//        {{2,3}, {1}, {4}, {5}, {6}, {7}, {8}},
+//          {{1,2,3,4,5,6}, {7,8}},
+//    {{1,2,3,4,5,6}, {7},{8}},
+// {{1,2,3,4,5,6,7},{8}},
+//     }},
+//     {"tpcxbb_web_f64", {
+//         {{6,7}, {1,2,3,4,5}, {8}},
+//           {{5,6,7}, {1,2,3,4}, {8}},
+// {{5},{6,7}, {1,2,3,4}, {8}},
+// {{5},{6},{7}, {1,2,3,4}, {8}},
+//
+//
+//
+//
+//     }},
+// {"jane_street_f64", {
+//
+//   {{4,5,6,7}, {1,2,3}, {8}},
+//   {{5,6,7}, {1,2,3,4}, {8}},
+//   {{5},{6},{7}, {1,2,3}, {8},{4}},
+//   // {{2,3}, {1}, {8}, {4}, {7}, {6}, {5}}
+//       }},
+//     {"nyc_taxi2015_f64", {
+//         {{1,2,3,8}, {4,5,6,7}},
+// {{4,5,6,7}, {1,2,3}, {8}},
+// {{5,6,7}, {1,2,3,4}, {8}},
+// {{5},{6},{7}, {1,2,3}, {8},{4}},
+// // {{2,3}, {1}, {8}, {4}, {7}, {6}, {5}}
+//     }}
+//
+// };
+std::map<std::string, std::vector<std::vector<std::vector<size_t>>>> datasetComponentMap;
+std::vector<std::vector<size_t>> parseClusterConfig(const std::string& configStr)
+{
+  std::vector<std::vector<size_t>> clusters;
+  std::vector<size_t>              current;
+  std::string                      num;
+  bool inside = false;            // true == we are inside an inner {...}
 
-    // -- f32 datasets (mostly single solutions) --
-    {"acs_wht_f32", {
-        {{1,2}, {3}, {4}},
+  for (char ch : configStr)
+  {
+    if (ch == '{')
+    {
+      // first inner '{' -> start a new cluster
+      if (!inside) { inside = true; current.clear(); }
+    }
+    else if (ch == '}')
+    {
+      if (inside)                       // <-- guard added
+      {
+        if (!num.empty()) { current.push_back(std::stoul(num)); num.clear(); }
+        clusters.push_back(current);  // store the finished cluster
+        inside = false;
+      }
+    }
+    else if (ch == ',' && inside)         // still only collect numbers while inside
+    {
+      if (!num.empty()) { current.push_back(std::stoul(num)); num.clear(); }
+    }
+    else if (std::isdigit(ch))
+    {
+      num += ch;
+    }
+  }
+  return clusters;
+}
 
-    }},
-    {"citytemp_f32", {
-        {{1,2}, {3}, {4}}
-    }},
-    {"hdr_night_f32", {
-        {{1,2}, {3}, {4}}
-    }},
-    {"hdr_palermo_f32", {
-        {{1,2}, {3}, {4}}
-    }},
-    {"hst_wfc3_ir_f32", {
-        {{1,2,}, {3}, {4}}
-    }},
-    {"hst_wfc3_uvis_f32", {
-        {{1,2,3}, {4}}
-    }},
-    {"jw_mirimage_f32", {
-        //{{1}, {2}, {3}, {4}}
-         {{1,2,3}, {4}},
-    }},
-    {"rsim_f32", {
-        {{1,2,3}, {4}}
-    }},
-    {"solar_wind_f32", {
-        {{1,2}, {3}, {4}}
-    }},
-    {"spitzer_irac_f32", {
-        {{1,2,3}, {4}}
-    }},
-    {"tpcds_catalog_f32", {
-        {{1}, {2}, {3}, {4}}
-    }},
-    {"tpcds_store_f32", {
-        {{1,2}, {3}, {4}}
-    }},
-    {"tpcds_web_f32", {
-        {{1}, {2}, {3}, {4}}
-    }},
-    {"tpch_lineitem_f32", {
-        {{1,2,3}, {4}}
-    }},
-
-    // wave_f32 has TWO solutions
-    {"wave_f32", {
-        {{1,2,3}, {4}},
-       // {{1,2}, {3}, {4}}
-    }},
-
-    // Default entry
-    {"default", {
-        {{1}, {2}}
-    }},
-
-    // -- f64 datasets (mostly two solutions each) --
-    {"astro_mhd_f64", {
-        // First solution
-        {{1,2,3,4,5,6}, {7,8}},
-        // Second solution
-      //  {{1,3,4}, {5}, {2}, {6}, {7}, {8}}
-    }},
-    {"tpch_order_f64", {
-        {{5,6}, {1,2,3,4}, {7}, {8}},
-    //    {{5}, {6}, {1,2,3}, {4}, {7}, {8}}
-    }},
-    {"astro_pt_f64", {
-       // {{1,2,3,4,5,6,7}, {8}},
-        {{4,5}, {1,2,3}, {6}, {7}, {8}}
-    }},
-    {"wesad_chest_f64", {
-        {{1,2,3,4,8}, {5,6,7}},
-      //  {{2,3}, {4}, {8}, {1}, {5}, {7}, {6}}
-    }},
-    {"phone_gyro_f64", {
-        {{1,2,3,4,5,6,7}, {8}},
-      //  {{2,3}, {1}, {7}, {4}, {6}, {5}, {8}}
-    }},
-    {"tpcxbb_store_f64", {
-        {{6,7}, {1,2,3,4,5}, {8}},
-     //   {{6}, {7}, {1,2,4}, {3}, {5}, {8}}
-    }},
-    {"num_brain_f64", {
-       // {{1,2,3,4,5,6,7}, {8}},
-        {{2,5}, {1,3,4}, {6}, {7}, {8}}
-    }},
-{"num_brain_f64", {
-  //  {{1,2,3,4,5,6,7}, {8}},
-     {{1,2}, {3}, {6},{4}, {5} ,{7}, {8}}
-
-      }},
-    {"msg_bt_f64", {
-     //   {{1,2,3,4,5,6,7}, {8}},
-       {{2,3}, {1}, {4}, {5}, {6}, {7}, {8}}
-    }},
-    {"tpcxbb_web_f64", {
-        {{6,7}, {1,2,3,4,5}, {8}},
-//  {{6}, {7}, {2,3,4}, {1}, {5}, {8}}
-    }},
-    {"nyc_taxi2015_f64", {
-        {{1,2,3,8}, {4,5,6,7}},
-// {{2,3}, {1}, {8}, {4}, {7}, {6}, {5}}
-    }}
-
-};
 
 
 // --- Helper: Split a vector into N nearly equal chunks ---
@@ -163,15 +251,17 @@ std::vector<std::vector<uint8_t>> splitIntoChunks(const std::vector<uint8_t>& da
   }
   return chunks;
 }
-
 // Function to get all configurations for a dataset
 std::vector<std::vector<std::vector<size_t>>> getComponentConfigurationsForDataset(const std::string& datasetName) {
-  auto it = datasetComponentMap.find(datasetName);
+  const auto it = datasetComponentMap.find(datasetName);
   if (it != datasetComponentMap.end()) {
     return it->second;
   }
-  return datasetComponentMap["default"];
+  // Fallback to "default" if datasetName not found
+  const auto defaultIt = datasetComponentMap.find("default");
+  return (defaultIt != datasetComponentMap.end()) ? defaultIt->second : std::vector<std::vector<std::vector<size_t>>>{};
 }
+
 
 std::string extractDatasetName(const std::string& filePath) {
   size_t lastSlashPos = filePath.find_last_of("/\\");
@@ -409,7 +499,29 @@ int main(int argc, char* argv[]) {
   int userThreads         = result["threads"].as<int>();
   int precisionBits       = result["bits"].as<int>();
   std::string method      = result["method"].as<std::string>(); // "fastlz" or "zstd"
+ ////////////////////////////
+  std::ifstream file("/home/jamalids/Downloads/64-config-S.csv");  // <- path to your CSV
+  if (!file.is_open()) {
+    std::cerr << "Cannot open cluster config CSV." << std::endl;
+    exit(1);
+  }
 
+  std::string headerLine;
+  std::getline(file, headerLine);  // Skip header
+
+  std::string line;
+  while (std::getline(file, line)) {
+    std::stringstream ss(line);
+    std::string dataset, clusterStr;
+    std::getline(ss, dataset, ',');
+    std::getline(ss, clusterStr);
+
+    if (!dataset.empty() && !clusterStr.empty()) {
+      auto parsed = parseClusterConfig(clusterStr);
+      datasetComponentMap[dataset].push_back(parsed);
+    }
+  }
+ /////////////////////////////
   // For convenience, we test only the user–supplied thread count.
   std::vector<int> threadList = { userThreads };
   int runCount = 1;
@@ -489,12 +601,14 @@ int main(int argc, char* argv[]) {
   };
 
   // Open the CSV output file.
-  std::ofstream file(outputCSV);
-  if (!file) {
+
+  std::ofstream outputFile(outputCSV);
+
+  if (!outputFile) {
     std::cerr << "Failed to open the file for writing: " << outputCSV << std::endl;
     return 1;
   }
-  file << "Index;DatasetName;Threads;BlockSize;ConfigString;RunType;CompressionRatio;"
+  outputFile << "Index;DatasetName;Threads;BlockSize;ConfigString;RunType;CompressionRatio;"
        << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput;TotalValues;Num-Block;Compressedsize\n";
 
   int recordIndex = 1;
@@ -569,7 +683,7 @@ int main(int argc, char* argv[]) {
           double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
 
-          file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
+          outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
                << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
                << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks << ";" << totalCompressedSize <<"\n";
         }
@@ -595,7 +709,7 @@ int main(int argc, char* argv[]) {
           double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
 
-          file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+          outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
                << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";" << pi_full.total_time_decompressed << ";"
                << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1<< ";" << compressedSize <<"\n";
         }
@@ -663,7 +777,7 @@ int main(int argc, char* argv[]) {
               std::cerr << "[ERROR] (FastLZ) Full reconstructed data does NOT match the original data." << std::endl;
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
                  << "Decompose_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
                  << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks<< ";" << totalCompressedSize <<"\n";
           }
@@ -704,7 +818,7 @@ int main(int argc, char* argv[]) {
               std::cerr << "[ERROR] (FastLZ) Final reconstructed data does NOT match the original data." << std::endl;
             double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
                  << "Decompose_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
                  << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks <<";" << totalCompressedSize <<"\n";
           }
@@ -770,7 +884,7 @@ int main(int argc, char* argv[]) {
               double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
               auto [compThroughput, decompThroughput] =
                   calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-              file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+              outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                    << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
                    << totalCompTime << ";" << totalDecompTime << ";"
                    << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks<< ";" << totalCompressedSize <<"\n";
@@ -795,7 +909,7 @@ int main(int argc, char* argv[]) {
               double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
               auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                   totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
-              file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+              outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
                    << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                    << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
                    << ";" << totalBytes << ";" << 1 << ";" << compressedSize <<"\n";
@@ -882,7 +996,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
 
         double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
         auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
              << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
@@ -936,7 +1050,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
     auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
 
     // Record the results (using "N/A" or similar for block size since no chunking is used).
-    file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
+    outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
          << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
          << totalCompTime << ";" << totalDecompTime << ";"
          << compThroughput << ";" << decompThroughput << ";"  << totalBytes <<";" << 1 << ";" << totalCompressedSize << "\n";
@@ -987,7 +1101,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
                   double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
                   auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                       totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
-                  file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+                  outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                        << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
                        << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
                        << compThroughput << ";" << decompThroughput << ";"  << totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
@@ -1058,7 +1172,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
               double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
               auto [compThroughput, decompThroughput] =
                   calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-              file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+              outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                    << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
                    << totalCompTime << ";" << totalDecompTime << ";"
                    << compThroughput << ";" << decompThroughput << ";"  << totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
@@ -1084,7 +1198,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
               double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
               auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                   totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
-              file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+              outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
                    << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                    << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
                    << ";" << totalBytes <<";" << 1 << ";" << compressedSize <<  "\n";
@@ -1171,7 +1285,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
 
         double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
         auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
              << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
@@ -1225,7 +1339,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
     auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
 
     // Record the results (using "N/A" or similar for block size since no chunking is used).
-    file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
+    outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
          << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
          << totalCompTime << ";" << totalDecompTime << ";"
          << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize <<  "\n";
@@ -1273,7 +1387,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
                   double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
                   auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                       totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
-                  file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+                  outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                        << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
                        << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
                        << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << -1 << ";" << totalCompressedSize <<  "\n";
@@ -1337,7 +1451,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
               std::cerr << "[ERROR] (Snappy) Reconstructed data does NOT match the original (PARALLEL)." << std::endl;
           double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-          file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
+          outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
                << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";"
                << totalDecompTime << ";" << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
         }
@@ -1361,7 +1475,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
           double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
               totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
-          file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+          outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
                << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << compressedSize << "\n";
         }
@@ -1432,7 +1546,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
               std::cerr << "[ERROR] (Snappy) Reconstructed data does NOT match the original (PARALLEL, decomposed)." << std::endl;
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
                  << "Chunk-decompose_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
                  << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
           }
@@ -1469,7 +1583,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
               std::cerr << "[ERROR] (Snappy) Reconstructed data does NOT match the original (Non-chunked decomposed)." << std::endl;
           double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
-          file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << configStr << ";"
+          outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << configStr << ";"
                << "Decompose_NonChunked" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
                << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize << "\n";
         }
@@ -1513,7 +1627,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
             double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
                  << "Decompose_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
                  << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << -1 << ";" << totalCompressedSize << "\n";
           }
@@ -1580,7 +1694,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
         double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
         auto [compThroughput, decompThroughput] =
             calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
              << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
@@ -1605,7 +1719,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
         double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
         auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
             totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
              << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
              << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
              << ";" << totalBytes <<";" << 1 << ";" << compressedSize << "\n";
@@ -1690,7 +1804,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
 
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                  << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
                  << totalCompTime << ";" << totalDecompTime << ";"
                  << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
@@ -1741,7 +1855,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
 
         double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
         auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
              << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize << "\n";
@@ -1789,7 +1903,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
             double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                  << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
                  << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
                  << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" <<-1 << ";" << totalCompressedSize << "\n";
@@ -1857,7 +1971,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
         double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
         auto [compThroughput, decompThroughput] =
             calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
              << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
@@ -1882,7 +1996,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
         double compRatio = calculateCompressionRatio(totalBytes, compressedSize);
         auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
             totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
              << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
              << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
              << ";" << rowCount << "\n";
@@ -1967,7 +2081,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
 
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                  << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
                  << totalCompTime << ";" << totalDecompTime << ";"
                  << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
@@ -2018,7 +2132,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
 
         double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
         auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
-        file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
+        outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
              << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
              << totalCompTime << ";" << totalDecompTime << ";"
              << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize <<"\n";
@@ -2066,7 +2180,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
             double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
-            file << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
+            outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
                  << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
                  << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
                  << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << -1 << ";" << totalCompressedSize <<"\n";
@@ -2078,7 +2192,7 @@ for (const auto& componentConfig : componentConfigurationsList) {
   }
 
 
-  file.close();
+  outputFile.close();
   std::cout << "Profiling results saved to " << outputCSV << "\n";
   return 0;
 }

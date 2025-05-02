@@ -22,11 +22,13 @@ module load cmake/3.27.7
 
 
 
-#DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64"
-DATASET_DIR="/home/jamalids/Downloads/llama7b-l5"
+DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/64/r1"
+#DATASET_DIR="/home/jamalids/Downloads/llama7b-l5"
 #DATASET_DIR="/home/jamalids/Downloads/llama7b-l6-l9"
 #DATASET_DIR="/home/jamalids/Downloads/llama7b-l2-l4"
-RESULTS_DIR="/home/jamalids/Documents/results1"
+#DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/OBS"
+#DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/64"
+RESULTS_DIR="/home/jamalids/Documents/results2"
 EXECUTABLE="./build/external_tools/parallel-test"
 
 
@@ -59,7 +61,7 @@ for dataset in "$DATASET_DIR"/*; do
         start_time=$(date +%s.%N)
 
 
-        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 16 --method=zstd
+        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 64 --method=zstd
 
         end_time=$(date +%s.%N)
         elapsed_time=$(echo "$end_time - $start_time" | bc)
