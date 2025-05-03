@@ -60,8 +60,7 @@ for dataset in "$DATASET_DIR"/*; do
         echo "Processing dataset: $dataset"
         start_time=$(date +%s.%N)
 
-
-        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 64 --method=zstd
+        "$EXECUTABLE" --dataset "$dataset" --outcsv "$result_file" --threads 16 --bits 64 --method=fastlz
 
         end_time=$(date +%s.%N)
         elapsed_time=$(echo "$end_time - $start_time" | bc)

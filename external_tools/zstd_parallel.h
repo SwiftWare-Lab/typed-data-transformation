@@ -13,7 +13,6 @@
 
 #include "profiling_info.h"
 
-// Global data (defined elsewhere)
 extern std::vector<uint8_t> globalByteArray;
 
 //=============================================================================
@@ -61,7 +60,6 @@ inline size_t decompressWithZstd(
     return dSize;
 }
 
-// Splitting function: decomposes full (interleaved) data into its components.
 inline void splitBytesIntoComponentsNested1(
     const std::vector<uint8_t>& byteArray,
     std::vector<std::vector<uint8_t>>& outputComponents,
@@ -99,7 +97,6 @@ inline void splitBytesIntoComponentsNested1(
     }
 }
 
-// Reassembly function: rebuilds the full interleaved data from its components.
 inline void reassembleBytesFromComponentsNested1(
     const std::vector<std::vector<uint8_t>>& inputComponents,
     uint8_t* byteArray,           // destination buffer pointer
@@ -171,13 +168,10 @@ inline size_t zstdFusedDecomposedParallel(
         return sum;
     }();
 
-    // Compute the number of elements in the interleaved data.
     const size_t numElements = dataSize / totalBytesPerElement;
 
-    // Resize the output container so that each component will have its own compressed output.
     compressedComponents.resize(allComponentSizes.size());
 
-    // Vectors for per–component timing measurements.
     std::vector<double> splitTimes(allComponentSizes.size(), 0.0);
     std::vector<double> compressTimes(allComponentSizes.size(), 0.0);
 
@@ -190,7 +184,7 @@ inline size_t zstdFusedDecomposedParallel(
     // Parallel region over the number of components.
     #pragma omp parallel
     {
-        size_t threadCompressedSize = 0;  // Each thread’s local accumulation.
+        size_t threadCompressedSize = 0;
 
         #pragma omp for schedule(static)
         for (int compIdx = 0; compIdx < static_cast<int>(allComponentSizes.size()); compIdx++) {
@@ -239,11 +233,8 @@ inline size_t zstdFusedDecomposedParallel(
 
     double overallEnd = omp_get_wtime();
     double overallTime = overallEnd - overallStart;
-
-
     return totalCompressedSize;
 }
-//////////////////////////////////////////////////
 
 inline void zstdDecomposedParallelDecompression(
     const std::vector<std::vector<uint8_t>>& compressedComponents,
@@ -286,8 +277,8 @@ inline void zstdDecomposedParallelDecompression(
 
 
 //=============================================================================
-// New Functions: Decomposed Then Chunked Parallel Compression/Decompression
-// (Analogous to your FastLZ functions, but using Zstd.)
+//  Decomposed Then Chunked Parallel Compression/Decompression
+//
 //=============================================================================
 inline size_t zstdDecomposedThenChunkedParallelCompression(
     const uint8_t* data,
@@ -340,13 +331,13 @@ inline void zstdDecomposedThenChunkedParallelDecompression(
     size_t chunkBlockSize,    // must match the size used during compression
     uint8_t* finalReconstructed // pointer to preallocated destination buffer
 ) {
-    // Determine the per-element size.
+
     size_t totalBytesPerElement = 0;
     for (const auto &group : allComponentSizes)
         totalBytesPerElement += group.size();
     size_t numElements = originalBlockSize / totalBytesPerElement;
 
-    // For each component, decompress each chunk sequentially.
+
     std::vector<std::vector<uint8_t>> decompressedComponents(compressedBlocks.size());
     double overallStart = omp_get_wtime();
 
@@ -371,15 +362,13 @@ inline void zstdDecomposedThenChunkedParallelDecompression(
     double overallEnd = omp_get_wtime();
     pi.total_time_decompressed = overallEnd - overallStart;
 
-    // Reassemble the full data from the decomposed components.
-    // Here we create a temporary vector for the reassembled data.
     std::vector<uint8_t> reassembled(originalBlockSize, 0);
     reassembleBytesFromComponentsNested1(decompressedComponents,
-                                         reassembled.data(),   // destination buffer pointer
-                                         originalBlockSize,    // total size of the destination buffer
+                                         reassembled.data(),
+                                         originalBlockSize,
                                          allComponentSizes,
                                          numThreads);
 
-    // Copy reassembled data into the preallocated destination buffer.
+
     std::memcpy(finalReconstructed, reassembled.data(), originalBlockSize);
 }

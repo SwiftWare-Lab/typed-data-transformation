@@ -107,8 +107,13 @@ add_executable(parallel-test
         # bz2_parallel.h
         # parallel-bzip2.cpp
 )
+# Let the compiler search external_tools/profiles/ for #include "profiles/…"
+target_include_directories(parallel-test PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/profiles
+)
 add_library(fastlz STATIC fastlz.c
         bzib_parallel.h
+        dataset_loaders.h
 )
 target_link_libraries(parallel-test PRIVATE fastlz)
 target_link_libraries(parallel-test
@@ -155,4 +160,5 @@ if(NOT EXISTS ${HALF_HPP_FILE})
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/external/half)
+
 

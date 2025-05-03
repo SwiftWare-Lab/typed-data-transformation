@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <snappy.h>       // Snappy compression library
+#include <snappy.h>
 #include <chrono>
 #include <cstdint>
 #include <omp.h>
@@ -22,7 +22,6 @@ extern std::vector<uint8_t> globalByteArray;
 // Basic Snappy Compression/Decompression
 //=============================================================================
 
-// Compress data using Snappy.
 inline size_t compressWithSnappy(
     const std::vector<uint8_t>& data,
     std::vector<uint8_t>& compressedData
@@ -60,7 +59,6 @@ inline size_t decompressWithSnappy(
 // Splitting and Reassembly Functions (Nested Decomposition)
 //=============================================================================
 
-// Splitting function: decomposes full (interleaved) data into its components.
 inline void splitBytesIntoComponentsNestedsanppy(
     const std::vector<uint8_t>& byteArray,
     std::vector<std::vector<uint8_t>>& outputComponents,
@@ -74,11 +72,8 @@ inline void splitBytesIntoComponentsNestedsanppy(
     }
     size_t numElements = byteArray.size() / totalBytesPerElement;
     outputComponents.resize(allComponentSizes.size());
-
-    // (Optional) Make a temporary copy if needed.
     std::vector<uint8_t> temp(byteArray);
 
-    // Allocate space for each component.
     for (size_t i = 0; i < allComponentSizes.size(); i++) {
         outputComponents[i].resize(numElements * allComponentSizes[i].size());
     }
@@ -99,11 +94,10 @@ inline void splitBytesIntoComponentsNestedsanppy(
     }
 }
 
-// Reassembly function: rebuilds the full interleaved data from its components.
 inline void reassembleBytesFromComponentsNestedsnappy(
     const std::vector<std::vector<uint8_t>>& inputComponents,
-    uint8_t* byteArray,           // destination buffer pointer
-    size_t byteArraySize,         // total size of the destination buffer
+    uint8_t* byteArray,
+    size_t byteArraySize,
     const std::vector<std::vector<size_t>>& allComponentSizes,
     int numThreads
 ) {
@@ -188,7 +182,7 @@ inline size_t snappyFusedDecomposedParallel(
 
     #pragma omp parallel
     {
-        size_t threadCompressedSize = 0;  // Thread-local accumulation.
+        size_t threadCompressedSize = 0;
         #pragma omp for schedule(static)
         for (int compIdx = 0; compIdx < static_cast<int>(allComponentSizes.size()); compIdx++) {
             double localSplitTime = 0.0, localCompTime = 0.0;
@@ -295,7 +289,6 @@ inline void snappyDecomposedParallelDecompression(
 // Decomposed Then Chunked Parallel Compression/Decompression
 //=============================================================================
 
-// Decomposed then Chunked Parallel Compression using Snappy.
 inline size_t snappyDecomposedThenChunkedParallelCompression(
     const uint8_t* data,
     size_t dataSize,
@@ -345,9 +338,9 @@ inline void snappyDecomposedThenChunkedParallelDecompression(
     ProfilingInfo &pi,
     const std::vector<std::vector<size_t>>& allComponentSizes,
     int numThreads,
-    size_t originalBlockSize, // original full data size before decomposition
-    size_t chunkBlockSize,    // must match the compression chunk size
-    uint8_t* finalReconstructed // pointer to preallocated destination buffer
+    size_t originalBlockSize,
+    size_t chunkBlockSize,
+    uint8_t* finalReconstructed
 ) {
     // Determine per-element size.
     size_t totalBytesPerElement = 0;
@@ -390,4 +383,4 @@ inline void snappyDecomposedThenChunkedParallelDecompression(
     std::memcpy(finalReconstructed, reassembled.data(), originalBlockSize);
 }
 
-#endif // SNAPPY_PARALLEL_H
+#endif

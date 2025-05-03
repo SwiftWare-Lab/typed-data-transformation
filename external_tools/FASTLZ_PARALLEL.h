@@ -15,7 +15,6 @@
 
 #include "profiling_info.h"
 
-// Global data (defined elsewhere)
 extern std::vector<uint8_t> globalByteArray;
 
 inline size_t compressWithFastLZ1(
@@ -54,10 +53,6 @@ inline void decompressWithFastLZ1(
   }
 }
 
-/////////////////////////////////////////////////////////////
-//  reassembly
-/////////////////////////////////////////////////////////////
-
 //-----------------------------------------------------------------------------
 // Optimized In-Place Reordering for Decomposition-Based Compression
 // Uses SIMD (AVX2) for faster memory operations and OpenMP for parallel execution
@@ -76,16 +71,12 @@ inline void splitBytesIntoComponentsNested1(
     size_t numElements = byteArray.size() / totalBytesPerElement;
 
     outputComponents.resize(allComponentSizes.size());
-
-
-
     std::vector<uint8_t> temp(byteArray);
 
     // Resize
     for (size_t i = 0; i < allComponentSizes.size(); i++) {
         outputComponents[i].resize(numElements * allComponentSizes[i].size());
     }
-
 #pragma omp parallel for num_threads(numThreads)
     for (size_t elem = 0; elem < numElements; elem++) {
         for (size_t compIdx = 0; compIdx < allComponentSizes.size(); compIdx++) {
@@ -106,9 +97,6 @@ inline void splitBytesIntoComponentsNested1(
     }
 }
 
-///////////////////////////
-// Reassembly
-///////////////////////////
 
 inline void reassembleBytesFromComponentsNested(
     const std::vector<std::vector<uint8_t>>& inputComponents,
@@ -126,7 +114,7 @@ inline void reassembleBytesFromComponentsNested(
   // 2. Compute the number of elements stored in the destination buffer.
   size_t numElements = byteArraySize / totalBytesPerElement;
 
-  // 3. For each component (i.e. each group of bytes) reassemble its part into the destination.
+  // 3. For each component  reassemble its part into the destination.
 #pragma omp parallel for num_threads(numThreads)
   for (size_t compIdx = 0; compIdx < inputComponents.size(); compIdx++) {
     const auto& groupIndices = allComponentSizes[compIdx];
@@ -146,16 +134,14 @@ inline void reassembleBytesFromComponentsNested(
   }
 }
 
-
-
 //////////////////////////////
 inline void fastlzDecomposedParallelDecompression(
     const std::vector<std::vector<uint8_t>>& compressedComponents,
     ProfilingInfo &pi,
     const std::vector<std::vector<size_t>>& allComponentSizes,
     int numThreads,
-    size_t originalBlockSize,    // Original block size (before compression)
-    uint8_t* finalReconstructed  // Preallocated destination buffer
+    size_t originalBlockSize,
+    uint8_t* finalReconstructed
 ) {
     auto startAll = std::chrono::high_resolution_clock::now();
 
@@ -179,15 +165,13 @@ inline void fastlzDecomposedParallelDecompression(
     omp_set_num_threads(numThreads);
 #pragma omp parallel for
     for (int i = 0; i < static_cast<int>(compressedComponents.size()); i++) {
-        // Preallocate a temporary vector of the expected uncompressed size.
         std::vector<uint8_t> temp(chunkSizes[i]);
-        // Decompress directly into the temporary vector's buffer.
         decompressWithFastLZ1(compressedComponents[i], temp.data(), chunkSizes[i]);
         decompressedSubChunks[i] = temp;
     }
 
     // 4) Reassemble the full block from the decompressed sub-components.
-    // Write directly into the preallocated destination buffer.
+
     reassembleBytesFromComponentsNested(
         decompressedSubChunks,
         finalReconstructed,       // Pointer to preallocated destination buffer
@@ -202,7 +186,7 @@ inline void fastlzDecomposedParallelDecompression(
 
 
 /////////////////////////////////////////////
-// Fused Splitting and Compression (New Function)
+// Fused Splitting and Compression
 // This function fuses the splitting (reordering) and compression steps
 // into one routine for potential performance benefits.
 /////////////////////////////////////////////
@@ -240,7 +224,7 @@ inline size_t fastlzFusedDecomposedParallel1(
     // Parallel region with thread-local accumulation.
     #pragma omp parallel
     {
-        size_t threadCompressedSize = 0;  // Each thread's local accumulation.
+        size_t threadCompressedSize = 0;
 
         #pragma omp for schedule(static)
         for (int compIdx = 0; compIdx < static_cast<int>(allComponentSizes.size()); compIdx++) {
@@ -293,9 +277,6 @@ inline size_t fastlzFusedDecomposedParallel1(
     // Stop overall timer.
     double overallEnd = omp_get_wtime();
     double overallTime = overallEnd - overallStart;
-
-    // Instead of summing per-component times (which overcounts concurrent work),
-    // take the maximum time among components.
     double maxSplitTime = 0.0;
     double maxCompressTime = 0.0;
     for (size_t i = 0; i < allComponentSizes.size(); i++) {
@@ -338,10 +319,7 @@ inline size_t fastlzFusedDecomposedParallel(
     // 2. Prepare for parallel splitting into a SINGLE large buffer.
     //    We want to place each component’s data in a back-to-back fashion.
     // ----------------------------------------------------------------------
-    // The total size of all uncompressed data is dataSize, i.e. the same
-    // as the original input. But we want to store them in "component-order":
-    //   comp0’s bytes (for all elements), then comp1’s bytes, etc.
-    // Let’s figure out the offsets where each component’s data will go.
+
     std::vector<size_t> componentOffsets(allComponentSizes.size());
     {
         size_t currentOffset = 0;
@@ -354,8 +332,6 @@ inline size_t fastlzFusedDecomposedParallel(
     // The final concatenated buffer will be size = dataSize.
     // Because sum_of(allComponentSizes[i].size()) * numElements = dataSize.
     std::vector<uint8_t> concatenatedUncompressed(dataSize);
-
-    // Prepare local timing arrays (one entry per component).
     std::vector<double> splitTimes(allComponentSizes.size(), 0.0);
 
     // ----------------------------------------------------------------------
@@ -415,8 +391,6 @@ inline size_t fastlzFusedDecomposedParallel(
     // ----------------------------------------------------------------------
     double overallEnd = omp_get_wtime();
     double overallTime = overallEnd - overallSplitStart;
-    // (If you truly want from the beginning, you can do a separate high-level start time)
-
     pi.split_time = maxSplitTime;
     pi.compress_time = compressTime;
     pi.total_time_compressed = overallTime;

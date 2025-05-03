@@ -16,7 +16,6 @@
 
 #include "profiling_info.h"
 
-// Global data (defined elsewhere)
 extern std::vector<uint8_t> globalByteArray;
 
 //=============================================================================
@@ -79,8 +78,6 @@ inline size_t decompressWithLZ4(
 
 //=============================================================================
 // Splitting and Reassembly Functions
-// (These assume that the full (interleaved) data consists of N elements,
-// each element consisting of bytes in a fixed order defined by allComponentSizes)
 //=============================================================================
 inline void splitBytesIntoComponentsNestedlz4(
     const std::vector<uint8_t>& byteArray,
@@ -172,7 +169,6 @@ inline void lz4Decompression(
 
 //=============================================================================
 // Decomposed Compression/Decompression
-//
 //=============================================================================
 // Fused LZ4 Decomposed Parallel Compression
 inline size_t lz4FusedDecomposedParallel(
@@ -306,7 +302,6 @@ inline void lz4DecomposedParallelDecompression(
 }
 //=============================================================================
 // New Functions: Decomposed Then Chunked Parallel Compression/Decompression
-// (Analogous to your FastLZ functions, but using LZ4.)
 //=============================================================================
 inline size_t lz4DecomposedThenChunkedParallelCompression(
     const uint8_t* data,
@@ -315,7 +310,7 @@ inline size_t lz4DecomposedThenChunkedParallelCompression(
     std::vector<std::vector<std::vector<uint8_t>>>& compressedBlocks,
     const std::vector<std::vector<size_t>>& allComponentSizes,
     int numThreads,
-    size_t chunkBlockSize  // desired chunk size for each component
+    size_t chunkBlockSize
 ) {
     // 1. Decompose the full data into its components.
     std::vector<uint8_t> inputData(data, data + dataSize);
