@@ -22,13 +22,8 @@ module load cmake/3.27.7
 
 
 
-DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/64/r1"
-#DATASET_DIR="/home/jamalids/Downloads/llama7b-l5"
-#DATASET_DIR="/home/jamalids/Downloads/llama7b-l6-l9"
-#DATASET_DIR="/home/jamalids/Downloads/llama7b-l2-l4"
-#DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/OBS"
-#DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/64"
-RESULTS_DIR="/home/jamalids/Documents/results2"
+DATASET_DIR="/home/Fcbench-dataset/64/64/r1"
+RESULTS_DIR="/home/Documents/results2"
 EXECUTABLE="./build/external_tools/parallel-test"
 
 
@@ -37,7 +32,7 @@ mkdir -p "$RESULTS_DIR"
 # Build the program
 mkdir -p build
 cd build
-/home/jamalids/programs/cmake-3.31.0-rc3-linux-x86_64/bin/cmake -DCMAKE_BUILD_TYPE=Release ..
+/home/programs/cmake-3.31.0-rc3-linux-x86_64/bin/cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j24  # Compile using 24 cores
 cd ..
 
