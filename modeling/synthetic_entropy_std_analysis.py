@@ -6,6 +6,11 @@ import math
 from collections import Counter
 import time
 
+from entropy_utils import calculate_multivariate_mutual_information, compute_interaction
+from string_float import load_20newsgroups_dataset, decompose_strings
+from utils import generate_smooth_array
+
+
 def generate_byte_stream(size, entropy):
     """
     Generate a byte stream of a given size with a specified entropy.
@@ -29,6 +34,7 @@ def generate_byte_stream(size, entropy):
     # Generate the byte stream
     #np.random.seed(int(time.time()))
     symbols = np.random.choice(range(num_symbols), size=size, p=probabilities)
+
     # cast it as int8
     if entropy <= 8:
         symbols = symbols.astype(np.uint8)
@@ -43,6 +49,9 @@ def generate_byte_stream(size, entropy):
     # random shuffle the symbols
     #np.random.shuffle(symbols)
     return symbols
+
+import numpy as np
+
 
 
 def compute_entropy(stream):
@@ -73,6 +82,7 @@ def cross_entropy(dataset1, dataset2):
 
     # Calculate probabilities and cross entropy
     cross_entropy = stats.entropy(pk, qk)
+    #kl_diver = scipy.special.kl_divergence(pk, qk)
     return cross_entropy
 
 def generate_float_stream(size, entropy_per_byte_array):
@@ -89,11 +99,11 @@ def generate_float_stream(size, entropy_per_byte_array):
         byte_array.append(generate_byte_stream(size, entropy_per_byte_array[1]))
         byte_array.append(generate_byte_stream(size, entropy_per_byte_array[2]))
         byte_array.append(generate_byte_stream(size, entropy_per_byte_array[3]))
-        for i in range(0, size, num_components):
-            packed_array[i] = byte_array[0][i]
-            packed_array[i + 1] = byte_array[1][i]
-            packed_array[i + 2] = byte_array[2][i]
-            packed_array[i + 3] = byte_array[3][i]
+        for i in range(0, size*num_components, num_components):
+            packed_array[i] = byte_array[0][i//num_components]
+            packed_array[i + 1] = byte_array[1][i//num_components]
+            packed_array[i + 2] = byte_array[2][i//num_components]
+            packed_array[i + 3] = byte_array[3][i//num_components]
 
     if num_components == 2:
         packed_array = np.zeros(size * num_components, dtype=np.uint16)
@@ -103,7 +113,7 @@ def generate_float_stream(size, entropy_per_byte_array):
         #print(f"Entropy of the generated float stream 2 : {compute_entropy(byte_array[1])} \n\n")
         entropy_array[0] = compute_entropy(byte_array[0])
         entropy_array[1] = compute_entropy(byte_array[1])
-        for i in range(0, size, num_components):
+        for i in range(0, size*num_components, num_components):
             packed_array[i] = byte_array[0][i]
             packed_array[i + 1] = byte_array[1][i]
 
@@ -116,9 +126,12 @@ def generate_float_stream(size, entropy_per_byte_array):
     return packed_array, byte_array, entropy_array
 
 
-def compress_with_zstd(data, level=3):
+def compress_with_zstd(data, levelx=3):
     import zstandard as zstd
     cctx = zstd.ZstdCompressor(level=level)
+    # if data is not contiguous, make it contiguous
+    if not data.flags['C_CONTIGUOUS']:
+        data = np.ascontiguousarray(data)
     compressed = cctx.compress(data)
     # comp ratio
     comp_ratio = len(data.tobytes()) / len(compressed)
@@ -141,7 +154,7 @@ def plot_time_series(data, title):
     plt.show()
 
 
-def get_compression_ratio(components, merging_indices):
+def get_compression_ratio(components, merging_indices, original_dataset=None):
     """
     Calculate the compression ratio after merging components.
 
@@ -153,22 +166,71 @@ def get_compression_ratio(components, merging_indices):
     - float: Compression ratio after merging.
     """
     merged_component = np.concatenate([components[i] for i in merging_indices], axis=0)
-    compressed, comp_ratio = compress_with_zstd(merged_component)
+
+    compressed, comp_ratio_tmp = compress_with_zstd(merged_component)
+    compressed_size_non_merged = 0
+    for i in range(len(components)):
+        if i not in merging_indices:
+            compressed_b, comp_ratio = compress_with_zstd(components[i])
+            compressed_size_non_merged += len(compressed_b)
+    compressed_size_reo = len(compressed) + compressed_size_non_merged
     entropy_merged = compute_entropy(merged_component)
+
+    merged_same_value = np.zeros(merged_component.shape, dtype=np.uint8)
+    dest_cnt = 0
+    for j_cnt, j in enumerate(merging_indices):
+        for i in range(len(components[0])):
+            dest_cnt = i*len(merging_indices) + j_cnt
+            merged_same_value[dest_cnt] = components[j][i]
+            dest_cnt += 1
+    compressed_same_value, comp_ratio = compress_with_zstd(merged_same_value)
+    compressed_size_same_value = len(compressed_same_value) + compressed_size_non_merged
     decomposed_size = 0
     for c in components:
         decompressed, comp_ratio = compress_with_zstd(c)
         decomposed_size += len(decompressed)
     # flatten the components array
     float_stream = np.concatenate(components, axis=0)
-    decomp_cr = len(float_stream.tobytes()) / decomposed_size
-    return comp_ratio, decomp_cr, entropy_merged
+    decomp_cr_all = len(float_stream.tobytes()) / decomposed_size
+    comp_ratio_reo = len(float_stream.tobytes()) / compressed_size_reo
+    comp_ratio_sameval = len(float_stream.tobytes()) / compressed_size_same_value
+    return comp_ratio_reo, comp_ratio_sameval, decomp_cr_all, entropy_merged
 
-def check_mutual_information():
+def check_mutual_information(entropies):
     float_stream, comp_array, comp_entropy_array = generate_float_stream(
-        2 * 1024 * 1024, [2, 2, 4, 2])
-    float_stream2, comp_array2, comp_entropy_array2 = generate_float_stream(
-        2 * 1024 * 1024, [7, 7, 7, 7])
+        2 * 1024 * 1024, entropies)
+
+    string = False
+    if string:
+        dataset = load_20newsgroups_dataset()
+        merged_dataset = ""
+        for item in dataset:
+            merged_dataset = merged_dataset + item
+        float_stream = np.frombuffer(merged_dataset.encode(), dtype=np.uint8)
+        b0, b1, b2, b3 = decompose_strings(float_stream)
+        # convert list to uint8 array
+        comp_array = []
+        comp_array.append(np.array(b0))
+        comp_array.append(np.array(b1))
+        comp_array.append(np.array(b2))
+        comp_array.append(np.array(b3))
+
+    is_float = False
+    if is_float:
+        comp_array = []
+        symbols = generate_smooth_array(len(float_stream) // 4)
+        size, num_components = len(float_stream) // 4, 4
+        # cast symbols as uint8
+        float_stream = symbols.view(np.uint8)
+        comp_array.append(np.array(float_stream[0: 4*size: 4]))
+        comp_array.append(np.array(float_stream[1: 4*size: 4]))
+        comp_array.append(np.array(float_stream[2: 4*size: 4]))
+        comp_array.append(np.array(float_stream[3: 4*size: 4]))
+
+    #mmi, joint = calculate_multivariate_mutual_information([comp_array[0],comp_array[0]])
+    mmi, joint = calculate_multivariate_mutual_information(comp_array)
+    interaction, intr_array = compute_interaction(comp_array)
+    print("+++++++++ Interaction Information: ", interaction)
     cross_table = np.zeros((len(comp_array), len(comp_array)))
     comp_data, original_cr = compress_with_zstd(float_stream)
     entropy_combined = compute_entropy(float_stream)
@@ -176,9 +238,11 @@ def check_mutual_information():
     for i in range(len(comp_array)):
         data = comp_array[i]
         entropy_vals[i] = compute_entropy(data)
-    print(" Original compression ratio: ", original_cr)
-
-    print(f" ---ratio : {np.sum(entropy_vals)/entropy_combined} ---")
+    print(" =========   Original compression ratio: ", original_cr)
+    float_stream_i32 = float_stream.view(dtype=np.uint32)
+    ent_f32 = compute_entropy(float_stream_i32)
+    print(f"Entropy flot32: {ent_f32}")
+    print(f" ---ratio : {np.sum(entropy_vals)/entropy_combined} --- entropy {entropy_vals} ----")
     for i in range(len(comp_array)):
         for j in range(i + 1, len(comp_array)):
             data1 = comp_array[i]
@@ -188,21 +252,48 @@ def check_mutual_information():
             # Calculate mutual information
             mi = cross_entropy(data1, data2)
             cross_table[i][j] = mi
-            cr, decomp_cr, e_merged = get_compression_ratio(comp_array, [i, j])
+            cr, comp_ratio_sameval, decomp_cr, e_merged = get_compression_ratio(comp_array, [i, j])
             e_sum = e_merged
             for k in range(len(comp_array)):
                 if k != i and k != j:
                     e_sum += compute_entropy(comp_array[k])
             print(f" ---ratio : {e_sum / entropy_combined} ---")
-            print(f"Mutual Information between component {i} and {j}: {mi}  -> {cr} vs {decomp_cr} vs {original_cr}")
+            print(f"Mutual Information between component {i} and {j}: {mi}  -> TDT: {cr} vs {comp_ratio_sameval} vs Sep: {decomp_cr} vs {original_cr}")
 
+    #print("============ ")
+    cr, cr_tdt_sb, decomp_cr, e_merged = get_compression_ratio(comp_array, [0, 1, 2, 3], float_stream)
+    print(" ****** Compression ratio: ", cr, " ", cr_tdt_sb)
+    from itertools import combinations
+    elements = {0, 1, 2, 3}
+    # Generate all combinations of 3 elements
+    combinations_of_3 = list(combinations(elements, 3))
+    for comb in combinations_of_3:
+        i, j, k = comb
+        data1 = comp_array[i]
+        data2 = comp_array[j]
+        data3 = comp_array[k]
+        # Calculate mutual information
+        mi = cross_entropy(data1, data2)
+        cross_table[i][j] = mi
+        cr, cr_tdt_sb, decomp_cr, e_merged = get_compression_ratio(comp_array, [i, j, k])
+        e_sum = e_merged
+        for l in range(len(comp_array)):
+            if l != i and l != j and l != k:
+                e_sum += compute_entropy(comp_array[l])
+        print(f" ---ratio : {e_sum / entropy_combined} ---")
+        print(f"Mutual Information between component {i} and {j} and {k}: {mi}  -> {cr} vs {cr_tdt_sb} vs {decomp_cr} vs {original_cr}")
 
+    print("\n\n\n")
 
-check_mutual_information()
+for l in range(1, 9):
+    for k in range(1, 9):
+        for j in range(1, 9):
+            for i in range(1, 9):
+                check_mutual_information([i, j, k, l])
 exit(1)
-
-
-log_array = []
+#
+#
+# log_array = []
 
 # for j in range(1, 17):
 #     for i in range(1, 17):

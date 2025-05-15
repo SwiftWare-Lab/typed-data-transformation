@@ -63,25 +63,26 @@ def compute_entropy(stream):
 # print(f"Number of rows in the dataset: {len(dataset)}")
 
 
-# Example usage
-dataset = load_20newsgroups_dataset()
-merged_dataset = ""
-for item in dataset:
-    merged_dataset = merged_dataset + item
-# convert list to array pf characters
-#dataset = [list(item) for item in dataset]
+if __name__ == "__main__":
+    # Example usage
+    dataset = load_20newsgroups_dataset()
+    merged_dataset = ""
+    for item in dataset:
+        merged_dataset = merged_dataset + item
+    # convert list to array pf characters
+    #dataset = [list(item) for item in dataset]
 
-print(f"Number of strings in the dataset: {len(merged_dataset)}")
+    print(f"Number of strings in the dataset: {len(merged_dataset)}")
 
-b0, b1, b2, b3 = decompose_strings(merged_dataset)
+    b0, b1, b2, b3 = decompose_strings(merged_dataset)
 
-# compute entropy of each string
-ent_b0 = compute_entropy(b0)
-ent_b1 = compute_entropy(b1)
-ent_b2 = compute_entropy(b2)
-ent_b3 = compute_entropy(b3)
-ent_all = compute_entropy(merged_dataset)
-#
-print(f"Entropy of b0: {ent_b0}, b1: {ent_b1}, b2: {ent_b2}, b3: {ent_b3}, all: {ent_all}")
+    # compute entropy of each string
+    ent_b0 = compute_entropy(b0)
+    ent_b1 = compute_entropy(b1)
+    ent_b2 = compute_entropy(b2)
+    ent_b3 = compute_entropy(b3)
+    ent_all = compute_entropy(merged_dataset)
+    #
+    print(f"Entropy of b0: {ent_b0}, b1: {ent_b1}, b2: {ent_b2}, b3: {ent_b3}, all: {ent_all}")
 
 
