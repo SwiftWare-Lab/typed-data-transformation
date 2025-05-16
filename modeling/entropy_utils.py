@@ -178,17 +178,17 @@ def generate_partitions(elements):
 
 def all_possible_merging(comp_array, original_dataset=None):
     bit_width = len(comp_array)
-    for i in range(1, bit_width+1):
-        elements = list(range(0, bit_width ))
+    #for i in range(1, bit_width+1):
+    elements = list(range(0, bit_width ))
 
-        # Generate all combinations of 3 elements
-        #combinations_of_3 = list(itertools.combinations(elements, i))
-        partitions = generate_partitions(elements)
-        for comb in partitions:
-            cr_reordered, decomp_cr, rignal_cr, entropy_combined, cross_ent_combined = get_compression_ratio(comp_array, comb, original_dataset)
-            print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {rignal_cr}")
-            print(f"Entropy of the merged components: {entropy_combined}")
-            print(f"Cross Entropy of the merged components: {cross_ent_combined}\n\n")
+    # Generate all combinations of 3 elements
+    #combinations_of_3 = list(itertools.combinations(elements, i))
+    partitions = generate_partitions(elements)
+    for comb in partitions:
+        cr_reordered, decomp_cr, rignal_cr, entropy_combined, cross_ent_combined = get_compression_ratio(comp_array, comb, original_dataset)
+        print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {rignal_cr}")
+        print(f"Entropy of the merged components: {entropy_combined}")
+        print(f"Cross Entropy of the merged components \n {cross_ent_combined}\n\n")
 
 
     interaction_info, joint_entropy_dict = compute_interaction(comp_array)
@@ -281,7 +281,7 @@ data_set_name = ""
 if data_set_name == "":
     entropies = [7, 2, 1, 7]
     float_stream, comp_array, comp_entropy_array = generate_float_stream(
-            2 * 1024 * 1024, entropies)
+            1*1024, entropies)
 else:
     # TODO: load the dataset and get the entropy of each component
     pass
