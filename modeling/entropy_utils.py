@@ -63,7 +63,7 @@ def compute_interaction(datasets):
             subset = [datasets[j] for j in comb]
             # calculate the mutual information
             mmi, joint_entropy = calculate_multivariate_mutual_information(subset)
-            print(f"Mutual Information for combination {comb}: {mmi}, Joint Entropy: {joint_entropy}")
+            #print(f"Mutual Information for combination {comb}: {mmi}, Joint Entropy: {joint_entropy}")
             interaction_info += (mmi *  pow(-1, i - 1))  # (-1)^(i-1) * mmi
             joint_entropy_dict[comb] = joint_entropy
     return interaction_info, joint_entropy_dict
@@ -145,20 +145,56 @@ def get_compression_ratio(components, merging_indices, original_dataset=None):
     # flatten the components array
     if original_dataset is None:
         original_dataset = np.concatenate(components, axis=0)
+    comp_original, cr_original = compress_with_zstd(original_dataset)
     decomp_cr_all = len(original_dataset.tobytes()) / compressed_size_merged
-    comp_ratio_reo = len(original_dataset.tobytes()) / compressed_size_reo
-    return comp_ratio_reo, decomp_cr_all, merged_comp_entropy, merged_cross_entropy
+    comp_ratio_reo = len(original_dataset.tobytes()) / len(compressed_reordered)
+    return comp_ratio_reo, decomp_cr_all, cr_original, merged_comp_entropy, merged_cross_entropy
+
+def generate_partitions(elements):
+    """
+    Generate all possible partitions (clusterings) of a set.
+
+    Args:
+        elements (list): The set to partition.
+
+    Returns:
+        list: A list of all partitions, where each partition is a list of subsets.
+    """
+    if len(elements) == 0:
+        return [[]]
+
+    # Recursive generation of partitions
+    first, rest = elements[0], elements[1:]
+    partitions = []
+    for smaller_partition in generate_partitions(rest):
+        # Add the first element to each subset in the smaller partition
+        for i in range(len(smaller_partition)):
+            new_partition = smaller_partition[:i] + [[first] + smaller_partition[i]] + smaller_partition[i + 1:]
+            partitions.append(new_partition)
+        # Or create a new subset with the first element
+        partitions.append([[first]] + smaller_partition)
+    return partitions
 
 
 def all_possible_merging(comp_array, original_dataset=None):
     bit_width = len(comp_array)
     for i in range(1, bit_width+1):
-        elements = {0, 1, 2, 3}
+        elements = list(range(0, bit_width ))
+
         # Generate all combinations of 3 elements
-        combinations_of_3 = list(itertools.combinations(elements, i))
-        for comb in combinations_of_3:
-            cr_reordered, decomp_cr, entropy_combined, cross_ent_combined = get_compression_ratio(comp_array, [comb], original_dataset)
+        #combinations_of_3 = list(itertools.combinations(elements, i))
+        partitions = generate_partitions(elements)
+        for comb in partitions:
+            cr_reordered, decomp_cr, rignal_cr, entropy_combined, cross_ent_combined = get_compression_ratio(comp_array, comb, original_dataset)
+            print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {rignal_cr}")
+            print(f"Entropy of the merged components: {entropy_combined}")
+            print(f"Cross Entropy of the merged components: {cross_ent_combined}\n\n")
+
+
     interaction_info, joint_entropy_dict = compute_interaction(comp_array)
+    print(f"Interaction Information: {interaction_info}")
+    print(f"Joint Entropy: {joint_entropy_dict}")
+
 
 
 def generate_byte_stream(size, entropy):
@@ -243,7 +279,7 @@ def generate_float_stream(size, entropy_per_byte_array):
 
 data_set_name = ""
 if data_set_name == "":
-    entropies = [7, 2, 1, 3]
+    entropies = [7, 2, 1, 7]
     float_stream, comp_array, comp_entropy_array = generate_float_stream(
             2 * 1024 * 1024, entropies)
 else:
