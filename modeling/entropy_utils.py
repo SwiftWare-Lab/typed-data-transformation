@@ -251,6 +251,10 @@ def generate_float_stream(size, entropy_per_byte_array):
         byte_array.append(generate_byte_stream(size, entropy_per_byte_array[1]))
         byte_array.append(generate_byte_stream(size, entropy_per_byte_array[2]))
         byte_array.append(generate_byte_stream(size, entropy_per_byte_array[3]))
+        entropy_array[0] = compute_entropy(byte_array[0])
+        entropy_array[1] = compute_entropy(byte_array[1])
+        entropy_array[2] = compute_entropy(byte_array[2])
+        entropy_array[3] = compute_entropy(byte_array[3])
         for i in range(0, size*num_components, num_components):
             packed_array[i] = byte_array[0][i//num_components]
             packed_array[i + 1] = byte_array[1][i//num_components]
