@@ -65,7 +65,7 @@ def compute_interaction(datasets):
             mmi, joint_entropy = calculate_multivariate_mutual_information(subset)
             #print(f"Mutual Information for combination {comb}: {mmi}, Joint Entropy: {joint_entropy}")
             interaction_info += (mmi *  pow(-1, i - 1))  # (-1)^(i-1) * mmi
-            joint_entropy_dict[comb] = joint_entropy
+            joint_entropy_dict[comb] = joint_entropy, mmi
     return interaction_info, joint_entropy_dict
 
 def cross_entropy(dataset1, dataset2):
@@ -279,9 +279,37 @@ def generate_float_stream(size, entropy_per_byte_array):
 
 data_set_name = ""
 if data_set_name == "":
-    entropies = [7, 2, 1, 7]
+    entropies = [2, 2, 2, 7]
     float_stream, comp_array, comp_entropy_array = generate_float_stream(
             1*1024, entropies)
+    # string = False
+    # if string:
+    #     from string_float import load_20newsgroups_dataset, decompose_strings
+    #     dataset = load_20newsgroups_dataset()
+    #     merged_dataset = ""
+    #     for item in dataset:
+    #         merged_dataset = merged_dataset + item
+    #     float_stream = np.frombuffer(merged_dataset[:4*1024].encode(), dtype=np.uint8)
+    #     b0, b1, b2, b3 = decompose_strings(float_stream)
+    #     # convert list to uint8 array
+    #     comp_array = []
+    #     comp_array.append(np.array(b0))
+    #     comp_array.append(np.array(b1))
+    #     comp_array.append(np.array(b2))
+    #     comp_array.append(np.array(b3))
+    # is_float = False
+    # if is_float:
+    #     from utils import generate_smooth_array
+    #     comp_array = []
+    #     symbols = generate_smooth_array(len(float_stream) // 4)
+    #     size, num_components = len(float_stream) // 4, 4
+    #     # cast symbols as uint8
+    #     float_stream = symbols.view(np.uint8)
+    #     comp_array.append(np.array(float_stream[0: 4 * size: 4]))
+    #     comp_array.append(np.array(float_stream[1: 4 * size: 4]))
+    #     comp_array.append(np.array(float_stream[2: 4 * size: 4]))
+    #     comp_array.append(np.array(float_stream[3: 4 * size: 4]))
+
 else:
     # TODO: load the dataset and get the entropy of each component
     pass

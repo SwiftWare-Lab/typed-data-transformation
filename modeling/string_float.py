@@ -28,7 +28,7 @@ def load_single_variable_dataset():
 
 def decompose_strings(ds):
     b0, b1, b2, b3 = [], [], [], []
-    len_m4 = (len(ds) - len(ds) % 4) // 4
+    len_m4 = (len(ds) - len(ds) % 4)
     for i in range(0, len_m4, 4):
         b0.append(ds[i+0])
         b1.append(ds[i+1])
