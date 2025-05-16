@@ -51,6 +51,9 @@ def calculate_multivariate_mutual_information(datasets):
     return mmi, joint_entropy
 
 
+
+
+
 def compute_interaction(datasets):
     num_vars = len(datasets)
     joint_entropy_dict = {}
@@ -67,6 +70,89 @@ def compute_interaction(datasets):
             interaction_info += (mmi *  pow(-1, i - 1))  # (-1)^(i-1) * mmi
             joint_entropy_dict[comb] = joint_entropy, mmi
     return interaction_info, joint_entropy_dict
+
+
+def conditional_entropy(X, conditional_vars_indices, target_var_index):
+    """
+    Calculates the conditional entropy H(X[target_var_index] | X[conditional_vars_indices]).
+
+    Args:
+        X: A list or numpy array of numpy arrays, where each inner array represents the observed
+           values of a random variable.  All inner arrays must have the same length.
+        conditional_vars_indices: A list of integers, indicating the indices of the variables
+                                  on which the entropy is conditioned.
+        target_var_index: An integer, indicating the index of the variable for which the
+                          conditional entropy is calculated.
+
+    Returns:
+        float: The conditional entropy H(X[target_var_index] | X[conditional_vars_indices]).
+               Returns 0 if any input array is empty or if there are invalid indices.
+    """
+    # Basic input validation
+    if not isinstance(X, (list, np.ndarray)) or len(X) == 0:
+        return 0.0
+    if not all(isinstance(arr, np.ndarray) for arr in X):
+        return 0.0
+    if not all(len(arr) == len(X[0]) for arr in X) or len(X[0]) == 0:
+        return 0.0
+    if not isinstance(conditional_vars_indices, list) or not all(isinstance(i, int) and 0 <= i < len(X) for i in conditional_vars_indices):
+        return 0.0
+    if not isinstance(target_var_index, int) or not 0 <= target_var_index < len(X):
+        return 0.0
+    if target_var_index in conditional_vars_indices:
+        return 0.0 # Target variable cannot be in the conditioning set.
+
+    n = len(X[0])  # Number of data points
+    num_vars = len(X)
+
+    # Create a list of the variables to condition on
+    conditioning_vars = [X[i] for i in conditional_vars_indices]
+
+    # Calculate joint probabilities of the conditioning variables
+    unique_conditioning_values, counts_conditioning_values = np.unique(
+        list(zip(*conditioning_vars)), axis=0, return_counts=True )
+    p_conditioning_values = counts_conditioning_values / n
+
+    conditional_entropy = 0.0
+    for i, conditioning_value_tuple in enumerate(unique_conditioning_values):
+        # Find indices where the conditioning variables match the current combination
+        indices = np.where(np.all(np.array(conditioning_vars).T == conditioning_value_tuple, axis=1))[0]
+
+        X_target_values_given_conditioning = X[target_var_index][indices]
+
+        # Calculate p(x_target | x_conditioning)
+        unique_X_target_given_conditioning, counts_X_target_given_conditioning = np.unique(
+            X_target_values_given_conditioning, return_counts=True
+        )
+        p_X_target_given_conditioning = counts_X_target_given_conditioning / len(X_target_values_given_conditioning)
+
+        # Calculate the entropy of the target variable given the conditioning variables
+        entropy_X_target_given_conditioning = -np.sum(p_X_target_given_conditioning * np.log2(p_X_target_given_conditioning))
+
+        # Accumulate the conditional entropy
+        conditional_entropy += p_conditioning_values[i] * entropy_X_target_given_conditioning
+
+    return conditional_entropy
+
+
+def get_conditional_entropies(datasets):
+    """
+    Calculate the conditional entropies of each variable in the dataset given all other variables.
+
+    Args:
+        datasets: A list or array of NumPy arrays of dtype uint8.
+
+    Returns:
+        A list of conditional entropies.
+    """
+    num_vars = len(datasets)
+    conditional_entropies = []
+    for i in range(num_vars):
+        # Get the conditional entropy of variable i given all other variables
+        cond_entropy = conditional_entropy(datasets, [j for j in range(num_vars) if j != i], i)
+        conditional_entropies.append(cond_entropy)
+    return conditional_entropies
+
 
 def cross_entropy(dataset1, dataset2):
     # Count occurrences of each element
@@ -194,6 +280,9 @@ def all_possible_merging(comp_array, original_dataset=None):
     interaction_info, joint_entropy_dict = compute_interaction(comp_array)
     print(f"Interaction Information: {interaction_info}")
     print(f"Joint Entropy: {joint_entropy_dict}")
+    # Calculate conditional entropies
+    conditional_entropies = get_conditional_entropies(comp_array)
+    print(f"Conditional Entropies: {conditional_entropies}")
 
 
 
@@ -283,36 +372,36 @@ def generate_float_stream(size, entropy_per_byte_array):
 
 data_set_name = ""
 if data_set_name == "":
-    entropies = [2, 2, 2, 7]
+    entropies = [2, 2, 7, 1]
     float_stream, comp_array, comp_entropy_array = generate_float_stream(
             1*1024, entropies)
-    # string = False
-    # if string:
-    #     from string_float import load_20newsgroups_dataset, decompose_strings
-    #     dataset = load_20newsgroups_dataset()
-    #     merged_dataset = ""
-    #     for item in dataset:
-    #         merged_dataset = merged_dataset + item
-    #     float_stream = np.frombuffer(merged_dataset[:4*1024].encode(), dtype=np.uint8)
-    #     b0, b1, b2, b3 = decompose_strings(float_stream)
-    #     # convert list to uint8 array
-    #     comp_array = []
-    #     comp_array.append(np.array(b0))
-    #     comp_array.append(np.array(b1))
-    #     comp_array.append(np.array(b2))
-    #     comp_array.append(np.array(b3))
-    # is_float = False
-    # if is_float:
-    #     from utils import generate_smooth_array
-    #     comp_array = []
-    #     symbols = generate_smooth_array(len(float_stream) // 4)
-    #     size, num_components = len(float_stream) // 4, 4
-    #     # cast symbols as uint8
-    #     float_stream = symbols.view(np.uint8)
-    #     comp_array.append(np.array(float_stream[0: 4 * size: 4]))
-    #     comp_array.append(np.array(float_stream[1: 4 * size: 4]))
-    #     comp_array.append(np.array(float_stream[2: 4 * size: 4]))
-    #     comp_array.append(np.array(float_stream[3: 4 * size: 4]))
+    string = True
+    if string:
+        from string_float import load_20newsgroups_dataset, decompose_strings
+        dataset = load_20newsgroups_dataset()
+        merged_dataset = ""
+        for item in dataset:
+            merged_dataset = merged_dataset + item
+        float_stream = np.frombuffer(merged_dataset[:4*1024].encode(), dtype=np.uint8)
+        b0, b1, b2, b3 = decompose_strings(float_stream)
+        # convert list to uint8 array
+        comp_array = []
+        comp_array.append(np.array(b0))
+        comp_array.append(np.array(b1))
+        comp_array.append(np.array(b2))
+        comp_array.append(np.array(b3))
+    is_float = False
+    if is_float:
+        from utils import generate_smooth_array
+        comp_array = []
+        symbols = generate_smooth_array(len(float_stream) // 4)
+        size, num_components = len(float_stream) // 4, 4
+        # cast symbols as uint8
+        float_stream = symbols.view(np.uint8)
+        comp_array.append(np.array(float_stream[0: 4 * size: 4]))
+        comp_array.append(np.array(float_stream[1: 4 * size: 4]))
+        comp_array.append(np.array(float_stream[2: 4 * size: 4]))
+        comp_array.append(np.array(float_stream[3: 4 * size: 4]))
 
 else:
     # TODO: load the dataset and get the entropy of each component
