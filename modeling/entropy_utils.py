@@ -6,6 +6,18 @@ import scipy.stats as stats
 import itertools
 
 
+from enum import Enum
+
+class CompressionTool(Enum):
+    ZSTD = "zstd"
+    ZLIB = "zlib"
+    BZ2 = "bz2"
+    SNAPPY = "snappy"
+    FASTLZ = "fastlz"
+    HUFFMAN = "huffman"
+    RLE = "rle"
+
+compression_tool = "fastlz" #"huffman"
 
 def calculate_entropy(probabilities):
     """Calculates the entropy of a probability distribution."""
@@ -49,9 +61,6 @@ def calculate_multivariate_mutual_information(datasets):
     # 5. Calculate multivariate mutual information
     mmi = sum(individual_entropies) - joint_entropy
     return mmi, joint_entropy
-
-
-
 
 
 def compute_interaction(datasets):
@@ -147,14 +156,24 @@ def get_conditional_entropies(datasets):
     """
     num_vars = len(datasets)
     conditional_entropies = []
-    for i in range(num_vars):
-        # Get the conditional entropy of variable i given all other variables
-        cond_entropy = conditional_entropy(datasets, [j for j in range(num_vars) if j != i], i)
-        conditional_entropies.append(cond_entropy)
+    for v in range(num_vars):
+        dict_c = {}
+        dict_c[v] = {}
+        for i in range(1, num_vars + 1):
+            # all combination of i from num_vars
+            combinations = itertools.combinations(range(num_vars), i)
+            for comb in combinations:
+                if v in comb:
+                    dict_c[v][comb] = 0
+                    continue
+                # Get the conditional entropy of variable i given all other variables
+                cond_entropy = conditional_entropy(datasets, [j for j in comb if j != v], v)
+                dict_c[v][comb] = cond_entropy
+        conditional_entropies.append(dict_c)
     return conditional_entropies
 
 
-def cross_entropy(dataset1, dataset2):
+def cross_relative_entropy(dataset1, dataset2):
     # Count occurrences of each element
     counts1 = Counter(dataset1)
     counts2 = Counter(dataset2)
@@ -169,18 +188,28 @@ def cross_entropy(dataset1, dataset2):
         qk[i] = counts2[i] / total2
 
     # Calculate probabilities and cross entropy
-    cross_entropy = stats.entropy(pk, qk)
+    relative_entropy = stats.entropy(pk, qk)
     #kl_diver = scipy.special.kl_divergence(pk, qk)
-    return cross_entropy
+    cross_entropy = stats.entropy(pk) + relative_entropy
+    return relative_entropy, cross_entropy
 
 
 def compress_with_zstd(data, level=3):
-    import zstandard as zstd
-    cctx = zstd.ZstdCompressor(level=level)
-    # if data is not contiguous, make it contiguous
-    if not data.flags['C_CONTIGUOUS']:
-        data = np.ascontiguousarray(data)
-    compressed = cctx.compress(data)
+    if compression_tool == CompressionTool.HUFFMAN:
+        # Use Huffman coding for compression
+        from compression_tools import huffman_compress
+        compressed = huffman_compress(data)
+    elif compression_tool == CompressionTool.FASTLZ:
+        # Use FastLZ for compression
+        from compression_tools import fastlz_compress
+        compressed = fastlz_compress(data)
+    else:
+        import zstandard as zstd
+        cctx = zstd.ZstdCompressor(level=level)
+        # if data is not contiguous, make it contiguous
+        if not data.flags['C_CONTIGUOUS']:
+            data = np.ascontiguousarray(data)
+        compressed = cctx.compress(data)
     # comp ratio
     comp_ratio = len(data.tobytes()) / len(compressed)
     return compressed, comp_ratio
@@ -198,7 +227,7 @@ def compute_entropy(stream):
     return entropy
 
 
-def get_compression_ratio(components, merging_indices, original_dataset=None):
+def get_compression_ratio_stats(components, merging_indices, original_dataset=None):
     """
     Calculate the compression ratio after merging components.
 
@@ -220,11 +249,12 @@ def get_compression_ratio(components, merging_indices, original_dataset=None):
         compressed_size_merged += len(compressed)
         entropy_comp = compute_entropy(comp)
         merged_comp_entropy.append(entropy_comp)
-    merged_cross_entropy = np.zeros((len(merged_comp), len(merged_comp)))
+    relative_entropy, merged_cross_entropy = np.zeros((len(merged_comp), len(merged_comp))), np.zeros((len(merged_comp), len(merged_comp)))
     for i in range(len(merged_comp)):
         for j in range(i + 1, len(merged_comp)):
-            merged_cross_entropy[i][j] = cross_entropy(merged_comp[i], merged_comp[j])
+            relative_entropy[i][j], merged_cross_entropy[i][j] = cross_relative_entropy(merged_comp[i], merged_comp[j])
             merged_cross_entropy[j][i] = merged_cross_entropy[i][j]
+            relative_entropy[j][i] = relative_entropy[i][j]
 
     reordered_data = np.concatenate(merged_comp, axis=0)
     compressed_reordered, compressed_size_reo = compress_with_zstd(reordered_data)
@@ -234,7 +264,7 @@ def get_compression_ratio(components, merging_indices, original_dataset=None):
     comp_original, cr_original = compress_with_zstd(original_dataset)
     decomp_cr_all = len(original_dataset.tobytes()) / compressed_size_merged
     comp_ratio_reo = len(original_dataset.tobytes()) / len(compressed_reordered)
-    return comp_ratio_reo, decomp_cr_all, cr_original, merged_comp_entropy, merged_cross_entropy
+    return comp_ratio_reo, decomp_cr_all, cr_original, merged_comp_entropy, merged_cross_entropy, relative_entropy
 
 def generate_partitions(elements):
     """
@@ -262,27 +292,36 @@ def generate_partitions(elements):
     return partitions
 
 
-def all_possible_merging(comp_array, original_dataset=None):
+def all_possible_merging(comp_array, ds_name, original_dataset=None):
     bit_width = len(comp_array)
     #for i in range(1, bit_width+1):
     elements = list(range(0, bit_width ))
-
-    # Generate all combinations of 3 elements
-    #combinations_of_3 = list(itertools.combinations(elements, i))
+    stat_dict = []
     partitions = generate_partitions(elements)
     for comb in partitions:
-        cr_reordered, decomp_cr, rignal_cr, entropy_combined, cross_ent_combined = get_compression_ratio(comp_array, comb, original_dataset)
-        print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {rignal_cr}")
+        dicts_or_stat_item = {}
+        dicts_or_stat_item["Name"], dicts_or_stat_item["tool"] = ds_name, compression_tool
+        cr_reordered, decomp_cr, orignal_cr, entropy_combined, cross_ent_combined, rel_ent_combined = get_compression_ratio_stats(comp_array, comb, original_dataset)
+        print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {orignal_cr}")
         print(f"Entropy of the merged components: {entropy_combined}")
         print(f"Cross Entropy of the merged components \n {cross_ent_combined}\n\n")
-
+        print(f"Relative Entropy of the merged components \n {rel_ent_combined}\n\n")
+        dicts_or_stat_item["clustering"] = comb
+        dicts_or_stat_item["reordered cr"] = cr_reordered
+        dicts_or_stat_item["decomposed cr"] = decomp_cr
+        dicts_or_stat_item["original cr"] = orignal_cr
+        dicts_or_stat_item["entropy"], dicts_or_stat_item["cross entropy"], dicts_or_stat_item["relative entropy"] = entropy_combined, cross_ent_combined, rel_ent_combined
+        stat_dict.append(dicts_or_stat_item)
 
     interaction_info, joint_entropy_dict = compute_interaction(comp_array)
     print(f"Interaction Information: {interaction_info}")
     print(f"Joint Entropy: {joint_entropy_dict}")
     # Calculate conditional entropies
     conditional_entropies = get_conditional_entropies(comp_array)
-    print(f"Conditional Entropies: {conditional_entropies}")
+    for row in conditional_entropies:
+        for key, value in row.items():
+            print(f"Conditional Entropy for variable {key}: {value}")
+    return stat_dict, interaction_info, joint_entropy_dict, conditional_entropies
 
 
 
@@ -370,12 +409,48 @@ def generate_float_stream(size, entropy_per_byte_array):
             packed_array[i] = byte_array[0][i]
     return packed_array, byte_array, entropy_array
 
+
+def process_dictionary(dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies):
+    # plot average entropy vs compression ratio
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import pandas as pd
+    import json
+
+    stat_dict_df = pd.DataFrame(dicts_or_stat)
+    combined_ent = stat_dict_df["entropy"]
+    CR_original = stat_dict_df["original cr"]
+    CR_decomp = stat_dict_df["decomposed cr"]
+    comp_Tool = stat_dict_df["tool"][0]
+    average_ent, std_ent = [], []
+    for v in combined_ent:
+        average_ent.append(np.mean(v))
+        std_ent.append(np.std(v))
+    # create a dataframe
+    df = pd.DataFrame({
+        "STD Entropy": std_ent,
+        "Compression Ratio": CR_decomp
+    })
+    # plot the data
+    sns.scatterplot(data=df, x="STD Entropy", y="Compression Ratio")
+    # add a regression line
+    sns.regplot(data=df, x="STD Entropy", y="Compression Ratio", scatter=False, color='red')
+    plt.title(f"STD Entropy vs Compression Ratio {comp_Tool}")
+    plt.xlabel("STD Entropy")
+    plt.ylabel("Decomposed Compression Ratio")
+    plt.show()
+
+
+
+
 data_set_name = ""
+compression_tool = CompressionTool.HUFFMAN
 if data_set_name == "":
-    entropies = [2, 2, 7, 1]
+    entropies = [7, 4, 1, 4]
     float_stream, comp_array, comp_entropy_array = generate_float_stream(
             1*1024, entropies)
-    string = True
+    data_set_name = "Synthetic"+str(entropies)
+    string = False
     if string:
         from string_float import load_20newsgroups_dataset, decompose_strings
         dataset = load_20newsgroups_dataset()
@@ -402,9 +477,11 @@ if data_set_name == "":
         comp_array.append(np.array(float_stream[1: 4 * size: 4]))
         comp_array.append(np.array(float_stream[2: 4 * size: 4]))
         comp_array.append(np.array(float_stream[3: 4 * size: 4]))
-
 else:
     # TODO: load the dataset and get the entropy of each component
     pass
 
-all_possible_merging(comp_array, float_stream)
+dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies = all_possible_merging(comp_array, data_set_name, float_stream)
+process_dictionary(dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies)
+
+
