@@ -23,6 +23,7 @@ mpl.rcParams.update({
 # ======================
 df = pd.read_csv("/mnt/c/Users/jamalids/Downloads/figs/results/result-throughput/combine-all.csv")
 
+
 # ======================
 # 1. Geometric Mean Plot
 # ======================

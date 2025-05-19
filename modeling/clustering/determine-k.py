@@ -15,7 +15,7 @@ import subprocess
 
 # Import custom compression utilities
 from modeling.utils import compute_entropy, find_max_consecutive_similar_values
-from modeling.compression_tools import zstd_comp, zlib_comp, bz2_comp,fastlz_compress
+from modeling.compression_tools import zstd_comp, zlib_comp, bz2_comp
 
 ################## Compression Helper ##################
 
@@ -129,7 +129,7 @@ def compress_data(data_set_list, compress_method, order='F'):
         total_size += len(c_)
     return compressed_data, total_size
 
-################## Main Analysis Function ##################
+# ################## Main Analysis Function ##################
 
 def run_analysis(folder_path):
     if not os.path.isdir(folder_path):
@@ -139,10 +139,9 @@ def run_analysis(folder_path):
     results_records = []
 
     comp_tools = {
-        #"zstd": zstd_comp,
-       # 'fastlz': fastlz_compress,
+        "zstd": zstd_comp,
         # "zlib": zlib_comp,
-        "bz2": bz2_comp,
+        # "bz2": bz2_comp,
     }
 
     # Define feature scenarios including all individual ones and the "All_Features" scenario.
@@ -174,13 +173,6 @@ def run_analysis(folder_path):
 
         # Adjust slicing as needed; here we use all rows from column 1.
         numeric_vals = df.values[:, 1].astype(np.float32)
-        # 2. Determine 10% of the total number of float32 values:
-        # total_len = len(numeric_vals1)
-        # portion_len = int(total_len * 0.2)  # 10% of the total length
-        #
-        # # 3. Slice the first 10%:
-        # numeric_vals = numeric_vals1[:portion_len]
-        #4.
         flattened = numeric_vals.flatten().tobytes()
         arr = np.frombuffer(flattened, dtype=np.uint8)
 
@@ -248,10 +240,131 @@ def run_analysis(folder_path):
                     })
 
     df_results = pd.DataFrame(results_records)
-    out_csv = os.path.join("/home/jamalids/Documents", "clustering_compression_results.csv")
+    out_csv = os.path.join(folder_path, "clustering_compression_results1.csv")
     df_results.to_csv(out_csv, index=False)
     print(f"Results saved to: {out_csv}")
 
 if __name__ == "__main__":
-    folder_path ="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"
+    folder_path =  r"C:\Users\jamalids\Downloads\dataset\OBS"
     run_analysis(folder_path)
+# def run_analysis(folder_path):
+#     if not os.path.isdir(folder_path):
+#         print("Invalid folder:", folder_path)
+#         return
+#
+#     results_records = []
+#
+#     comp_tools = {
+#         "zstd": zstd_comp,
+#         # Add more compression tools here if needed
+#     }
+#
+#     feature_scenarios = {
+#         "Entropy": extract_entropy,
+#         "Entropy_Mean": extract_entropy_mean,
+#         "Entropy_Std": extract_entropy_std,
+#         "Entropy_Max": extract_entropy_max,
+#         "Entropy_Min": extract_entropy_min,
+#         "Frequency": extract_frequency,
+#         "All_Features": extract_all_features
+#     }
+#
+#     tsv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.tsv')]
+#     if not tsv_files:
+#         print("No .tsv files found in", folder_path)
+#         return
+#
+#     # -------------------- STEP 1: Read 10% from each dataset and merge --------------------
+#     all_samples = []
+#     for fname in tsv_files:
+#         fpath = os.path.join(folder_path, fname)
+#         try:
+#             df = pd.read_csv(fpath, sep='\t', header=None)
+#             series_data = pd.Series(df.values[:, 1].astype(np.float32))
+#             ten_percent = max(1, int(0.3 * len(series_data)))
+#             sampled_df = series_data.sample(n=ten_percent, random_state=42)
+#             all_samples.append(sampled_df)
+#         except Exception as e:
+#             print("Failed to process", fname, e)
+#             continue
+#
+#     if not all_samples:
+#         print("No data sampled.")
+#         return
+#
+#     merged_df = pd.concat(all_samples, ignore_index=True)
+#
+#     # -------------------- STEP 2: Process merged dataset --------------------
+#     print("Processing merged dataset of shape:", merged_df.shape)
+#     try:
+#         numeric_vals = merged_df.astype(np.float32)
+#         flattened = numeric_vals.values.flatten().tobytes()
+#
+#         arr = np.frombuffer(flattened, dtype=np.uint8)
+#     except Exception as e:
+#         print("Error processing merged dataset:", e)
+#         return
+#
+#     byte_groups = [arr[i::4] for i in range(4)]
+#     n_groups = len(byte_groups)
+#     entire_arr_2d = [arr.reshape(1, -1)]
+#
+#     for scenario_name, extractor in feature_scenarios.items():
+#         feature_list = [extractor(grp) for grp in byte_groups]
+#         feature_matrix = np.array(feature_list)
+#         if feature_matrix.shape[0] < 2:
+#             continue
+#
+#         linked = linkage(feature_matrix, method='complete')
+#         max_k = min(4, feature_matrix.shape[0])
+#         for k_val in range(2, max_k + 1):
+#             labels_k = fcluster(linked, k_val, criterion='maxclust')
+#
+#             try:
+#                 sil_val = silhouette_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+#                 db_score = davies_bouldin_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+#                 ch_score = calinski_harabasz_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+#                 gap_stat = compute_gap_statistic(feature_matrix, labels_k, k_val) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+#             except Exception as e:
+#                 sil_val, db_score, ch_score, gap_stat = -1, -1, -1, -1
+#
+#             cluster_str = "|".join([f"({','.join(str(x) for x in np.where(labels_k == c)[0] + 1)})"
+#                                      for c in sorted(set(labels_k))])
+#             comp_list = build_comp_list_from_clusters(byte_groups, labels_k)
+#
+#             for ctool_name, ctool_func in comp_tools.items():
+#                 _, full_comp_size = compress_data(entire_arr_2d, ctool_func)
+#                 std_ratio = ratio_or_inf(len(arr), full_comp_size)
+#
+#                 _, dec_size = compress_data(comp_list, ctool_func, order='F')
+#                 dec_ratio = ratio_or_inf(len(arr), dec_size)
+#
+#                 _, dec_size_row = compress_data(comp_list, ctool_func, order='C')
+#                 dec_ratio_row = ratio_or_inf(len(arr), dec_size_row)
+#
+#                 results_records.append({
+#                     "Dataset": "Merged_10Percent",
+#                     "FeatureScenario": scenario_name,
+#                     "k": k_val,
+#                     "Silhouette": sil_val,
+#                     "DaviesBouldin": db_score,
+#                     "CalinskiHarabasz": ch_score,
+#                     "GapStatistic": gap_stat,
+#                     "ClusterConfig": cluster_str,
+#                     "CompressionTool": ctool_name,
+#                     "StandardSize(B)": full_comp_size,
+#                     "StandardRatio": std_ratio,
+#                     "DecomposedSize(B)_ColOrder": dec_size,
+#                     "DecomposedRatio_ColOrder": dec_ratio,
+#                     "DecomposedSize(B)_RowOrder": dec_size_row,
+#                     "DecomposedRatio_RowOrder": dec_ratio_row,
+#                 })
+#
+#     df_results = pd.DataFrame(results_records)
+#     out_csv = os.path.join(folder_path, "merged_clustering_compression_results11.csv")
+#     df_results.to_csv(out_csv, index=False)
+#     print(f"Results saved to: {out_csv}")
+#
+# if __name__ == "__main__":
+#     folder_path = r"C:\Users\jamalids\Downloads\dataset\32\OBS"
+#     run_analysis(folder_path)
