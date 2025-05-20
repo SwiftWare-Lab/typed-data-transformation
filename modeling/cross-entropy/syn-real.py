@@ -87,96 +87,7 @@ def interleave_bytes(arrs):
             if i < len(a):
                 out.append(int(a[i]))
     return bytes(out)
-
-# ---------------------- MAIN TEST ---------------------- #
-def test_synthetic_all_modes(SIZE=50000, ENT=[0,8, 3, 5]):
-    packed, groups = generate_float_stream(SIZE, ENT)
-    orig_size = len(packed)
-
-    H1 = [compute_entropy(g) for g in groups]
-    H2 = [compute_kth_entropy(g, 2) for g in groups]
-
-    modes = ["entropy", "frequency", "all"]
-    records = []
-
-    for mode in modes:
-        feats = np.vstack([extract_features(g, mode) for g in groups])
-        linked = linkage(feats, method='complete')
-
-        for k in range(1, 5):
-            labels = np.ones(4, int) if k == 1 else fcluster(linked, k, criterion='maxclust')
-            clusters = {lab: [i for i, l in enumerate(labels) if l == lab] for lab in sorted(set(labels))}
-            cfg = "|".join(f"({','.join(map(str, idxs))})" for idxs in clusters.values())
-
-            # Standard compression
-            r_std = ratio(orig_size, compress_with_fastlz(packed.tobytes()))
-
-            # Decomposed (Col)
-            merged_bs = [b"".join(groups[i].tobytes() for i in idxs) for idxs in clusters.values()]
-            dec_sizes_col = [len(compress_with_fastlz(b)) for b in merged_bs]
-            r_decomp_col = orig_size / sum(dec_sizes_col)
-
-            # Decomposed (Row_C)
-            dec_sizes_row_C = []
-            for idxs in clusters.values():
-                arr2d = np.stack([groups[i] for i in idxs], axis=1)
-                row_bytes_C = arr2d.reshape(-1, order='C').tobytes()
-                dec_sizes_row_C.append(len(compress_with_fastlz(row_bytes_C)))
-            r_decomp_row_C = orig_size / sum(dec_sizes_row_C)
-
-            # Reordered (Col)
-            reordered_bytes_col = b"".join(merged_bs)
-            r_reorder_col = ratio(orig_size, compress_with_fastlz(reordered_bytes_col))
-
-            # Reordered (Row_C): use full consistent shape
-            arr2d_reordered_C = np.stack([groups[i] for i in range(4)], axis=1)
-            row_all_C = arr2d_reordered_C.reshape(-1, order='C').tobytes()
-            r_reorder_row_C = ratio(orig_size, compress_with_fastlz(row_all_C))
-
-            # Entropy and mutual information
-            merged_np = [np.frombuffer(b, dtype=np.uint8) for b in merged_bs]
-            jh = compute_joint_entropy(merged_np)
-            mi = max(sum(compute_entropy(g) for g in merged_np) - jh, 0.0)
-            kth = np.mean([compute_kth_entropy(g, 2) for g in merged_np])
-
-            # Window-based entropy stats
-            means, inners = [], []
-            for g in merged_np:
-                wins = [compute_entropy(g[i:i + 256]) for i in range(0, len(g), 256)]
-                means.append(np.mean(wins))
-                inners.append(np.std(wins))
-            avg_within = float(np.mean(means))
-            between = float(np.std(means))
-
-            rec = {
-                "FeatureMode": mode,
-                "k": k,
-                "ClusterConfig": cfg,
-                **{f"H1_c{i}": H1[i] for i in range(4)},
-                **{f"H2_c{i}": H2[i] for i in range(4)},
-                "AvgWithinEntropy": avg_within,
-                "BetweenClusterEntropySTD": between,
-                "StandardRatio": r_std,
-                "DecomposedRatio_Col": r_decomp_col,
-                "DecomposedRatio_Row_C": r_decomp_row_C,
-                "ReorderedRatio_Col": r_reorder_col,
-                "ReorderedRatio_Row_C": r_reorder_row_C,
-                "JointEntropy": jh,
-                "MutualInfo": mi,
-                "KthEntropy": float(kth),
-                "WithinSTD": float(np.mean(inners)),
-                "BetweenSTD": between,
-            }
-
-            records.append(rec)
-
-    df = pd.DataFrame(records)
-    df.to_csv("synthetic_all_modes.csv", index=False)
-    print("Written synthetic_all_modes.csv")
-    return records
-
-
-######################################################Real###############################
+#----------------------------------------------------------
 def transform_data(data_set_list, order='C'):
     # view data_set as bytes
     compressed_data = []
@@ -186,6 +97,124 @@ def transform_data(data_set_list, order='C'):
     # flatten the list
     compressed_data = np.concatenate(compressed_data, axis=0)
     return compressed_data
+# ---------------------- MAIN TEST ---------------------- #
+def test_synthetic_all_modes(SIZE=10, ENT=[0, 8, 3, 5]):
+    packed, groups = generate_float_stream(SIZE, ENT)
+    arr = packed
+    byte_groups = groups
+    orig_size = len(arr)
+
+
+    modes = ["entropy", "frequency", "all"]
+    records = []
+
+    for mode in modes:
+        feats = np.vstack([extract_features(g, mode) for g in byte_groups])
+        linked = linkage(feats, method='complete')
+
+        for k in range(1, 5):
+            labels = np.ones(4, int) if k == 1 else fcluster(linked, k, criterion='maxclust')
+            clusters = {lab: [i for i, l in enumerate(labels) if l == lab] for lab in sorted(set(labels))}
+            cfg = "|".join(f"({','.join(map(str, idxs))})" for idxs in clusters.values())
+
+            # Standard compression
+            r_std = ratio(orig_size, compress_with_fastlz(arr.tobytes()))
+
+            # Decomposed (Row) C and F: compress per-cluster then sum
+            dec_sizes_row_C, dec_sizes_row_F = [], []
+            for idxs in clusters.values():
+                arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
+                row_bytes_C = transform_data([arr2d], order='C')
+                row_bytes_F = transform_data([arr2d], order='F')
+                dec_sizes_row_C.append(len(compress_with_fastlz(row_bytes_C)))
+                dec_sizes_row_F.append(len(compress_with_fastlz(row_bytes_F)))
+            r_dec_row_C = orig_size / sum(dec_sizes_row_C)
+            r_dec_row_F = orig_size / sum(dec_sizes_row_F)
+
+            # Decomposed (Row) C and F: merge all reordered bytes and compress once
+            all_row_bytes_C, all_row_bytes_F = [], []
+            for idxs in clusters.values():
+                arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
+                all_row_bytes_C.append(transform_data([arr2d], order='C'))
+                all_row_bytes_F.append(transform_data([arr2d], order='F'))
+            merged_row_bytes_C = b"".join(all_row_bytes_C)
+            merged_row_bytes_F = b"".join(all_row_bytes_F)
+            r_re_row_C = ratio(orig_size, compress_with_fastlz(merged_row_bytes_C))
+            r_re_row_F = ratio(orig_size, compress_with_fastlz(merged_row_bytes_F))
+
+            # Info metrics: computed over per-cluster byte streams
+            cluster_streams = []
+            HC_H1, HC_H2 = [], []
+            total_bytes = 0
+            weighted_entropy = 0.0
+            weighted_kth_entropy = 0.0
+
+            for idxs in clusters.values():
+                arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
+                flat_stream = transform_data([arr2d], order='F')
+                flat = np.frombuffer(flat_stream, dtype=np.uint8)
+
+                cluster_streams.append(flat)
+
+                H1_val = compute_entropy(flat)
+                H2_val = compute_kth_entropy(flat, 2)
+                size = len(flat)
+
+                HC_H1.append(round(H1_val, 4))
+                HC_H2.append(round(H2_val, 4))
+
+                total_bytes += size
+                weighted_entropy += H1_val * size
+                weighted_kth_entropy += H2_val * size
+
+            # Compute joint entropy and mutual info across clusters
+            jh = compute_joint_entropy(cluster_streams)
+            mi = max(sum(compute_entropy(c) for c in cluster_streams) - jh, 0.0)
+            kth = np.mean([compute_kth_entropy(c, 2) for c in cluster_streams])
+
+            # Compute windowed entropy within each cluster
+            cluster_entropy_means = []
+            cluster_entropy_stds = []
+            for c in cluster_streams:
+                windows = [compute_entropy(c[i:i + 256]) for i in range(0, len(c), 256)]
+                cluster_entropy_means.append(np.mean(windows))
+                cluster_entropy_stds.append(np.std(windows))
+
+            avg_within = float(np.mean(cluster_entropy_means))
+            avg_within_std = float(np.mean(cluster_entropy_stds))
+            between = float(np.std(cluster_entropy_means))
+
+            rec = {
+                "Dataset": "synthetic",
+                "FeatureMode": mode,
+                "k": k,
+                "ClusterConfig": cfg,
+
+                "HC_H1": ",".join(map(str, HC_H1)),
+                "HC_H2": ",".join(map(str, HC_H2)),
+                "HC_H1_weighted": round(weighted_entropy / total_bytes, 5),
+                "HC_H2_weighted": round(weighted_kth_entropy / total_bytes, 5),
+                "BetweenClusterEntropySTD": between,
+                "StandardRatio": r_std,
+                "DecomposedRatio_Row_C": r_dec_row_C,
+                "DecomposedRatio_Row_F": r_dec_row_F,
+                "ReorderedRatio_Row_C": r_re_row_C,
+                "ReorderedRatio_Row_F": r_re_row_F,
+                "JointEntropy": jh,
+                "MutualInfo": mi,
+                "KthEntropy": float(kth),
+                "WithinSTD": avg_within_std,
+                "BetweenSTD": between,
+            }
+            records.append(rec)
+
+    df = pd.DataFrame(records)
+    df.to_csv("synthetic_all_modes.csv", index=False)
+    print("Written synthetic_all_modes.csv")
+    return records
+
+######################################################Real###############################
+
 def test_real_datasets(folder_path):
     tsv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.tsv')]
     if not tsv_files:
@@ -227,39 +256,35 @@ def test_real_datasets(folder_path):
                 # Standard compression
                 r_std = ratio(orig_size, compress_with_fastlz(arr))
 
-                # Decomposed (Col)
-                merged_bs = [b"".join(byte_groups[i].tobytes() for i in idxs) for idxs in clusters.values()]
-                dec_sizes_col = [len(compress_with_fastlz(b)) for b in merged_bs]
-                r_dec_col = orig_size / sum(dec_sizes_col)
-
                 # Decomposed (Row) C and F orders
                 dec_sizes_row_C, dec_sizes_row_F = [], []
 
                 for idxs in clusters.values():
-                    # Stack byte groups into 2D float32-like layout
                     arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
 
-                    # Use your transform function
                     row_bytes_C = transform_data([arr2d], order='C')
                     row_bytes_F = transform_data([arr2d], order='F')
 
-                    # Compress transformed byte streams
                     dec_sizes_row_C.append(len(compress_with_fastlz(row_bytes_C)))
                     dec_sizes_row_F.append(len(compress_with_fastlz(row_bytes_F)))
 
                 r_dec_row_C = orig_size / sum(dec_sizes_row_C)
                 r_dec_row_F = orig_size / sum(dec_sizes_row_F)
 
-                # Reordered (Col)
-                concat_all = b"".join(merged_bs)
-                r_reo_col = ratio(orig_size, compress_with_fastlz(concat_all))
+                # Decomposed (Row) C and F: collect all reordered byte chunks
+                all_row_bytes_C, all_row_bytes_F = [], []
 
-                # Reordered (Row) using byte_groups (guaranteed equal length)
-                all_arr2d = np.stack([byte_groups[i] for i in range(4)], axis=1)
-                row_all_C = all_arr2d.reshape(-1, order='C').tobytes()
-                row_all_F = all_arr2d.reshape(-1, order='F').tobytes()
-                r_reo_row_C = ratio(orig_size, compress_with_fastlz(row_all_C))
-                r_reo_row_F = ratio(orig_size, compress_with_fastlz(row_all_F))
+                for idxs in clusters.values():
+                    arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
+                    all_row_bytes_C.append(transform_data([arr2d], order='C'))
+                    all_row_bytes_F.append(transform_data([arr2d], order='F'))
+
+                # Merge cluster-wise reordered byte streams and compress once
+                merged_row_bytes_C = b"".join(all_row_bytes_C)
+                merged_row_bytes_F = b"".join(all_row_bytes_F)
+
+                r_re_row_C = ratio(orig_size, compress_with_fastlz(merged_row_bytes_C))
+                r_re_row_F = ratio(orig_size, compress_with_fastlz(merged_row_bytes_F))
 
                 # Info metrics
                 # (merged_np might be variable size — skip stacking and only use for MI, joint entropy, etc.)
@@ -286,12 +311,10 @@ def test_real_datasets(folder_path):
                     "AvgWithinEntropy": avg_within,
                     "BetweenClusterEntropySTD": between,
                     "StandardRatio": r_std,
-                    "DecomposedRatio_Col": r_dec_col,
                     "DecomposedRatio_Row_C": r_dec_row_C,
-                    "DecomposedRatio_Row_F": r_dec_row_F,
-                    "ReorderedRatio_Col": r_reo_col,
-                    "ReorderedRatio_Row_C": r_reo_row_C,
-                    "ReorderedRatio_Row_F": r_reo_row_F,
+                    "DecomposedRatio_Row_F": r_dec_row_F,#col
+                    "ReorderedRatio_Row_C": r_re_row_C,
+                    "ReorderedRatio_Row_F":r_re_row_F,
                     "JointEntropy": jh,
                     "MutualInfo": mi,
                     "KthEntropy": float(kth),
@@ -312,8 +335,8 @@ def plot_ratios_and_kth(records, kth_order=2):
     all_rec = [r for r in records if r["FeatureMode"]=="all"]
     ks  = [r['k'] for r in all_rec]
     std = [r['StandardRatio'] for r in all_rec]
-    dec = [r['DecomposedRatio_Col'] for r in all_rec]
-    reo = [r['ReorderedRatio_Col'] for r in all_rec]
+    dec = [r['DecomposedRatio_Row_F'] for r in all_rec]
+    reo = [r['ReorderedRatio_Row_F'] for r in all_rec]
     kth = [r['KthEntropy'] for r in all_rec]
 
     x, w = np.arange(len(ks)), 0.25
@@ -339,7 +362,7 @@ def plot_decomp_col_vs_mi(records, mode="all"):
     # filter by feature mode
     recs = [r for r in records if r["FeatureMode"] == mode]
     ks   = [r["k"]                for r in recs]
-    dec  = [r["ReorderedRatio_Col"] for r in recs]
+    dec  = [r["ReorderedRatio_Row_F"] for r in recs]
     mi   = [r["MutualInfo"]       for r in recs]
 
     x = np.arange(len(ks))
@@ -349,7 +372,7 @@ def plot_decomp_col_vs_mi(records, mode="all"):
     ax1.set_xticks(x)
     ax1.set_xticklabels(ks)
     ax1.set_xlabel("k (clusters)")
-    ax1.set_ylabel("ReorderedRatio_Col", color="C0")
+    ax1.set_ylabel("ReorderedRatio_Row_F", color="C0")
     ax1.tick_params(axis="y", labelcolor="C0")
     ax1.legend(loc="upper left")
 
@@ -389,8 +412,8 @@ def plot_decomp_reo_vs_mi(records, mode="all"):
     # filter records by mode
     recs = [r for r in records if r["FeatureMode"] == mode]
     ks   = [r["k"]                   for r in recs]
-    dec  = [r["DecomposedRatio_Col"] for r in recs]
-    reo  = [r["ReorderedRatio_Col"]  for r in recs]
+    dec  = [r["DecomposedRatio_Row_F"] for r in recs]
+    reo  = [r["ReorderedRatio_Row_F"]  for r in recs]
     mi   = [r["MutualInfo"]          for r in recs]
 
     x = np.arange(len(ks))
@@ -434,7 +457,7 @@ def plot_decomp_row_vs_mutual_info(recs, mode="all"):
         return
 
     df = pd.DataFrame(recs_filtered)
-    df = df[df["ReorderedRatio_Col"] > 0]
+    df = df[df["ReorderedRatio_Row_F"] > 0]
 
     # Plot styling
     sns.set(style="whitegrid")
@@ -444,7 +467,7 @@ def plot_decomp_row_vs_mutual_info(recs, mode="all"):
     sns.regplot(
         data=df,
         x="MutualInfo",
-        y="ReorderedRatio_Col",
+        y="ReorderedRatio_Row_F",
         scatter=False,
         color="black",
         line_kws={"linewidth": 2, "label": "Regression Line"}
@@ -454,15 +477,15 @@ def plot_decomp_row_vs_mutual_info(recs, mode="all"):
     sns.scatterplot(
         data=df,
         x="MutualInfo",
-        y="ReorderedRatio_Col",
+        y="ReorderedRatio_Row_F",
         hue="k",
         palette="viridis",
         s=80
     )
 
     # Tight Y-axis limits
-    ymin = df["ReorderedRatio_Col"].min() * 0.95
-    ymax = df["ReorderedRatio_Col"].max() * 1.05
+    ymin = df["ReorderedRatio_Row_F"].min() * 0.95
+    ymax = df["ReorderedRatio_Row_F"].max() * 1.05
     plt.ylim(ymin, ymax)
 
     # Labels and layout
