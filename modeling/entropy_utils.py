@@ -4,9 +4,15 @@ import math
 from collections import Counter
 import scipy.stats as stats
 import itertools
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import json
 
 from enum import Enum
+
+from entropy_analysis import calculate_kth_order_entropy_paper
+
 
 class CompressionTool(Enum):
     ZSTD = "zstd"
@@ -238,7 +244,7 @@ def get_compression_ratio_stats(components, merging_indices, original_dataset=No
     Returns:
     - float: Compression ratio after merging.
     """
-    merged_comp, merged_comp_entropy = [], []
+    merged_comp, merged_comp_entropy, merged_k2_entropy = [], [], []
     for m_indices in merging_indices:
         comp = np.concatenate([components[i] for i in m_indices], axis=0)
         merged_comp.append(comp)
@@ -249,6 +255,8 @@ def get_compression_ratio_stats(components, merging_indices, original_dataset=No
         compressed_size_merged += len(compressed)
         entropy_comp = compute_entropy(comp)
         merged_comp_entropy.append(entropy_comp)
+        entropy_k2 = calculate_kth_order_entropy_paper(comp, 1)
+        merged_k2_entropy.append(entropy_k2)
     relative_entropy, merged_cross_entropy = np.zeros((len(merged_comp), len(merged_comp))), np.zeros((len(merged_comp), len(merged_comp)))
     for i in range(len(merged_comp)):
         for j in range(i + 1, len(merged_comp)):
@@ -258,13 +266,14 @@ def get_compression_ratio_stats(components, merging_indices, original_dataset=No
 
     reordered_data = np.concatenate(merged_comp, axis=0)
     compressed_reordered, compressed_size_reo = compress_with_zstd(reordered_data)
+    entropy_k2_reorder = calculate_kth_order_entropy_paper(reordered_data, 1)
     # flatten the components array
     if original_dataset is None:
         original_dataset = np.concatenate(components, axis=0)
     comp_original, cr_original = compress_with_zstd(original_dataset)
     decomp_cr_all = len(original_dataset.tobytes()) / compressed_size_merged
     comp_ratio_reo = len(original_dataset.tobytes()) / len(compressed_reordered)
-    return comp_ratio_reo, decomp_cr_all, cr_original, merged_comp_entropy, merged_cross_entropy, relative_entropy
+    return comp_ratio_reo, decomp_cr_all, cr_original, merged_comp_entropy, merged_cross_entropy, relative_entropy, merged_k2_entropy, entropy_k2_reorder
 
 def generate_partitions(elements):
     """
@@ -294,6 +303,14 @@ def generate_partitions(elements):
 
 def all_possible_merging(comp_array, ds_name, original_dataset=None):
     bit_width = len(comp_array)
+    interaction_info, joint_entropy_dict = compute_interaction(comp_array)
+    print(f"Interaction Information: {interaction_info}")
+    # print(f"Joint Entropy: {joint_entropy_dict}")
+    # Calculate conditional entropies
+    conditional_entropies = get_conditional_entropies(comp_array)
+    # for row in conditional_entropies:
+    #     for key, value in row.items():
+    #         print(f"Conditional Entropy for variable {key}: {value}")
     #for i in range(1, bit_width+1):
     elements = list(range(0, bit_width ))
     stat_dict = []
@@ -301,26 +318,36 @@ def all_possible_merging(comp_array, ds_name, original_dataset=None):
     for comb in partitions:
         dicts_or_stat_item = {}
         dicts_or_stat_item["Name"], dicts_or_stat_item["tool"] = ds_name, compression_tool
-        cr_reordered, decomp_cr, orignal_cr, entropy_combined, cross_ent_combined, rel_ent_combined = get_compression_ratio_stats(comp_array, comb, original_dataset)
-        print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {orignal_cr}")
+        cr_reordered, decomp_cr, orignal_cr, entropy_combined, cross_ent_combined, rel_ent_combined, k2_entropy_combined, k2_entropy_reorder = get_compression_ratio_stats(comp_array, comb, original_dataset)
+        #print(f"Compression Ratio for combination {comb}: reorded: {cr_reordered}, Decompsed CR: {decomp_cr} vs original: {orignal_cr}")
         print(f"Entropy of the merged components: {entropy_combined}")
-        print(f"Cross Entropy of the merged components \n {cross_ent_combined}\n\n")
-        print(f"Relative Entropy of the merged components \n {rel_ent_combined}\n\n")
+        # print(f"Cross Entropy of the merged components \n {cross_ent_combined}\n\n")
+        # print(f"Relative Entropy of the merged components \n {rel_ent_combined}\n\n")
+        # print(f"K2 Entropy of the merged components \n {k2_entropy_combined}\n\n")
+        # print(f"K2 Entropy of the reordered components \n {k2_entropy_reorder}\n\n")
+        joint_entropy_sum, mmi_sum = 0, 0
+        for cluster in comb:
+            # convert it to tuple
+            cluster = tuple(cluster)
+            if cluster in joint_entropy_dict:
+                joint_entropy_sum += joint_entropy_dict[cluster][0]
+                mmi_sum += joint_entropy_dict[cluster][1]
+            else:
+                # print(f"Cluster {cluster} not found in joint_entropy_dict")
+                pass
+
+        dicts_or_stat_item["joint entropy"] = joint_entropy_sum
+        dicts_or_stat_item["mmi"] = mmi_sum
         dicts_or_stat_item["clustering"] = comb
         dicts_or_stat_item["reordered cr"] = cr_reordered
         dicts_or_stat_item["decomposed cr"] = decomp_cr
         dicts_or_stat_item["original cr"] = orignal_cr
         dicts_or_stat_item["entropy"], dicts_or_stat_item["cross entropy"], dicts_or_stat_item["relative entropy"] = entropy_combined, cross_ent_combined, rel_ent_combined
+        dicts_or_stat_item["k2 entropy"] = k2_entropy_combined
+        dicts_or_stat_item["k2 entropy reorder"] = k2_entropy_reorder
         stat_dict.append(dicts_or_stat_item)
 
-    interaction_info, joint_entropy_dict = compute_interaction(comp_array)
-    print(f"Interaction Information: {interaction_info}")
-    print(f"Joint Entropy: {joint_entropy_dict}")
-    # Calculate conditional entropies
-    conditional_entropies = get_conditional_entropies(comp_array)
-    for row in conditional_entropies:
-        for key, value in row.items():
-            print(f"Conditional Entropy for variable {key}: {value}")
+
     return stat_dict, interaction_info, joint_entropy_dict, conditional_entropies
 
 
@@ -412,76 +439,153 @@ def generate_float_stream(size, entropy_per_byte_array):
 
 def process_dictionary(dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies):
     # plot average entropy vs compression ratio
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import pandas as pd
-    import json
 
     stat_dict_df = pd.DataFrame(dicts_or_stat)
+    ds_name = stat_dict_df["Name"][0]
     combined_ent = stat_dict_df["entropy"]
+    combined_entk2 = stat_dict_df["k2 entropy"]
     CR_original = stat_dict_df["original cr"]
+    CR_reordered = stat_dict_df["reordered cr"]
     CR_decomp = stat_dict_df["decomposed cr"]
+    joint_entropy = stat_dict_df["joint entropy"]
+    mmi = stat_dict_df["mmi"]
+
     comp_Tool = stat_dict_df["tool"][0]
-    average_ent, std_ent = [], []
+    average_ent, std_ent, std_ent2 = [], [], []
     for v in combined_ent:
         average_ent.append(np.mean(v))
         std_ent.append(np.std(v))
+    for v in combined_entk2:
+        average_ent.append(np.mean(v))
+        std_ent2.append(np.std(v))
     # create a dataframe
+    label1, label2 = "STD Entropy", "STD Entropy K2"
+    label1, label2 = "joint entropy", "mmi"
+    # df = pd.DataFrame({
+    #     "STD Entropy": std_ent,
+    #     "STD Entropy K2": std_ent2,
+    #     "Compression Ratio": CR_decomp,
+    # })
     df = pd.DataFrame({
-        "STD Entropy": std_ent,
-        "Compression Ratio": CR_decomp
+        label1: joint_entropy,
+        label2: mmi,
+        "Compression Ratio": CR_decomp,
     })
     # plot the data
-    sns.scatterplot(data=df, x="STD Entropy", y="Compression Ratio")
+    #sns.scatterplot(data=df, x="STD Entropy", y="Compression Ratio")
+    # create two subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    # plot the first subplot
+    sns.scatterplot(data=df, x=label1, y="Compression Ratio", ax=ax1)
+    ax1.set_title(f"{ds_name} : {comp_Tool}")
+    ax1.set_xlabel(label1)
+    ax1.set_ylabel("Decomposed Compression Ratio")
     # add a regression line
-    sns.regplot(data=df, x="STD Entropy", y="Compression Ratio", scatter=False, color='red')
-    plt.title(f"STD Entropy vs Compression Ratio {comp_Tool}")
-    plt.xlabel("STD Entropy")
-    plt.ylabel("Decomposed Compression Ratio")
+    sns.regplot(data=df, x=label1, y="Compression Ratio", scatter=False, color='red', ax=ax1)
+    # show the r2
+    r2 = stats.linregress(df[label1], df["Compression Ratio"]).rvalue ** 2
+    print(f"R2 for STD Entropy vs Compression Ratio: {r2}")
+    ax1.text(0.05, 0.95, f"R² = {r2:.2f}", transform=ax1.transAxes, fontsize=10, verticalalignment='top', color='red')
+
+    # plot the second subplot
+    sns.scatterplot(data=df, x=label2, y="Compression Ratio", ax=ax2)
+    ax2.set_title(f"{ds_name} : {comp_Tool}")
+    ax2.set_xlabel(label2)
+    ax2.set_ylabel("Decomposed Compression Ratio")
+    sns.regplot(data=df, x=label2, y="Compression Ratio", scatter=False, color='blue', ax=ax2)
+    # show the r2
+    r2 = stats.linregress(df[label2], df["Compression Ratio"]).rvalue ** 2
+    ax2.text(0.05, 0.95, f"R² = {r2:.2f}", transform=ax2.transAxes, fontsize=10, verticalalignment='top', color='blue')
+    print(f"R2 for STD Entropy K2 vs Compression Ratio: {r2}")
     plt.show()
 
 
+def get_best_compression_clustering(stat_dict):
+    """
+    Get the best compression clustering based on the compression ratio.
+
+    Args:
+        stat_dict: A list of dictionaries containing the clustering information.
+
+    Returns:
+        The best clustering based on the compression ratio.
+    """
+    best_cr = 0
+    best_clustering = {}
+    for item in stat_dict:
+        if item["decomposed cr"] > best_cr:
+            best_cr = item["decomposed cr"]
+            best_clustering = item
+    return best_clustering
 
 
+def all_possible_ent(sampling=0):
+    all_possible = []
+    # all possible combination of 4 variables between 1 to 7
+    for i in range(1, 8):
+        for j in range(1, 8):
+            for k in range(1, 8):
+                for l in range(1, 8):
+                    all_possible.append([i, j, k, l])
+    if sampling > 0:
+        # generate a random array of integers between 1 and sampling
+        rand_int = np.random.randint(1, len(all_possible), size=(sampling))
+        # get the random samples
+        all_possible = np.array([all_possible[i] for i in rand_int])
+        #all_possible = np.random.choice(all_possible, sampling, replace=False)
+    return all_possible
+
+best_clustering, all_stats = [], []
 data_set_name = ""
 compression_tool = CompressionTool.HUFFMAN
-if data_set_name == "":
-    entropies = [7, 4, 1, 4]
-    float_stream, comp_array, comp_entropy_array = generate_float_stream(
-            1*1024, entropies)
-    data_set_name = "Synthetic"+str(entropies)
-    string = False
-    if string:
-        from string_float import load_20newsgroups_dataset, decompose_strings
-        dataset = load_20newsgroups_dataset()
-        merged_dataset = ""
-        for item in dataset:
-            merged_dataset = merged_dataset + item
-        float_stream = np.frombuffer(merged_dataset[:4*1024].encode(), dtype=np.uint8)
-        b0, b1, b2, b3 = decompose_strings(float_stream)
-        # convert list to uint8 array
-        comp_array = []
-        comp_array.append(np.array(b0))
-        comp_array.append(np.array(b1))
-        comp_array.append(np.array(b2))
-        comp_array.append(np.array(b3))
-    is_float = False
-    if is_float:
-        from utils import generate_smooth_array
-        comp_array = []
-        symbols = generate_smooth_array(len(float_stream) // 4)
-        size, num_components = len(float_stream) // 4, 4
-        # cast symbols as uint8
-        float_stream = symbols.view(np.uint8)
-        comp_array.append(np.array(float_stream[0: 4 * size: 4]))
-        comp_array.append(np.array(float_stream[1: 4 * size: 4]))
-        comp_array.append(np.array(float_stream[2: 4 * size: 4]))
-        comp_array.append(np.array(float_stream[3: 4 * size: 4]))
-else:
-    # TODO: load the dataset and get the entropy of each component
-    pass
+# generate a list of entropies arrays
+entropy_array = all_possible_ent(10) #[[2, 2, 2, 2], [6, 2, 2, 3], [2, 6, 2, 6], [2, 2, 6, 2], [5, 1, 2, 6], [4, 4, 4, 4], [7, 3, 4, 1]]
+for entropies in entropy_array:
+    if data_set_name == "":
+        #entropies = [7, 2, 1, 4]
+        float_stream, comp_array, comp_entropy_array = generate_float_stream(
+                1*1024, entropies)
+        data_set_name = "Synthetic"+str(entropies)
+        string = False
+        if string:
+            from string_float import load_20newsgroups_dataset, decompose_strings
+            dataset = load_20newsgroups_dataset()
+            merged_dataset = ""
+            for item in dataset:
+                merged_dataset = merged_dataset + item
+            float_stream = np.frombuffer(merged_dataset[:4*1024].encode(), dtype=np.uint8)
+            b0, b1, b2, b3 = decompose_strings(float_stream)
+            # convert list to uint8 array
+            comp_array = []
+            comp_array.append(np.array(b0))
+            comp_array.append(np.array(b1))
+            comp_array.append(np.array(b2))
+            comp_array.append(np.array(b3))
+        is_float = False
+        if is_float:
+            from utils import generate_smooth_array
+            comp_array = []
+            symbols = generate_smooth_array(len(float_stream) // 4)
+            size, num_components = len(float_stream) // 4, 4
+            # cast symbols as uint8
+            float_stream = symbols.view(np.uint8)
+            comp_array.append(np.array(float_stream[0: 4 * size: 4]))
+            comp_array.append(np.array(float_stream[1: 4 * size: 4]))
+            comp_array.append(np.array(float_stream[2: 4 * size: 4]))
+            comp_array.append(np.array(float_stream[3: 4 * size: 4]))
+    else:
+        # TODO: load the dataset and get the entropy of each component
+        pass
 
-dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies = all_possible_merging(comp_array, data_set_name, float_stream)
-process_dictionary(dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies)
+    dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies = all_possible_merging(comp_array, data_set_name, float_stream)
+    best_cluster = get_best_compression_clustering(dicts_or_stat)
+    all_stats.append(dicts_or_stat)
 
-
+    best_clustering.append(best_cluster)
+    process_dictionary(dicts_or_stat, interaction_info, joint_entropy_dict, conditional_entropies)
+    data_set_name = ""
+    # best_df = pd.DataFrame(best_clustering)
+    # best_df.to_csv("best_clustering.csv", index=False)
+    # all_df = pd.DataFrame(all_stats)
+    # all_df.to_csv("all_clustering.csv", index=False)
+#process_dictionary(best_clustering, None, None, None)

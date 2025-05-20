@@ -357,73 +357,74 @@ def plot_tensor(byte_cluster_entropy, output_path, ds_name):
 # calc_test_k = compute_kth_order_entropy_optimized("mississippi", 1, False)
 # print(f"Test k-th order entropy: {calc_test_k}")
 
-chunk_size = -1
-contig_order = False
-# generate random floating point data aray and measure entropy for different fixed-width integer types
-data_size = 5000 #65000
-data = np.random.rand(data_size)
-dataset_name = "random"
-if len(sys.argv) > 1:
-    dataset_path = sys.argv[1]
-    dataset_name = dataset_path.split('/')[-1].split('.')[0]
-    # open tsv file with df
-    data = pd.read_csv(dataset_path, sep='\t')
-    sliced_data = data.values[:, 1].astype(np.float32)  # TODO: change this to general
-    # flatten the data
-    data = sliced_data.flatten()
-if len(sys.argv) > 2:
-    chunk_size = int(sys.argv[3])
-if chunk_size == -1:
-    chunk_size = 1000 #TODO a larger block size
+if __name__ == "__main__":
+    chunk_size = -1
+    contig_order = False
+    # generate random floating point data aray and measure entropy for different fixed-width integer types
+    data_size = 5000 #65000
+    data = np.random.rand(data_size)
+    dataset_name = "random"
+    if len(sys.argv) > 1:
+        dataset_path = sys.argv[1]
+        dataset_name = dataset_path.split('/')[-1].split('.')[0]
+        # open tsv file with df
+        data = pd.read_csv(dataset_path, sep='\t')
+        sliced_data = data.values[:, 1].astype(np.float32)  # TODO: change this to general
+        # flatten the data
+        data = sliced_data.flatten()
+    if len(sys.argv) > 2:
+        chunk_size = int(sys.argv[3])
+    if chunk_size == -1:
+        chunk_size = 1000 #TODO a larger block size
 
-# we only needd a few blocks
-data_size = chunk_size * 10
-data = data[:data_size]
+    # we only needd a few blocks
+    data_size = chunk_size * 10
+    data = data[:data_size]
 
-# convert it to float32 for testing # TODO remove this once transformation supports float64
-data = np.float32(data)
-bit_width = data.dtype.itemsize * 8
-data_int = data.view(dtype=np.uint8)
+    # convert it to float32 for testing # TODO remove this once transformation supports float64
+    data = np.float32(data)
+    bit_width = data.dtype.itemsize * 8
+    data_int = data.view(dtype=np.uint8)
 
-num_blocs = len(data_int) // chunk_size
+    num_blocs = len(data_int) // chunk_size
 
-num_entropies = 5
-kth_order_ent = {'0': [], '1':[], '2':[], '3':[], '4':[]}
-orig_entropy = {'8':[], '16': [], '32': [], '64': []}
+    num_entropies = 5
+    kth_order_ent = {'0': [], '1':[], '2':[], '3':[], '4':[]}
+    orig_entropy = {'8':[], '16': [], '32': [], '64': []}
 
-tdt_kth_order_ent = {'0': [], '1':[], '2':[], '3':[], '4':[]}
-tdt_orig_entropy = {'8':[], '16': [], '32': [], '64': []}
+    tdt_kth_order_ent = {'0': [], '1':[], '2':[], '3':[], '4':[]}
+    tdt_orig_entropy = {'8':[], '16': [], '32': [], '64': []}
 
-byte_cluster_entropy = []
+    byte_cluster_entropy = []
 
-for i in range(num_blocs):
-    data_block = data_int[i*chunk_size:(i+1)*chunk_size]
-    for k in range(num_entropies):
-        kth_order_ent[str(k)].append(compute_kth_order_entropy_optimized(data_block, k))
-        print(f"{k}-th order entropy for block {i}: {kth_order_ent[str(k)][-1]}")
+    for i in range(num_blocs):
+        data_block = data_int[i*chunk_size:(i+1)*chunk_size]
+        for k in range(num_entropies):
+            kth_order_ent[str(k)].append(compute_kth_order_entropy_optimized(data_block, k))
+            print(f"{k}-th order entropy for block {i}: {kth_order_ent[str(k)][-1]}")
 
-    for w in [8, 16, 32, 64]:
-        manual_entropy, entropy_scipy = compute_entropy_w(data, w)
-        orig_entropy[str(w)].append(manual_entropy)
-        print(f"Entropy for {w}-bit fixed-width integers: {manual_entropy} (SciPy: {entropy_scipy})")
+        for w in [8, 16, 32, 64]:
+            manual_entropy, entropy_scipy = compute_entropy_w(data, w)
+            orig_entropy[str(w)].append(manual_entropy)
+            print(f"Entropy for {w}-bit fixed-width integers: {manual_entropy} (SciPy: {entropy_scipy})")
 
-    tdt_data, entropy_per_cluster = tdt_transform(data_block) # this is done assuming float32, TODO fix this
-    byte_cluster_entropy.append(entropy_per_cluster)
-    tdt_data_int = tdt_data.view(dtype=np.uint8)
-    for w in [8, 16, 32, 64]:
-        manual_entropy, entropy_scipy = compute_entropy_w(tdt_data, w)
-        tdt_orig_entropy[str(w)].append(manual_entropy)
-        print(f"Entropy for TDT-transformed {w}-bit fixed-width integers: {manual_entropy} (SciPy: {entropy_scipy})")
+        tdt_data, entropy_per_cluster = tdt_transform(data_block) # this is done assuming float32, TODO fix this
+        byte_cluster_entropy.append(entropy_per_cluster)
+        tdt_data_int = tdt_data.view(dtype=np.uint8)
+        for w in [8, 16, 32, 64]:
+            manual_entropy, entropy_scipy = compute_entropy_w(tdt_data, w)
+            tdt_orig_entropy[str(w)].append(manual_entropy)
+            print(f"Entropy for TDT-transformed {w}-bit fixed-width integers: {manual_entropy} (SciPy: {entropy_scipy})")
 
-    for k in range(num_entropies):
-        tdt_kth_order_ent[str(k)].append(compute_kth_order_entropy_optimized(tdt_data_int, k))
-        print(f"{k}-th order entropy for TDT-transformed block {i}: {kth_order_ent[str(k)][-1]}")
+        for k in range(num_entropies):
+            tdt_kth_order_ent[str(k)].append(compute_kth_order_entropy_optimized(tdt_data_int, k))
+            print(f"{k}-th order entropy for TDT-transformed block {i}: {kth_order_ent[str(k)][-1]}")
 
-# plot the entropy values
-metadata = {'dataset': dataset_name, 'chunk_size': chunk_size}
-output_path = f"{dataset_name}_entropy_plot.png"
-plot(kth_order_ent, orig_entropy, tdt_kth_order_ent, tdt_orig_entropy, output_path, metadata)
-plot_tensor(byte_cluster_entropy, f"{dataset_name}_byte_cluster_entropy.png", metadata)
+    # plot the entropy values
+    metadata = {'dataset': dataset_name, 'chunk_size': chunk_size}
+    output_path = f"{dataset_name}_entropy_plot.png"
+    plot(kth_order_ent, orig_entropy, tdt_kth_order_ent, tdt_orig_entropy, output_path, metadata)
+    plot_tensor(byte_cluster_entropy, f"{dataset_name}_byte_cluster_entropy.png", metadata)
 
 
 
