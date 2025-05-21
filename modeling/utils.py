@@ -175,3 +175,13 @@ def find_max_consecutive_similar_values(data_set):
         else:
             current_consecutive = 1
     return max_consecutive
+# Inside modeling/utils.py
+def generate_partitions(elements):
+    if len(elements) == 1:
+        yield [elements]
+        return
+    first = elements[0]
+    for smaller in generate_partitions(elements[1:]):
+        for n, subset in enumerate(smaller):
+            yield smaller[:n] + [[first] + subset] + smaller[n+1:]
+        yield [[first]] + smaller
