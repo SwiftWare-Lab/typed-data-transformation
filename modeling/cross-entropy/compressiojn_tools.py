@@ -3,11 +3,12 @@ import zstandard as zstd
 import zlib
 import bz2
 import snappy
-import lzma as lz2
+import lzma as lzma
 import lz4.frame as fastlz
 from dahuffman import HuffmanCodec
 import numpy as np
 import blosc
+
 
 def blosc_comp(data, clevel=3, shuffle=blosc.SHUFFLE, codec='zstd'):
     """
@@ -105,8 +106,8 @@ def snappy_comp(data):
 # def lzma_comp(data, level=9):
 #     return lz2.compress(data, level)
 
-# def fastlz_compress(data):
-#     return  fastlz.compress(data)
+def lzma_compress(data):
+    return  fastlz.compress(data)
 def fastlz_compress(data):
      return fastlz.compress(
          data,

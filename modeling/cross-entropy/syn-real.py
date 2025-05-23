@@ -13,7 +13,7 @@ from scipy.special import rel_entr           # KL divergence
 
 
 # Replace this import with your actual fastlz_compress location
-from compressiojn_tools import fastlz_compress, huffman_compress,zstd_comp,zlib_comp,bz2_comp
+from compressiojn_tools import fastlz_compress, huffman_compress,zstd_comp,zlib_comp,bz2_comp,snappy_comp,lzma_compress
 
 # ---------------------- SYNTHETIC DATA GENERATION ---------------------- #
 
@@ -171,7 +171,7 @@ def delta_H0(global_stream, cluster_streams):
     H0_weight = sum(len(c) * compute_entropy(c) for c in cluster_streams) / total
     return H0_global - H0_weight
 
-def test_synthetic_all_modes(SIZE=65536, ENT=[1, 4, 2, 3], mode="frequency", compress_method=None, comp_name=""):
+def test_synthetic_all_modes(SIZE=65536, ENT=[3, 1,6, 5], mode="frequency", compress_method=None, comp_name=""):
 
 
     if compress_method is None:
@@ -534,8 +534,132 @@ def plot_with_cluster_labels(df, comp_tool="FastLZ", ds_name="Synthetic"):
     plt.close()
     return plot_path
 
+# ────────────────────────────────────────────────────────────────
+#  0.  put these imports once, near your other matplotlib imports
+# ────────────────────────────────────────────────────────────────
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+# ────────────────────────────────────────────────────────────────
+#  1.  helper that adds boolean columns + plot
+# ────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────
+#  correlation heat-map helper  (add after your imports just once)
+# ────────────────────────────────────────────────────────────────
 
+def plot_corr_to_ratios(df,
+                        metrics=("WithinSTD",
+                                 "BetweenSTD",
+                                 "HC_H1_weighted",
+                                 "HC_H2_weighted",
+                                 "DeltaMatchEntropy",
+                                 "AvgJSDivergence",
+                                 "AvgCrossEntropy",
+                                 "JointEntropy",
+                                 "MutualInfo",
+                                 "DeltaH0"),
+                        ratio_cols=("DecomposedRatio_Row_C",
+                                    "DecomposedRatio_Row_F"),
+                        codec_tag="FastLZ",
+                        save_dir="/home/jamalids/Documents"):
+    """
+    Compute Pearson correlations and save a  heat-map.
+    Returns the PNG path.
+    """
+    # ---------- build a tidy DF of correlations -------------------
+    rows = []
+    for m in metrics:
+        for r in ratio_cols:
+            # guard against constant columns → corr = NaN
+            rho = df[m].corr(df[r])
+            rows.append((m, r, 0.0 if np.isnan(rho) else rho))
+    corr_df = pd.DataFrame(rows, columns=["Metric", "Ratio", "ρ"])
+
+    # ---------- print exact values --------------------------------
+    # ---------- print exact values & rename the two ratio columns -----
+    wide = corr_df.pivot(index="Metric", columns="Ratio", values="ρ")
+
+    # ✨ NEW – nicer labels for the two ratios
+    ratio_alias = {
+        "DecomposedRatio_Row_C": "decom-Row ",
+        "DecomposedRatio_Row_F": "decom-Col",
+    }
+    wide = wide.rename(columns=ratio_alias)  # <-- rename for display
+
+    print(f"\n=== Pearson correlations – {codec_tag} ===")
+    print(wide.round(3).to_string())
+
+    # ---------- heat-map ------------------------------------------
+    plt.figure(figsize=(6, 0.6*len(metrics)+1))
+    sns.heatmap(wide, annot=True, fmt=".2f",
+                center=0, cmap="vlag", cbar_kws=dict(label="ρ"))
+    plt.title(f"{codec_tag}: correlation with decomposed ratios")
+    plt.tight_layout()
+
+    os.makedirs(save_dir, exist_ok=True)
+    png_path = os.path.join(save_dir,
+                            f"corr_ratios_{codec_tag.lower()}.png")
+    plt.savefig(png_path, dpi=300)
+    plt.close()
+    print("saved →", png_path)
+    return png_path
+
+def plot_corr_to_ratios_re(df,
+                        metrics=("WithinSTD",
+                                 "BetweenSTD",
+                                 "HC_H1_weighted",
+                                 "HC_H2_weighted",
+                                 "DeltaMatchEntropy",
+                                 "AvgJSDivergence",
+                                 "AvgCrossEntropy",
+                                 "JointEntropy",
+                                 "MutualInfo",
+                                 "DeltaH0"),
+                        ratio_cols=("DecomposedRatio_Row_C",
+                                    "DecomposedRatio_Row_F"),
+                        codec_tag="FastLZ",
+                        save_dir="/home/jamalids/Documents"):
+    """
+    Compute Pearson correlations and save a  heat-map.
+    Returns the PNG path.
+    """
+    # ---------- build a tidy DF of correlations -------------------
+    rows = []
+    for m in metrics:
+        for r in ratio_cols:
+            # guard against constant columns → corr = NaN
+            rho = df[m].corr(df[r])
+            rows.append((m, r, 0.0 if np.isnan(rho) else rho))
+    corr_df = pd.DataFrame(rows, columns=["Metric", "Ratio", "ρ"])
+
+    # ---------- print exact values --------------------------------
+    # ---------- print exact values & rename the two ratio columns -----
+    wide = corr_df.pivot(index="Metric", columns="Ratio", values="ρ")
+
+    # ✨ NEW – nicer labels for the two ratios
+    ratio_alias = {
+        "ReorderedRatio_Row_C": "Reordered-Row ",
+        "ReorderedRatio_Row_F": "Reordered-Col",
+    }
+    wide = wide.rename(columns=ratio_alias)  # <-- rename for display
+
+    print(f"\n=== Pearson correlations – {codec_tag} ===")
+    print(wide.round(3).to_string())
+
+    # ---------- heat-map ------------------------------------------
+    plt.figure(figsize=(6, 0.6*len(metrics)+1))
+    sns.heatmap(wide, annot=True, fmt=".2f",
+                center=0, cmap="vlag", cbar_kws=dict(label="ρ"))
+    plt.title(f"{codec_tag}: correlation with Reordered ratios")
+    plt.tight_layout()
+
+    os.makedirs(save_dir, exist_ok=True)
+    png_path = os.path.join(save_dir,
+                            f"corr_ratios_re_{codec_tag.lower()}.png")
+    plt.savefig(png_path, dpi=300)
+    plt.close()
+    print("saved →", png_path)
+    return png_path
 
 
 if __name__=="__main__":
@@ -556,15 +680,45 @@ if __name__=="__main__":
    df_huffman.to_csv("/home/jamalids/Documents/synthetic_huffman.csv")
    plot_mutual_and_joint_vs_ratio(df_huffman, comp_tool="huffman")
    plot_many_vs_ratio(df_huffman, comp_tool="Huffman", ds_name="Synthetic")
-   #################################
+   # #################################
    df_zlib = test_synthetic_all_modes(compress_method=zlib_comp, comp_name="zlib")
    df_zlib.to_csv("/home/jamalids/Documents/synthetic_zlib.csv")
    plot_mutual_and_joint_vs_ratio(df_zlib, comp_tool="zlib")
    plot_many_vs_ratio(df_zlib, comp_tool="Zlib", ds_name="Synthetic")
-
-   #################################
+   #
+   # #################################
    df_bzib = test_synthetic_all_modes(compress_method=bz2_comp, comp_name="bzib")
    df_bzib.to_csv("/home/jamalids/Documents/synthetic_bzib.csv")
    plot_mutual_and_joint_vs_ratio(df_bzib, comp_tool="bzib")
    plot_many_vs_ratio(df_bzib, comp_tool="bzib", ds_name="Synthetic")
+   #######################################################################3
+
+   df_snappy = test_synthetic_all_modes(compress_method=snappy_comp, comp_name="snappy")
+   df_snappy.to_csv("/home/jamalids/Documents/synthetic_snappy.csv")
+   plot_mutual_and_joint_vs_ratio(df_snappy, comp_tool="snappy")
+   plot_many_vs_ratio(df_snappy, comp_tool="snappy", ds_name="Synthetic")
+   ##################################################################################
+   df_lzma = test_synthetic_all_modes(compress_method=lzma_compress, comp_name="lzma")
+   df_lzma.to_csv("/home/jamalids/Documents/synthetic_lzma.csv")
+   plot_mutual_and_joint_vs_ratio(df_lzma, comp_tool="lzma")
+   plot_many_vs_ratio(df_lzma, comp_tool="lzma", ds_name="Synthetic")
+   #############################################################################
+   plot_corr_to_ratios(df_result, codec_tag="FastLZ")
+   plot_corr_to_ratios(df_huffman, codec_tag="Huffman")
+   plot_corr_to_ratios(df_zstd, codec_tag="ZSTD")
+   plot_corr_to_ratios(df_snappy, codec_tag="snappy")
+   plot_corr_to_ratios(df_zlib, codec_tag="zlib")
+   plot_corr_to_ratios(df_bzib, codec_tag="bzib")
+   plot_corr_to_ratios(df_lzma, codec_tag="lzma")
+   plot_corr_to_ratios_re(df_result, codec_tag="FastLZ")
+   plot_corr_to_ratios_re(df_huffman, codec_tag="Huffman")
+   plot_corr_to_ratios_re(df_zstd, codec_tag="ZSTD")
+   plot_corr_to_ratios_re(df_snappy, codec_tag="snappy")
+   plot_corr_to_ratios_re(df_zlib, codec_tag="zlib")
+   plot_corr_to_ratios_re(df_bzib, codec_tag="bzib")
+   plot_corr_to_ratios_re(df_lzma, codec_tag="lzma")
+
+
+
+
 
