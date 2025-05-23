@@ -6,6 +6,11 @@ from scipy.cluster.hierarchy import linkage, fcluster
 import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
+from sklearn.metrics import davies_bouldin_score
+from itertools import combinations
+from scipy.spatial.distance import pdist, squareform
+from scipy.special import rel_entr           # KL divergence
+
 
 # Replace this import with your actual fastlz_compress location
 from compressiojn_tools import fastlz_compress, huffman_compress,zstd_comp,zlib_comp,bz2_comp
@@ -96,122 +101,7 @@ def transform_data(data_set_list, order='C'):
     # flatten the list
     compressed_data = np.concatenate(compressed_data, axis=0)
     return compressed_data
-# ---------------------- MAIN TEST ---------------------- #
-# def test_synthetic_all_modes(SIZE=10, ENT=[0, 8, 3, 5]):
-#     packed, groups = generate_float_stream(SIZE, ENT)
-#     arr = packed
-#     byte_groups = groups
-#     orig_size = len(arr)
-#
-#
-#     modes = ["entropy", "frequency", "all"]
-#     records = []
-#
-#     for mode in modes:
-#         feats = np.vstack([extract_features(g, mode) for g in byte_groups])
-#         linked = linkage(feats, method='complete')
-#
-#         for k in range(1, 5):
-#             labels = np.ones(4, int) if k == 1 else fcluster(linked, k, criterion='maxclust')
-#             clusters = {lab: [i for i, l in enumerate(labels) if l == lab] for lab in sorted(set(labels))}
-#             cfg = "|".join(f"({','.join(map(str, idxs))})" for idxs in clusters.values())
-#
-#             # Standard compression
-#             r_std = ratio(orig_size, compress_with_fastlz(arr.tobytes()))
-#
-#             # Decomposed (Row) C and F: compress per-cluster then sum
-#             dec_sizes_row_C, dec_sizes_row_F = [], []
-#             for idxs in clusters.values():
-#                 arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#                 row_bytes_C = transform_data([arr2d], order='C')
-#                 row_bytes_F = transform_data([arr2d], order='F')
-#                 dec_sizes_row_C.append(len(compress_with_fastlz(row_bytes_C)))
-#                 dec_sizes_row_F.append(len(compress_with_fastlz(row_bytes_F)))
-#             r_dec_row_C = orig_size / sum(dec_sizes_row_C)
-#             r_dec_row_F = orig_size / sum(dec_sizes_row_F)
-#
-#             # Decomposed (Row) C and F: merge all reordered bytes and compress once
-#             all_row_bytes_C, all_row_bytes_F = [], []
-#             for idxs in clusters.values():
-#                 arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#                 all_row_bytes_C.append(transform_data([arr2d], order='C'))
-#                 all_row_bytes_F.append(transform_data([arr2d], order='F'))
-#             merged_row_bytes_C = b"".join(all_row_bytes_C)
-#             merged_row_bytes_F = b"".join(all_row_bytes_F)
-#             r_re_row_C = ratio(orig_size, compress_with_fastlz(merged_row_bytes_C))
-#             r_re_row_F = ratio(orig_size, compress_with_fastlz(merged_row_bytes_F))
-#
-#             # Info metrics: computed over per-cluster byte streams
-#             cluster_streams = []
-#             HC_H1, HC_H2 = [], []
-#             total_bytes = 0
-#             weighted_entropy = 0.0
-#             weighted_kth_entropy = 0.0
-#
-#             for idxs in clusters.values():
-#                 arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#                 flat_stream = transform_data([arr2d], order='F')
-#                 flat = np.frombuffer(flat_stream, dtype=np.uint8)
-#
-#                 cluster_streams.append(flat)
-#
-#                 H1_val = compute_entropy(flat)
-#                 H2_val = compute_kth_entropy(flat, 2)
-#                 size = len(flat)
-#
-#                 HC_H1.append(round(H1_val, 4))
-#                 HC_H2.append(round(H2_val, 4))
-#
-#                 total_bytes += size
-#                 weighted_entropy += H1_val * size
-#                 weighted_kth_entropy += H2_val * size
-#
-#             # Compute joint entropy and mutual info across clusters
-#             jh = compute_joint_entropy(cluster_streams)
-#             mi = max(sum(compute_entropy(c) for c in cluster_streams) - jh, 0.0)
-#             kth = np.mean([compute_kth_entropy(c, 2) for c in cluster_streams])
-#
-#             # Compute windowed entropy within each cluster
-#             cluster_entropy_means = []
-#             cluster_entropy_stds = []
-#             for c in cluster_streams:
-#                 windows = [compute_entropy(c[i:i + 256]) for i in range(0, len(c), 256)]
-#                 cluster_entropy_means.append(np.mean(windows))
-#                 cluster_entropy_stds.append(np.std(windows))
-#
-#             avg_within = float(np.mean(cluster_entropy_means))
-#             avg_within_std = float(np.mean(cluster_entropy_stds))
-#             between = float(np.std(cluster_entropy_means))
-#
-#             rec = {
-#                 "Dataset": "synthetic",
-#                 "FeatureMode": mode,
-#                 "k": k,
-#                 "ClusterConfig": cfg,
-#
-#                 "HC_H1": ",".join(map(str, HC_H1)),
-#                 "HC_H2": ",".join(map(str, HC_H2)),
-#                 "HC_H1_weighted": round(weighted_entropy / total_bytes, 5),
-#                 "HC_H2_weighted": round(weighted_kth_entropy / total_bytes, 5),
-#                 "BetweenClusterEntropySTD": between,
-#                 "StandardRatio": r_std,
-#                 "DecomposedRatio_Row_C": r_dec_row_C,
-#                 "DecomposedRatio_Row_F": r_dec_row_F,
-#                 "ReorderedRatio_Row_C": r_re_row_C,
-#                 "ReorderedRatio_Row_F": r_re_row_F,
-#                 "JointEntropy": jh,
-#                 "MutualInfo": mi,
-#                 "KthEntropy": float(kth),
-#                 "WithinSTD": avg_within_std,
-#                 "BetweenSTD": between,
-#             }
-#             records.append(rec)
-#
-#     df = pd.DataFrame(records)
-#     df.to_csv("synthetic_all_modes.csv", index=False)
-#     print("Written synthetic_all_modes.csv")
-#     return records
-# Generate all valid partitions of 4 indices (0 to 3)
+
 def generate_partitions(elements):
     if len(elements) == 1:
         yield [elements]
@@ -228,124 +118,9 @@ from scipy.cluster.hierarchy import linkage, fcluster
 from itertools import combinations
 from modeling.utils import generate_partitions  # make sure this is defined or imported
 
-# def test_synthetic_all_modes(SIZE=50000, ENT=[0, 8, 3, 5], mode="all"):
-#     packed, groups = generate_float_stream(SIZE, ENT)
-#     arr = packed
-#     byte_groups = groups
-#     orig_size = len(arr)
-#     records = []
-#
-#     # Get hierarchical cluster config (for labeling)
-#     feats = np.vstack([extract_features(g, mode) for g in byte_groups])
-#     linked = linkage(feats, method='complete')
-#     hclust_configs = set()
-#     for k in range(1, 5):
-#         labels = np.ones(4, int) if k == 1 else fcluster(linked, k, criterion='maxclust')
-#         clusters = {lab: [i for i, l in enumerate(labels) if l == lab] for lab in sorted(set(labels))}
-#         cfg = "|".join(f"({','.join(map(str, group))})" for group in clusters.values())
-#         hclust_configs.add(cfg)
-#
-#     # Now enumerate all partitions
-#     for cluster_config in generate_partitions([0, 1, 2, 3]):
-#         cfg = "|".join(f"({','.join(map(str, group))})" for group in cluster_config)
-#         label_type = "HClust" if cfg in hclust_configs else "Non-HClust"
-#
-#         r_std = ratio(orig_size, fastlz_compress(arr.tobytes()))
-#         dec_sizes_row_C, dec_sizes_row_F = [], []
-#         all_row_bytes_C, all_row_bytes_F = [], []
-#
-#         for idxs in cluster_config:
-#             arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#             row_bytes_C = transform_data([arr2d], order='C')
-#             row_bytes_F = transform_data([arr2d], order='F')
-#             dec_sizes_row_C.append(len(fastlz_compress(row_bytes_C)))
-#             dec_sizes_row_F.append(len(fastlz_compress(row_bytes_F)))
-#             all_row_bytes_C.append(row_bytes_C)
-#             all_row_bytes_F.append(row_bytes_F)
-#
-#         r_dec_row_C = orig_size / sum(dec_sizes_row_C)
-#         r_dec_row_F = orig_size / sum(dec_sizes_row_F)
-#         merged_row_bytes_C = b"".join(all_row_bytes_C)
-#         merged_row_bytes_F = b"".join(all_row_bytes_F)
-#         r_re_row_C = ratio(orig_size, fastlz_compress(merged_row_bytes_C))
-#         r_re_row_F = ratio(orig_size, fastlz_compress(merged_row_bytes_F))
-#
-#         cluster_streams = []
-#         HC_H1, HC_H2 = [], []
-#         total_bytes = 0
-#         weighted_entropy = 0.0
-#         weighted_kth_entropy = 0.0
-#
-#         for idxs in cluster_config:
-#             arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#             flat_stream = transform_data([arr2d], order='F')
-#             flat = np.frombuffer(flat_stream, dtype=np.uint8)
-#             cluster_streams.append(flat)
-#             H1_val = compute_entropy(flat)
-#             H2_val = compute_kth_entropy(flat, 2)
-#             size = len(flat)
-#             HC_H1.append(round(H1_val, 4))
-#             HC_H2.append(round(H2_val, 4))
-#             total_bytes += size
-#             weighted_entropy += H1_val * size
-#             weighted_kth_entropy += H2_val * size
-#
-#         jh = compute_joint_entropy(cluster_streams)
-#         mi = max(sum(compute_entropy(c) for c in cluster_streams) - jh, 0.0)
-#         kth = np.mean([compute_kth_entropy(c, 2) for c in cluster_streams])
-#
-#         cluster_entropy_means = []
-#         cluster_entropy_stds = []
-#         for c in cluster_streams:
-#             windows = [compute_entropy(c[i:i + 256]) for i in range(0, len(c), 256)]
-#             cluster_entropy_means.append(np.mean(windows))
-#             cluster_entropy_stds.append(np.std(windows))
-#
-#         avg_within = float(np.mean(cluster_entropy_means))
-#         avg_within_std = float(np.mean(cluster_entropy_stds))
-#         between = float(np.std(cluster_entropy_means))
-#
-#         rec = {
-#             "Dataset": "synthetic",
-#             "ClusterConfig": cfg,
-#             "ConfigType": label_type,
-#             "HC_H1": ",".join(map(str, HC_H1)),
-#             "HC_H2": ",".join(map(str, HC_H2)),
-#             "HC_H1_weighted": round(weighted_entropy / total_bytes, 5),
-#             "HC_H2_weighted": round(weighted_kth_entropy / total_bytes, 5),
-#             "BetweenClusterEntropySTD": between,
-#             "StandardRatio": r_std,
-#             "DecomposedRatio_Row_C": r_dec_row_C,
-#             "DecomposedRatio_Row_F": r_dec_row_F,
-#             "ReorderedRatio_Row_C": r_re_row_C,
-#             "ReorderedRatio_Row_F": r_re_row_F,
-#             "JointEntropy": jh,
-#             "MutualInfo": mi,
-#             "KthEntropy": float(kth),
-#             "WithinSTD": avg_within_std,
-#             "BetweenSTD": between,
-#         }
-#         records.append(rec)
-#
-#     df = pd.DataFrame(records)
-#     df.to_csv("synthetic_all_partitions.csv", index=False)
-#     print("Written synthetic_all_partitions.csv")
-#     return df
-
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
-
-# Your existing utilities assumed:
-# - generate_float_stream
-# - compute_entropy
-# - compute_kth_entropy
-# - compute_joint_entropy
-# - transform_data
-# - fastlz_compress
-# - ratio
-# - generate_partitions
-# - extract_features
 
 def normalize_cluster_config(cluster_dict):
     """Normalize cluster dict or list to a hashable, sorted structure."""
@@ -355,8 +130,49 @@ def normalize_partition(partition_list):
     """Same as normalize_cluster_config but from generate_partitions list of lists."""
     return tuple(sorted(tuple(sorted(g)) for g in partition_list))
 
-def test_synthetic_all_modes(SIZE=131072, ENT=[3, 5, 2, 1], mode="frequency", compress_method=None, comp_name=""):
-    from modeling.compression_tools import fastlz_compress  # fallback default
+def _hist256(vec: np.ndarray) -> np.ndarray:
+    """Normalised 256-bin histogram (float64)."""
+    return np.bincount(vec, minlength=256) / vec.size
+
+def _dunn_index(D, labels):
+    """
+    D: full distance matrix (square), labels: 1-D array of ints.
+    Returns Dunn index (∞ if every cluster has ≤1 point).
+    """
+    u = np.unique(labels)
+    intra = 0.0
+    inter = np.inf
+    for i in u:
+        idx_i = np.where(labels == i)[0]
+        if idx_i.size > 1:
+            intra = max(intra, D[np.ix_(idx_i, idx_i)].max())
+        else:
+            intra = max(intra, 0.0)               # single-point cluster → 0
+        for j in u:
+            if i >= j:
+                continue
+            idx_j = np.where(labels == j)[0]
+            inter = min(inter, D[np.ix_(idx_i, idx_j)].min())
+    return np.inf if intra == 0 else inter / intra
+# ------------------------------------------------------------------
+# EXTRA HELPERS for match-gain vs block-entropy gain
+# ------------------------------------------------------------------
+def delta_k_entropy(global_stream, cluster_streams, k=2):
+    """Return H_k(global) − weighted avg H_k(cluster_i)."""
+    H_global = compute_kth_entropy(global_stream, k)
+    total    = len(global_stream)
+    H_weight = sum(len(c) * compute_kth_entropy(c, k) for c in cluster_streams) / total
+    return H_global - H_weight          # >0 means decomposition helps
+
+def delta_H0(global_stream, cluster_streams):
+    """0-order cross-entropy gain (same as H0 drop)."""
+    H0_global = compute_entropy(global_stream)
+    total     = len(global_stream)
+    H0_weight = sum(len(c) * compute_entropy(c) for c in cluster_streams) / total
+    return H0_global - H0_weight
+
+def test_synthetic_all_modes(SIZE=65536, ENT=[1, 4, 2, 3], mode="frequency", compress_method=None, comp_name=""):
+
 
     if compress_method is None:
         compress_method = fastlz_compress
@@ -410,7 +226,7 @@ def test_synthetic_all_modes(SIZE=131072, ENT=[3, 5, 2, 1], mode="frequency", co
 
         for idxs in cluster_config:
             arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-            flat_stream = transform_data([arr2d], order='F')
+            flat_stream = transform_data([arr2d], order='C')
             flat = np.frombuffer(flat_stream, dtype=np.uint8)
             cluster_streams.append(flat)
 
@@ -425,6 +241,10 @@ def test_synthetic_all_modes(SIZE=131072, ENT=[3, 5, 2, 1], mode="frequency", co
             weighted_kth_entropy += H2_val * size
 
         jh = compute_joint_entropy(cluster_streams)
+        # ---- NEW: delta-metrics ------------------------------------------
+        delta_match = delta_k_entropy(arr, cluster_streams, k=2)   # k=2 is what you used
+        delta_h0    = delta_H0(arr, cluster_streams)
+
         mi = max(sum(compute_entropy(c) for c in cluster_streams) - jh, 0.0)
         kth = np.mean([compute_kth_entropy(c, 2) for c in cluster_streams])
 
@@ -437,6 +257,49 @@ def test_synthetic_all_modes(SIZE=131072, ENT=[3, 5, 2, 1], mode="frequency", co
         avg_within = float(np.mean(cluster_entropy_means))
         avg_within_std = float(np.mean(cluster_entropy_stds))
         between = float(np.std(cluster_entropy_means))
+        # ---- Davies–Bouldin index for this ClusterConfig -------------------
+        num_clusters = len(cluster_config)
+        n_samples = feats.shape[0]  # here: 4
+
+        if 1 < num_clusters < n_samples:  # valid range: 2 .. n_samples-1
+            lane_labels = np.zeros(n_samples, dtype=int)
+            for cid, idxs in enumerate(cluster_config):
+                lane_labels[list(idxs)] = cid
+            db_index = davies_bouldin_score(feats, lane_labels)
+        else:
+            db_index = float("nan")  # undefined for 1 or 4 clusters
+        # --------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        #     A) Dunn index  (works for k = n; ∞ when intra = 0)
+        # ------------------------------------------------------------------
+        # Represent each lane by its feature vector from `feats`
+        lane_labels = np.zeros(feats.shape[0], dtype=int)
+        for cid, idxs in enumerate(cluster_config):
+            lane_labels[list(idxs)] = cid
+
+        # Full Euclidean distance matrix for the 4 feature vectors
+        D_feat = squareform(pdist(feats))
+        dunn_val = _dunn_index(D_feat, lane_labels)
+
+        # ------------------------------------------------------------------
+        #     B) Divergence between cluster byte-distributions
+        # ------------------------------------------------------------------
+        # Pre-compute histograms
+        hists = [_hist256(c) for c in cluster_streams]
+
+        ce_vals, js_vals = [], []
+        for i, j in combinations(range(len(hists)), 2):
+            p, q = hists[i], hists[j]
+            # Cross-entropy H(P,Q) = H(P) + KL(P‖Q)
+            ce_vals.append(-(p * np.log2(q + 1e-12)).sum())
+            # Jensen–Shannon divergence (base-2): ½ KL(P‖M)+½ KL(Q‖M)
+            m = 0.5 * (p + q)
+            kl_pm = rel_entr(p, m).sum() / np.log(2)  # convert nats → bits
+            kl_qm = rel_entr(q, m).sum() / np.log(2)
+            js_vals.append(0.5 * (kl_pm + kl_qm))
+
+        avg_ce = float(np.mean(ce_vals)) if ce_vals else float("nan")
+        avg_js = float(np.mean(js_vals)) if js_vals else float("nan")
 
         rec = {
             "Dataset": "synthetic",
@@ -459,130 +322,33 @@ def test_synthetic_all_modes(SIZE=131072, ENT=[3, 5, 2, 1], mode="frequency", co
             "KthEntropy": float(kth),
             "WithinSTD": avg_within_std,
             "BetweenSTD": between,
+            "DaviesBouldin": db_index,
+            "Dunn": dunn_val,
+            "AvgCrossEntropy": avg_ce,
+            "AvgJSDivergence": avg_js,
+            "DeltaMatchEntropy": delta_match,
+            "DeltaH0": delta_h0,
         }
         records.append(rec)
 
+
+
     df = pd.DataFrame(records)
-    df.to_csv(f"synthetic_all_partitions_{comp_name}.csv", index=False)
-    print(f"Written synthetic_all_partitions_{comp_name}.csv")
+
+    if comp_name.lower() in {"fastlz", "lz4", "snappy"}:
+        df["SeparationScore_final"] = df["DeltaMatchEntropy"]
+    else:
+        df["SeparationScore_final"] = df["DeltaH0"]
+
+    rho_final = df["SeparationScore_final"].corr(df["DecomposedRatio_Row_F"])
+    print(f"ρ(SeparationScore_final, ratio) = {rho_final:.3f}")
+
+
+    out_csv = f"synthetic_all_partitions_{comp_name}.csv"
+    df.to_csv(out_csv, index=False)
+    print(f"Written {out_csv}")
     return df
 
-######################################################Real###############################
-
-# def test_real_datasets(folder_path):
-#     tsv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.tsv')]
-#     if not tsv_files:
-#         print("No .tsv files found in", folder_path)
-#         return
-#
-#     all_records = []
-#
-#     for fname in tsv_files:
-#         dataset_name = os.path.splitext(fname)[0]
-#         fpath = os.path.join(folder_path, fname)
-#         print(f"Processing: {dataset_name}")
-#
-#         try:
-#             df = pd.read_csv(fpath, sep='\t', header=None)
-#         except Exception as e:
-#             print("Failed to load", fname, e)
-#             continue
-#
-#         # Load float32 column and convert to bytes
-#         numeric_vals = df.values[1:500000, 1].astype(np.float32)
-#         arr = np.frombuffer(numeric_vals.tobytes(), dtype=np.uint8)
-#         byte_groups = [arr[i::4] for i in range(4)]
-#         orig_size = len(arr)
-#
-#         # Per-component entropy
-#         H1 = [compute_entropy(g) for g in byte_groups]
-#         H2 = [compute_kth_entropy(g, 2) for g in byte_groups]
-#
-#         for mode in ["entropy", "frequency", "all"]:
-#             feats = np.vstack([extract_features(g, mode) for g in byte_groups])
-#             linked = linkage(feats, method='complete')
-#
-#             for k in range(1, 5):
-#                 labels = np.ones(4, int) if k == 1 else fcluster(linked, k, criterion='maxclust')
-#                 clusters = {lab: [i for i, l in enumerate(labels) if l == lab] for lab in sorted(set(labels))}
-#                 cfg = "|".join(f"({','.join(map(str, idxs))})" for idxs in clusters.values())
-#
-#                 # Standard compression
-#                 r_std = ratio(orig_size, compress_with_fastlz(arr))
-#
-#                 # Decomposed (Row) C and F orders
-#                 dec_sizes_row_C, dec_sizes_row_F = [], []
-#
-#                 for idxs in clusters.values():
-#                     arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#
-#                     row_bytes_C = transform_data([arr2d], order='C')
-#                     row_bytes_F = transform_data([arr2d], order='F')
-#
-#                     dec_sizes_row_C.append(len(compress_with_fastlz(row_bytes_C)))
-#                     dec_sizes_row_F.append(len(compress_with_fastlz(row_bytes_F)))
-#
-#                 r_dec_row_C = orig_size / sum(dec_sizes_row_C)
-#                 r_dec_row_F = orig_size / sum(dec_sizes_row_F)
-#
-#                 # Decomposed (Row) C and F: collect all reordered byte chunks
-#                 all_row_bytes_C, all_row_bytes_F = [], []
-#
-#                 for idxs in clusters.values():
-#                     arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
-#                     all_row_bytes_C.append(transform_data([arr2d], order='C'))
-#                     all_row_bytes_F.append(transform_data([arr2d], order='F'))
-#
-#                 # Merge cluster-wise reordered byte streams and compress once
-#                 merged_row_bytes_C = b"".join(all_row_bytes_C)
-#                 merged_row_bytes_F = b"".join(all_row_bytes_F)
-#
-#                 r_re_row_C = ratio(orig_size, compress_with_fastlz(merged_row_bytes_C))
-#                 r_re_row_F = ratio(orig_size, compress_with_fastlz(merged_row_bytes_F))
-#
-#                 # Info metrics
-#                 # (merged_np might be variable size — skip stacking and only use for MI, joint entropy, etc.)
-#                 merged_np = [np.frombuffer(b, dtype=np.uint8) for b in merged_bs]
-#                 jh = compute_joint_entropy(merged_np)
-#                 mi = max(sum(compute_entropy(g) for g in merged_np) - jh, 0.0)
-#                 kth = np.mean([compute_kth_entropy(g, 2) for g in merged_np])
-#
-#                 means, inners = [], []
-#                 for g in merged_np:
-#                     wins = [compute_entropy(g[i:i + 256]) for i in range(0, len(g), 256)]
-#                     means.append(np.mean(wins))
-#                     inners.append(np.std(wins))
-#                 avg_within = float(np.mean(means))
-#                 between = float(np.std(means))
-#
-#                 rec = {
-#                     "Dataset": dataset_name,
-#                     "FeatureMode": mode,
-#                     "k": k,
-#                     "ClusterConfig": cfg,
-#                     **{f"H1_c{i}": H1[i] for i in range(4)},
-#                     **{f"H2_c{i}": H2[i] for i in range(4)},
-#                     "AvgWithinEntropy": avg_within,
-#                     "BetweenClusterEntropySTD": between,
-#                     "StandardRatio": r_std,
-#                     "DecomposedRatio_Row_C": r_dec_row_C,
-#                     "DecomposedRatio_Row_F": r_dec_row_F,#col
-#                     "ReorderedRatio_Row_C": r_re_row_C,
-#                     "ReorderedRatio_Row_F":r_re_row_F,
-#                     "JointEntropy": jh,
-#                     "MutualInfo": mi,
-#                     "KthEntropy": float(kth),
-#                     "WithinSTD": float(np.mean(inners)),
-#                     "BetweenSTD": between,
-#                 }
-#                 all_records.append(rec)
-#
-#     df_real = pd.DataFrame(all_records)
-#     df_real.to_csv("/home/jamalids/Documents/real_dataset_results.csv", index=False)
-#     print("Written real_dataset_results.csv")
-#     return all_records
-#
-# # ---------------------- PLOT ---------------------- #
 
 ###################################
 
@@ -631,11 +397,13 @@ def plot_mutual_and_joint_vs_ratio(df, comp_tool="FastLZ", ds_name="Synthetic"):
     return plot_path
 
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-from scipy import stats
-import numpy as np
+
 import os
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
 
 def plot_many_vs_ratio(
     df,
@@ -644,29 +412,34 @@ def plot_many_vs_ratio(
     save_dir="/home/jamalids/Documents",
 ):
     """
-    Generate 8 scatter-plots, each against DecomposedRatio_Row_F, and draw the
-    dataset-wide StandardRatio as a horizontal baseline.
+    Draw scatter-and-trend plots of DecomposedRatio_Row_F vs 10 metrics,
+    with HClust configs in red and Non-HClust configs in blue.
 
-    Red points = HClust configs (annotated with ClusterConfig text)
-    Blue points = Non-HClust configs
+    Added metrics:
+        • AvgCrossEntropy
+        • AvgJSDivergence
     """
     ratio_col = "DecomposedRatio_Row_F"
-    base_line = df["StandardRatio"].iloc[0]          # identical in every row
+    base_line = df["StandardRatio"].iloc[0]      # identical for all rows
     palette   = {"HClust": "red", "Non-HClust": "blue"}
 
-    # X-metrics to inspect
+    # ---- 10 X-metrics ------------------------------------------------------
     x_cols = [
-        ("MutualInfo",          "Mutual Information (bits)"),
+       # ("MutualInfo",          "Mutual Information (bits)"),
         ("JointEntropy",        "Joint Entropy (bits)"),
         ("HC_H1_weighted",      "Weighted H1"),
         ("HC_H2_weighted",      "Weighted H2"),
         ("WithinSTD",           "Within-Cluster STD"),
         ("BetweenSTD",          "Between-Cluster STD"),
-        ("HC_H1_num",           "Mean HC_H1"),       # computed below
+        ("HC_H1_num",           "Mean HC_H1"),
         ("HC_H2_num",           "Mean HC_H2"),
+        ("AvgCrossEntropy",     "Avg Cross-Entropy (bits)"),
+        ("AvgJSDivergence",     "Avg JS Divergence (bits)"),
+        ("SeparationScore_final", "Δ-Metric (best for codec)"),
+
     ]
 
-    # ---- Ensure numeric helper columns for raw HC_H1 / HC_H2 lists ----------
+    # ---- Ensure numeric helper columns for raw HC lists --------------------
     if "HC_H1_num" not in df.columns:
         df = df.copy()
         df["HC_H1_num"] = df["HC_H1"].apply(
@@ -674,31 +447,29 @@ def plot_many_vs_ratio(
         df["HC_H2_num"] = df["HC_H2"].apply(
             lambda s: np.mean(list(map(float, s.split(",")))))
 
-    # ---- Layout: 2 rows × 4 columns ----------------------------------------
-    fig, axes_grid = plt.subplots(2, 4, figsize=(22, 8), sharey=True)
-    axes = axes_grid.ravel()
-    ncols = 4  # for “left-most column” test
+    # ---- Layout: 2 rows × 5 columns ---------------------------------------
+    fig, axes_grid = plt.subplots(2, 5, figsize=(28, 8), sharey=True)
+    axes  = axes_grid.ravel()
+    ncols = 5   # for left-most-column check
 
-    # ---- Plot each metric ---------------------------------------------------
+    # ---- Plot loop ---------------------------------------------------------
     for idx, (ax, (xcol, xlabel)) in enumerate(zip(axes, x_cols)):
-        # scatter with hue
         sns.scatterplot(data=df, x=xcol, y=ratio_col,
-                        hue="ConfigType", palette=palette, ax=ax, legend=False)
+                        hue="ConfigType", palette=palette, ax=ax,
+                        legend=False, s=50)
 
-        # trend line
         sns.regplot(data=df, x=xcol, y=ratio_col,
                     scatter=False, color="black", ax=ax)
 
-        # baseline
-        ax.axhline(base_line, ls="--", lw=1, color="grey", label="StandardRatio")
+        ax.axhline(base_line, ls="--", lw=1, color="grey")
 
-        # annotate HClust points
+        # annotate hierarchical-clustering points
         for _, row in df[df["ConfigType"] == "HClust"].iterrows():
             ax.text(row[xcol], row[ratio_col], row["ClusterConfig"],
                     fontsize=8, color="black", rotation=20,
                     va="bottom", ha="left")
 
-        # R² in corner
+        # R²
         r2 = stats.linregress(df[xcol], df[ratio_col]).rvalue ** 2
         ax.text(0.02, 0.94, f"R² = {r2:.2f}", transform=ax.transAxes,
                 fontsize=8, va="top", ha="left")
@@ -710,7 +481,7 @@ def plot_many_vs_ratio(
         else:
             ax.set_ylabel(None)
 
-    # ---- Overall title & save ----------------------------------------------
+    # ---- Title & save ------------------------------------------------------
     fig.suptitle(
         f"{ds_name} – {comp_tool}: Row-F Compression vs Multiple Metrics",
         fontsize=14,
@@ -718,15 +489,12 @@ def plot_many_vs_ratio(
     )
     plt.tight_layout()
 
-    # Ensure save directory exists
     os.makedirs(save_dir, exist_ok=True)
-    out_path = os.path.join(
-        save_dir, f"rowF_vs_metrics_{comp_tool.lower()}.png"
-    )
+    out_path = os.path.join(save_dir,
+                            f"rowF_vs_metrics_{comp_tool.lower()}.png")
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     return out_path
-
 
 ##################################
 # Plot with text annotations showing cluster config for each point
@@ -799,28 +567,4 @@ if __name__=="__main__":
    df_bzib.to_csv("/home/jamalids/Documents/synthetic_bzib.csv")
    plot_mutual_and_joint_vs_ratio(df_bzib, comp_tool="bzib")
    plot_many_vs_ratio(df_bzib, comp_tool="bzib", ds_name="Synthetic")
-
-
-    #plot_ratios_and_kth(df_result)
-    # for m in ["all", "entropy", "frequency"]:
-    #     plot_decomp_col_vs_mi(recs, mode=m)
-    #     plot_kth_entropy_vs_k(recs, mode=m, kth_order=2)
-    #     plot_decomp_reo_vs_mi(recs, mode=m)
-    #     plot_decomp_row_vs_mutual_info(recs, mode=m)  # 👈 Just add this line
-    #     plot_avg_within_entropy_vs_global(csv_path="/home/jamalids/Documents/frame/new3/big-data-compression/modeling/cross-entropy/synthetic_all_modes.csv", mode="all", save_path=None)
-    #     df = pd.DataFrame(recs)
-    #     plot_avg_within_entropy_vs_global_from_df(df, mode="entropy", save_path="avg_within_vs_global_entropy.png")
-    #
-
-
-    # Process your real datasets
-    # folder_path = "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32/test"
-    # recs=test_real_datasets(folder_path)
-    # plot_ratios_and_kth(recs)
-    # for m in ["all", "entropy", "frequency"]:
-    #     plot_decomp_col_vs_mi(recs, mode=m)
-    #     plot_kth_entropy_vs_k(recs, mode=m, kth_order=2)
-    #     plot_decomp_reo_vs_mi(recs, mode=m)
-    #     plot_decomp_row_vs_mutual_info(recs, mode=m)  # 👈 Just add this line
-
 

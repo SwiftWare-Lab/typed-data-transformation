@@ -105,8 +105,15 @@ def snappy_comp(data):
 # def lzma_comp(data, level=9):
 #     return lz2.compress(data, level)
 
+# def fastlz_compress(data):
+#     return  fastlz.compress(data)
 def fastlz_compress(data):
-    return  fastlz.compress(data)
+     return fastlz.compress(
+         data,
+         compression_level=0,  # 0 = default “fast” (no Huffman tweaks)
+         block_linked=True,  # keep 64 KiB history
+         block_size=fastlz.BLOCKSIZE_MAX64KB
+     )
 
 
 def rle_compress(data):
