@@ -39,7 +39,29 @@ def calculate_entropy_over_data(data, window_size=256):
 
 
 # --------------------------- Feature Extraction --------------------------- #
+def compute_kth_entropy(arr, k=2):
+    if len(arr) < k: return 0.0
+    grams = [tuple(arr[i:i+k]) for i in range(len(arr)-k+1)]
+    freq = Counter(grams); total = len(grams)
+    return -sum((cnt/total) * math.log2(cnt/total) for cnt in freq.values())
 
+def delta_k_entropy(global_stream, cluster_streams, k=2):
+    H_gl = compute_kth_entropy(global_stream, k)
+    total = len(global_stream)
+    Hw = sum(len(c) * compute_kth_entropy(c, k) for c in cluster_streams) / total
+    return H_gl - Hw
+def delta_k_entropy(global_stream, cluster_streams, k=2):
+    H_gl = compute_kth_entropy(global_stream, k)
+    total = len(global_stream)
+    Hw = sum(len(c) * compute_kth_entropy(c, k) for c in cluster_streams) / total
+    return H_gl - Hw
+
+def delta_H0(global_stream, cluster_streams):
+    H0 = compute_entropy(global_stream)
+    total = len(global_stream)
+    Hw0 = sum(len(c) * compute_entropy(c) for c in cluster_streams) / total
+    return H0 - Hw0
+#----------------------
 def compute_byte_frequency(data_window):
     """Compute the normalized byte frequency of a given byte window."""
     freq = Counter(data_window)
@@ -48,7 +70,7 @@ def compute_byte_frequency(data_window):
     return byte_freq
 
 
-def extract_features(byte_group, window_size=256):
+def extract_features1(byte_group, window_size=256):
     """
     Extract features from a byte group.
 
@@ -71,6 +93,33 @@ def extract_features(byte_group, window_size=256):
 
     return features
 
+def extract_features(byte_group, global_stream, window_size=256):
+    # 1) Entropy windows
+    entropies = calculate_entropy_over_data(byte_group, window_size)
+    avg_ent, std_ent, max_ent, min_ent = (
+        np.mean(entropies),
+        np.std(entropies),
+        np.max(entropies),
+        np.min(entropies),
+    )
+
+    # 2) Byte-frequency stddev
+    freq = Counter(byte_group)
+    probs = np.array([freq.get(i, 0) / len(byte_group) for i in range(256)])
+    freq_std = float(np.std(probs))
+
+    # 3) Delta metrics versus the full stream
+    #    first flatten this group to bytes
+    grp_bytes = np.frombuffer(byte_group.tobytes(), dtype=np.uint8)
+    delta_match = delta_k_entropy(global_stream, [grp_bytes], k=2)
+    delta_h0    = delta_H0(global_stream, [grp_bytes])
+
+    # 4) Concatenate into one feature vector
+    return np.array([
+        avg_ent, std_ent, max_ent, min_ent,
+        freq_std,
+        delta_match, delta_h0
+    ])
 
 # --------------------------- Data Splitting --------------------------- #
 
@@ -244,47 +293,6 @@ def compress_and_evaluate(byte_groups, ordered_indices, component_sizes=[1, 1, 1
 
 # --------------------------- Plotting Functions --------------------------- #
 
-def plot_entropy_profiles(components_entropy, dataset_name, save_path):
-    """Plot entropy profiles for each byte group."""
-    df = pd.DataFrame(components_entropy).T
-    df.columns = [f'Group {i + 1}' for i in range(len(components_entropy))]
-
-    plt.figure(figsize=(12, 6))
-    for column in df.columns:
-        plt.plot(df.index, df[column], label=column)
-
-    plt.title(f'Entropy Profiles for {dataset_name}')
-    plt.xlabel('Window Index')
-    plt.ylabel('Entropy (bits)')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-    print(f"Entropy profiles plot saved as {save_path}")
-
-
-def plot_correlation_matrix(components_entropy, dataset_name, save_path):
-    """
-    Plot the correlation matrix of component entropies.
-
-    :param components_entropy: List of entropy lists for each component.
-    :param dataset_name: Name of the dataset for titling.
-    :param save_path: File path to save the plot.
-    """
-    df = pd.DataFrame(components_entropy).T
-    df.columns = [f'Group {i + 1}' for i in range(len(components_entropy))]
-    correlation_matrix = df.corr()
-
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title(f'Correlation Matrix of Group Entropies for {dataset_name}')
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-    print(f"Correlation matrix plot saved as {save_path}")
-
-
 def plot_dendrogram_custom_func(linked, labels, save_path):
     """
     Plot and save a dendrogram.
@@ -379,7 +387,7 @@ def run_analysis(folder_path):
         dataset_path = os.path.join(folder_path, tsv_file)
         dataset_name = os.path.splitext(tsv_file)[0]
 
-        folder_path1 = "/home/jamalids/Documents/2D/CR-Ct-DT/clustering/Clustering1/32" # Update as needed
+        folder_path1 = ('/mnt/c/Users/jamalids/Downloads')
         save_dir = os.path.join(folder_path1, f"{dataset_name}_normal")
         os.makedirs(save_dir, exist_ok=True)
 
@@ -420,38 +428,29 @@ def run_analysis(folder_path):
             print(f"An error occurred during data preparation: {e}. Skipping this file.\n")
             continue
 
-        # --------------------------- Entropy Calculation --------------------------- #
-        print("Calculating entropy profiles...")
-        components_entropy = []
-        for i, group_bytes in enumerate(byte_groups):
-            entropies = calculate_entropy_over_data(group_bytes, window_size=window_size)
-            components_entropy.append(entropies)
-            print(f"Group {i + 1} entropy calculation completed. {len(entropies)} windows processed.\n")
 
-        # Plot entropy profiles
-        plot_entropy_profiles_path = os.path.join(save_dir, f"{dataset_name}_entropy_profiles.png")
-        plot_entropy_profiles(components_entropy, dataset_name, plot_entropy_profiles_path)
 
-        # --------------------------- Correlation Analysis --------------------------- #
-        print("Analyzing correlations between group entropies...")
-        # Create a DataFrame where each column is a group and each row is a window
-        df_entropies = pd.DataFrame(components_entropy).T
-        df_entropies.columns = [f'Group {i + 1}' for i in range(len(components_entropy))]
-        correlation_matrix = df_entropies.corr()
-
-        # Plot correlation matrix
-        plot_correlation_matrix_path = os.path.join(save_dir, f"{dataset_name}_correlation_matrix.png")
-        plot_correlation_matrix(components_entropy, dataset_name, plot_correlation_matrix_path)
-        print()
 
         # --------------------------- Feature Extraction for Clustering --------------------------- #
+        # --------------------------- Feature Extraction for Clustering --------------------------- #
         print("Extracting features for clustering...")
+
+        # Build the global byte stream (concatenate all groups)
+        full_stream_bytes = b''.join(g.tobytes() for g in byte_groups)
+        global_stream = np.frombuffer(full_stream_bytes, dtype=np.uint8)
+
         features = []
         for group_bytes in byte_groups:
-            feature_vector = extract_features(group_bytes, window_size=window_size)
+            # Pass global_stream into extract_features
+            feature_vector = extract_features(group_bytes,
+                                              global_stream,
+                                              window_size=window_size)
             features.append(feature_vector)
-        feature_matrix = np.array(features)
-        print(f"Extracted {feature_matrix.shape[0]} feature vectors with {feature_matrix.shape[1]} features each.\n")
+
+        feature_matrix = np.vstack(features)
+        print(f"Extracted {feature_matrix.shape[0]} feature vectors "
+              f"with {feature_matrix.shape[1]} features each.\n")
+
 
         # --------------------------- Hierarchical Clustering --------------------------- #
         print("Performing hierarchical clustering...")
@@ -509,5 +508,5 @@ def run_analysis(folder_path):
 
 if __name__ == "__main__":
     # Specify the folder containing .tsv files
-    folder_path =  "/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/paper"   # Update as needed
+    folder_path =  ('/mnt/c/Users/jamalids/Downloads/dataset/OBS/test')   # Update as needed
     run_analysis(folder_path)
