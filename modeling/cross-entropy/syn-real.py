@@ -540,12 +540,7 @@ def plot_with_cluster_labels(df, comp_tool="FastLZ", ds_name="Synthetic"):
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# ────────────────────────────────────────────────────────────────
-#  1.  helper that adds boolean columns + plot
-# ────────────────────────────────────────────────────────────────
-# ────────────────────────────────────────────────────────────────
-#  correlation heat-map helper  (add after your imports just once)
-# ────────────────────────────────────────────────────────────────
+
 
 def plot_corr_to_ratios(df,
                         metrics=("WithinSTD",
@@ -632,7 +627,7 @@ def plot_corr_to_ratios_re(df,
             rows.append((m, r, 0.0 if np.isnan(rho) else rho))
     corr_df = pd.DataFrame(rows, columns=["Metric", "Ratio", "ρ"])
 
-    # ---------- print exact values --------------------------------
+
     # ---------- print exact values & rename the two ratio columns -----
     wide = corr_df.pivot(index="Metric", columns="Ratio", values="ρ")
 
