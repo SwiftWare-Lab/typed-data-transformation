@@ -144,13 +144,11 @@ def compress_data(data_set_list, compress_method, order='F'):
     return compressed_data, total_size
 
 # ################## Main Analysis Function ##################
-
-def run_analysis(folder_path):
+#def run_analysis(folder_path, window_size=1048576):
+def run_analysis(folder_path, window_size=262144):
     if not os.path.isdir(folder_path):
         print("Invalid folder:", folder_path)
         return
-
-    results_records = []
 
     comp_tools = {
         "zstd": zstd_comp,
@@ -158,7 +156,6 @@ def run_analysis(folder_path):
         # "bz2": bz2_comp,
     }
 
-    # Define feature scenarios including all individual ones and the "All_Features" scenario.
     feature_scenarios = {
         "Entropy": extract_entropy,
         "Entropy_Mean": extract_entropy_mean,
@@ -167,7 +164,7 @@ def run_analysis(folder_path):
         "Entropy_Min": extract_entropy_min,
         "Frequency": extract_frequency,
         "All_Features": extract_all_features,
-        "Delta":extract_delta
+        "Delta": extract_delta
     }
 
     tsv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.tsv')]
@@ -178,93 +175,98 @@ def run_analysis(folder_path):
     for fname in tsv_files:
         dataset_name = os.path.splitext(fname)[0]
         fpath = os.path.join(folder_path, fname)
-        print(f"Processing: {dataset_name}")
+        print(f"\nProcessing dataset: {dataset_name}")
 
         try:
             df = pd.read_csv(fpath, sep='\t', header=None)
         except Exception as e:
-            print("Failed to load", fname, e)
+            print("  Failed to load", fname, e)
             continue
 
-        # Adjust slicing as needed; here we use all rows from column 1.
-        numeric_vals = df.values[:, 1].astype(np.float64)
-        flattened = numeric_vals.flatten().tobytes()
-        arr = np.frombuffer(flattened, dtype=np.uint8)
-        global_stream = arr.copy()
+        numeric_vals = df.values[:, 1].astype(np.float32)
+        flattened   = numeric_vals.flatten().tobytes()
+        arr         = np.frombuffer(flattened, dtype=np.uint8)
 
-        # Split into interleaved groups (using a stride of 8 in this example).
-        byte_groups = [arr[i::8] for i in range(8)]
-        n_groups = len(byte_groups)
+        # Determine number of full blocks
+        num_blocks = max(1, len(arr) // window_size)
 
-        # Standard compression on entire array.
-        entire_arr_2d = [arr.reshape(1, -1)]
+        for block_idx in range(num_blocks):
+            start    = block_idx * window_size
+            end      = start + window_size
+            block_arr = arr[start:end]
 
-        for scenario_name, extractor in feature_scenarios.items():
-            # Build feature matrix from byte groups.
-            if scenario_name == "Delta":
-                feature_list = [extractor(global_stream, grp)
-                                for grp in byte_groups]
-            else:
-                feature_list = [extractor(grp)
-                                for grp in byte_groups]
-            feature_matrix = np.array(feature_list)
-            if feature_matrix.shape[0] < 2:
-                continue
+            print(f"  Block {block_idx+1}/{num_blocks} (bytes {start}-{end}):")
 
-            linked = linkage(feature_matrix, method='complete')
-            max_k = min(8, feature_matrix.shape[0])
-            for k_val in range(2, max_k + 1):
-                labels_k = fcluster(linked, k_val, criterion='maxclust')
+            # Prepare streams & groups
+            global_stream = block_arr.copy()
+            byte_groups   = [block_arr[i::4] for i in range(4)]
+            entire_arr_2d = [block_arr.reshape(1, -1)]
 
-                try:
-                    sil_val = silhouette_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
-                    db_score = davies_bouldin_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
-                    ch_score = calinski_harabasz_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
-                    gap_stat = compute_gap_statistic(feature_matrix, labels_k, k_val) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
-                except Exception as e:
-                    sil_val, db_score, ch_score, gap_stat = -1, -1, -1, -1
+            records = []
+            for scenario_name, extractor in feature_scenarios.items():
+                # build feature matrix
+                if scenario_name == "Delta":
+                    feature_list = [extractor(global_stream, grp) for grp in byte_groups]
+                else:
+                    feature_list = [extractor(grp) for grp in byte_groups]
+                feature_matrix = np.array(feature_list)
+                if feature_matrix.shape[0] < 2:
+                    continue
 
-                # Create a string representation of the clustering configuration.
-                cluster_str = "|".join([f"({','.join(str(x) for x in np.where(labels_k == c)[0] + 1)})"
-                                         for c in sorted(set(labels_k))])
-                comp_list = build_comp_list_from_clusters(byte_groups, labels_k)
+                linked = linkage(feature_matrix, method='complete')
+                max_k  = min(4, feature_matrix.shape[0])
 
-                for ctool_name, ctool_func in comp_tools.items():
-                    # Standard compression (entire data).
-                    _, full_comp_size = compress_data(entire_arr_2d, ctool_func)
-                    std_ratio = ratio_or_inf(len(arr), full_comp_size)
+                for k_val in range(2, max_k + 1):
+                    labels_k = fcluster(linked, k_val, criterion='maxclust')
+                    # clustering metrics
+                    try:
+                        sil = silhouette_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+                        db  = davies_bouldin_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+                        ch  = calinski_harabasz_score(feature_matrix, labels_k) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+                        gap = compute_gap_statistic(feature_matrix, labels_k, k_val) if 2 <= len(set(labels_k)) < len(feature_matrix) else -1
+                    except:
+                        sil, db, ch, gap = -1, -1, -1, -1
 
-                    # Decomposed compression using column-order.
-                    _, dec_size = compress_data(comp_list, ctool_func, order='F')
-                    dec_ratio = ratio_or_inf(len(arr), dec_size)
+                    cluster_str = "|".join(
+                        f"({','.join(str(i) for i in np.where(labels_k == c)[0] + 1)})"
+                        for c in sorted(set(labels_k))
+                    )
+                    comp_list = build_comp_list_from_clusters(byte_groups, labels_k)
 
-                    # Decomposed compression using row-order.
-                    _, dec_size_row = compress_data(comp_list, ctool_func, order='C')
-                    dec_ratio_row = ratio_or_inf(len(arr), dec_size_row)
+                    for ctool_name, ctool_func in comp_tools.items():
+                        # standard
+                        _, full_size = compress_data(entire_arr_2d, ctool_func)
+                        # decomposed column‐order
+                        _, col_size  = compress_data(comp_list, ctool_func, order='F')
+                        # decomposed row‐order
+                        _, row_size  = compress_data(comp_list, ctool_func, order='C')
 
-                    results_records.append({
-                        "Dataset": dataset_name,
-                        "FeatureScenario": scenario_name,
-                        "k": k_val,
-                        "Silhouette": sil_val,
-                        "DaviesBouldin": db_score,
-                        "CalinskiHarabasz": ch_score,
-                        "GapStatistic": gap_stat,
-                        "ClusterConfig": cluster_str,
-                        "CompressionTool": ctool_name,
-                        "StandardSize(B)": full_comp_size,
-                        "StandardRatio": std_ratio,
-                        "DecomposedSize(B)_ColOrder": dec_size,
-                        "DecomposedRatio_ColOrder": dec_ratio,
-                        "DecomposedSize(B)_RowOrder": dec_size_row,
-                        "DecomposedRatio_RowOrder": dec_ratio_row,
-                    })
+                        records.append({
+                            "Dataset": dataset_name,
+                            "BlockIdx": block_idx,
+                            "FeatureScenario": scenario_name,
+                            "k": k_val,
+                            "Silhouette": sil,
+                            "DaviesBouldin": db,
+                            "CalinskiHarabasz": ch,
+                            "GapStatistic": gap,
+                            "ClusterConfig": cluster_str,
+                            "CompressionTool": ctool_name,
+                            "StandardSize(B)": full_size,
+                            "StandardRatio": ratio_or_inf(len(block_arr), full_size),
+                            "DecomposedSize(B)_ColOrder": col_size,
+                            "DecomposedRatio_ColOrder": ratio_or_inf(len(block_arr), col_size),
+                            "DecomposedSize(B)_RowOrder": row_size,
+                            "DecomposedRatio_RowOrder": ratio_or_inf(len(block_arr), row_size),
+                        })
 
-    df_results = pd.DataFrame(results_records)
-    out_csv = os.path.join(folder_path, "clustering_compression_results1.csv")
-    df_results.to_csv(out_csv, index=False)
-    print(f"Results saved to: {out_csv}")
+            # write per‐block CSV
+            df_block = pd.DataFrame(records)
+            out_csv = os.path.join(folder_path,
+                                   f"{dataset_name}-block{block_idx}.csv")
+            df_block.to_csv(out_csv, index=False)
+            print(f"    → saved: {out_csv}")
 
 if __name__ == "__main__":
-    folder_path =  '/mnt/c/Users/jamalids/Downloads/dataset/HPC-64'
+    folder_path =  '/mnt/c/Users/jamalids/Downloads/dataset/HPC/block2'
     run_analysis(folder_path)

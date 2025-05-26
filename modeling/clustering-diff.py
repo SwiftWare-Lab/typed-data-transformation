@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load the results CSV
-df = pd.read_csv('/mnt/c/Users/jamalids/Downloads/dataset/DB/clustering_compression_results1.csv')
+df = pd.read_csv('/mnt/c/Users/jamalids/Downloads/dataset/HPC-64/clustering_compression_results1.csv')
 
 # Keep only the four scenarios you care about
 wanted = ["Frequency", "Entropy", "Delta", "All_Features"]
@@ -27,7 +27,7 @@ diff_configs = (
 )
 
 # Save to CSV
-output_path = '/mnt/c/Users/jamalids/Downloads/dataset/DB/different_clusterconfigs_filtered.csv'
+output_path = '/mnt/c/Users/jamalids/Downloads/dataset/HPC-64/different_clusterconfigs_filtered.csv'
 diff_configs.to_csv(output_path, index=False)
 
 print(f"Done — see: {output_path}")

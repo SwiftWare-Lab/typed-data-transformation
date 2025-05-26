@@ -74,7 +74,7 @@ def extract_all_features(byte_group, window_size=65536):
     ent_features = extract_entropy_features(byte_group, window_size)
     freq_feature = extract_frequency(byte_group)
     return np.concatenate([ent_features, freq_feature])
-def extract_delta(global_stream, byte_group):
+def extract_delta1(global_stream, byte_group):
     """
     For one byte_group:
       ΔH0 = H0(global_stream) - (|byte_group|/|global_stream|) * H0(byte_group)
@@ -87,6 +87,38 @@ def extract_delta(global_stream, byte_group):
     return np.array([H0_global - weighted_H0])
 
 
+import numpy as np
+
+
+def extract_delta(global_stream, byte_group, window_size):
+    """
+    Partition both global_stream and byte_group into non-overlapping windows
+    of length `window_size` (truncating any tail shorter than window_size),
+    and for each window compute:
+
+      ΔH0 = H0(global_window) - (|byte_window|/|global_stream|) * H0(byte_window)
+
+    Returns a 1D array of length floor(min_len/window_size).
+    """
+    total = len(global_stream)
+    n = min(len(global_stream), len(byte_group))
+    n_windows = n // window_size
+
+    deltas = []
+    for i in range(n_windows):
+        start = i * window_size
+        end = start + window_size
+
+        g_win = global_stream[start:end]
+        b_win = byte_group[start:end]
+
+        H0_g = compute_entropy(g_win)
+        H0_b = compute_entropy(b_win)
+        weight = len(b_win) / total
+
+        deltas.append(H0_g - weight * H0_b)
+
+    return np.array(deltas)
 
 
 ################## Clustering Metrics ##################
@@ -187,13 +219,13 @@ def run_analysis(folder_path):
             continue
 
         # Adjust slicing as needed; here we use all rows from column 1.
-        numeric_vals = df.values[:, 1].astype(np.float64)
+        numeric_vals = df.values[:, 1].astype(np.float32)
         flattened = numeric_vals.flatten().tobytes()
         arr = np.frombuffer(flattened, dtype=np.uint8)
         global_stream = arr.copy()
 
         # Split into interleaved groups (using a stride of 8 in this example).
-        byte_groups = [arr[i::8] for i in range(8)]
+        byte_groups = [arr[i::4] for i in range(4)]
         n_groups = len(byte_groups)
 
         # Standard compression on entire array.
@@ -202,7 +234,7 @@ def run_analysis(folder_path):
         for scenario_name, extractor in feature_scenarios.items():
             # Build feature matrix from byte groups.
             if scenario_name == "Delta":
-                feature_list = [extractor(global_stream, grp)
+                feature_list = [extractor(global_stream, grp,4096)
                                 for grp in byte_groups]
             else:
                 feature_list = [extractor(grp)
@@ -212,7 +244,7 @@ def run_analysis(folder_path):
                 continue
 
             linked = linkage(feature_matrix, method='complete')
-            max_k = min(8, feature_matrix.shape[0])
+            max_k = min(4, feature_matrix.shape[0])
             for k_val in range(2, max_k + 1):
                 labels_k = fcluster(linked, k_val, criterion='maxclust')
 
@@ -266,5 +298,5 @@ def run_analysis(folder_path):
     print(f"Results saved to: {out_csv}")
 
 if __name__ == "__main__":
-    folder_path =  '/mnt/c/Users/jamalids/Downloads/dataset/HPC-64'
+    folder_path =  '/mnt/c/Users/jamalids/Downloads/dataset/DB'
     run_analysis(folder_path)
