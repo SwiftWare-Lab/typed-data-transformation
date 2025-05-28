@@ -323,5 +323,5 @@ def run_analysis(folder_path):
     print(f"Results saved to: {out_csv}")
 
 if __name__ == "__main__":
-    folder_path =  '/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/HPC'
+    folder_path =  '/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/64/TS'
     run_analysis(folder_path)
