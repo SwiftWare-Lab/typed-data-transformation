@@ -316,28 +316,11 @@ def test_synthetic_reorder_only(SIZE=1024, ENT=[6, 2, 4, 1], mode="frequency", c
 ###################################
 def plot_corr_to_ratios_re(df,
     metrics=(
-
-            #"HC_H1",
-            "HC_H2",
-            "HC_H3",
-            "HC_H4",
-          #  "Global_H1",
-           # "Global_H2",
-            #"HC_H1_F",
-           # "HC_H2_F",
-          #  "Delta_H2",
-           # "Delta_H1",
-           # "WithinSTD",
-#"WithinSTD_H2",
-#"WithinMean_H2",
-#"WithinSTD_global",
-
-
-
-         ),  # optionally add "Delta_H1", "Delta_H2" if computed
-    # ratio_cols=("ReorderedRatio_Row_C",
-    #             "ReorderedRatio_Row_F"),
-   ratio_cols=("ReorderedRatio_Row_C",),
+        "HC_H2",
+        "HC_H3",
+        "HC_H4",
+    ),
+    ratio_cols=("ReorderedRatio_Row_C",),
     codec_tag="FastLZ",
     save_dir="/home/jamalids/Documents"):
     """
@@ -354,14 +337,21 @@ def plot_corr_to_ratios_re(df,
 
     corr_df = pd.DataFrame(rows, columns=["Metric", "Ratio", "ρ"])
 
-    # ---------- Pivot to wide format and rename columns ----------
+    # ---------- Pivot to wide format ----------
     wide = corr_df.pivot(index="Metric", columns="Ratio", values="ρ")
 
-    ratio_alias = {
-        "ReorderedRatio_Row_C": "Reordered-Row",
-        "ReorderedRatio_Row_F": "Reordered-Col",
+    # ---------- Define your aliases ----------
+    metric_alias = {
+        "HC_H2": "2nd reordered entropy",
+        "HC_H3": "3rd reordered entropy",
+        "HC_H4": "4th reordered entropy",
     }
-    wide = wide.rename(columns=ratio_alias)
+    ratio_alias = {
+        "ReorderedRatio_Row_C": "Reordered compression ratio",
+    }
+
+    # ---------- Apply renaming ----------
+    wide = wide.rename(index=metric_alias, columns=ratio_alias)
 
     # ---------- Print correlation values ----------
     print(f"\n=== Pearson correlations – {codec_tag} ===")
@@ -379,8 +369,8 @@ def plot_corr_to_ratios_re(df,
     plt.savefig(png_path, dpi=300)
     plt.close()
     print("saved →", png_path)
-    return png_path
 
+    return png_path
 
 if __name__=="__main__":
    # recs = test_synthetic_all_modes()

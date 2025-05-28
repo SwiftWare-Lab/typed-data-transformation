@@ -2,16 +2,11 @@ import os
 import math
 import numpy as np
 from collections import Counter
-from scipy.cluster.hierarchy import linkage, fcluster
-import matplotlib.pyplot as plt
-import pandas as pd
-import itertools
+
 from sklearn.metrics import davies_bouldin_score
-from itertools import combinations
+
 from scipy.spatial.distance import pdist, squareform
 from scipy.special import rel_entr           # KL divergence
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 
 # Replace this import with your actual fastlz_compress location
@@ -172,22 +167,20 @@ def delta_H0(global_stream, cluster_streams):
     total     = len(global_stream)
     H0_weight = sum(len(c) * compute_entropy(c) for c in cluster_streams) / total
     return H0_global - H0_weight
-# Rewriting the `test_synthetic_all_modes` function to compute all metrics after reordering only
 
-def test_synthetic_reorder_only(SIZE=1024, ENT=[6, 2, 4, 1], mode="frequency", compress_method=None, comp_name=""):
+def test_synthetic_all_modes(SIZE=65534,  ENT=[6, 2, 4, 5], mode="frequency", compress_method=None, comp_name=""):
+
+
     if compress_method is None:
         compress_method = fastlz_compress
         comp_name = "FastLZ"
 
     packed, groups = generate_float_stream(SIZE, ENT)
+    arr = packed
     byte_groups = groups
-    orig_size = len(packed)
+    orig_size = len(arr)
     records = []
-    global_H1 = round(compute_entropy(packed), 4)
-    global_H2 = round(compute_kth_entropy(packed, 2), 4)
-    wins_g = [compute_entropy(packed[i:i + 256]) for i in range(0, len(packed), 256)]
-    avg_within_global = float(np.mean(wins_g))
-    avg_within_std_global = float(np.std(wins_g))
+
     # Step 1: Collect normalized HClust configurations
     feats = np.vstack([extract_features(g, mode) for g in byte_groups])
     linked = linkage(feats, method='complete')
@@ -198,80 +191,122 @@ def test_synthetic_reorder_only(SIZE=1024, ENT=[6, 2, 4, 1], mode="frequency", c
         clusters = {lab: [i for i, l in enumerate(labels) if l == lab] for lab in sorted(set(labels))}
         hclust_configs.add(normalize_cluster_config(clusters))
 
+    # Step 2: Test each possible clustering
     for cluster_config in generate_partitions([0, 1, 2, 3]):
         normalized = normalize_partition(cluster_config)
         cfg = "|".join(f"({','.join(map(str, group))})" for group in cluster_config)
         label_type = "HClust" if normalized in hclust_configs else "Non-HClust"
 
+        r_std = ratio(orig_size, compress_method(arr.tobytes()))
+        dec_sizes_row_C, dec_sizes_row_F = [], []
         all_row_bytes_C, all_row_bytes_F = [], []
 
         for idxs in cluster_config:
             arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
             row_bytes_C = transform_data([arr2d], order='C')
             row_bytes_F = transform_data([arr2d], order='F')
+            dec_sizes_row_C.append(len(compress_method(row_bytes_C)))
+            dec_sizes_row_F.append(len(compress_method(row_bytes_F)))
             all_row_bytes_C.append(row_bytes_C)
             all_row_bytes_F.append(row_bytes_F)
 
-        reordered_stream_C = np.frombuffer(b"".join(all_row_bytes_C), dtype=np.uint8)
-        reordered_stream_F = np.frombuffer(b"".join(all_row_bytes_F), dtype=np.uint8)
+        r_dec_row_C = orig_size / sum(dec_sizes_row_C)
+        r_dec_row_F = orig_size / sum(dec_sizes_row_F)
+        r_re_row_C = ratio(orig_size, compress_method(b"".join(all_row_bytes_C)))
+        r_re_row_F = ratio(orig_size, compress_method(b"".join(all_row_bytes_F)))
 
-        r_std = ratio(orig_size, compress_method(packed.tobytes()))
-        r_re_row_C = ratio(orig_size, compress_method(reordered_stream_C.tobytes()))
-        r_re_row_F = ratio(orig_size, compress_method(reordered_stream_F.tobytes()))
+        # Info metrics
+        cluster_streams = []
+        HC_H1, HC_H2 = [], []
+        total_bytes = 0
+        weighted_entropy, weighted_kth_entropy = 0.0, 0.0
 
-        # Compute entropy metrics after reordering (C-order)
-        HC_H1 = [round(compute_entropy(reordered_stream_C), 4)]
+        for idxs in cluster_config:
+            arr2d = np.stack([byte_groups[i] for i in idxs], axis=1)
+            flat_stream = transform_data([arr2d], order='C')
+            flat = np.frombuffer(flat_stream, dtype=np.uint8)
+            cluster_streams.append(flat)
 
-        HC_H2 = [round(compute_kth_entropy(reordered_stream_C, 2), 4)]
-        print("H2: ", HC_H2)
-        HC_H3 = [round(compute_kth_entropy(reordered_stream_C, 3), 4)]
-        HC_H4 = [round(compute_kth_entropy(reordered_stream_C, 4), 4)]
+            H1_val = compute_entropy(flat)
+            H2_val = compute_kth_entropy(flat, 2)
+            HC_H1.append(round(H1_val, 4))
+            HC_H2.append(round(H2_val, 4))
 
-        # HC_H1_F = [round(compute_entropy(reordered_stream_F), 4)]
-        # HC_H2_F= [round(compute_kth_entropy(reordered_stream_F, 2), 4)]
-        total_bytes = len(reordered_stream_C)
+            size = len(flat)
+            total_bytes += size
+            weighted_entropy += H1_val * size
+            weighted_kth_entropy += H2_val * size
 
-        cluster_streams = [reordered_stream_C]
         jh = compute_joint_entropy(cluster_streams)
-        mi = max(compute_entropy(reordered_stream_C) - jh, 0.0)
-        kth = HC_H2[0]
+        # ---- NEW: delta-metrics ------------------------------------------
+        delta_match = delta_k_entropy(arr, cluster_streams, k=2)   # k=2 is what you used
+        delta_h0    = delta_H0(arr, cluster_streams)
 
-        wins = [compute_entropy(reordered_stream_C[i:i + 256]) for i in range(0, len(reordered_stream_C), 256)]
-        avg_within = float(np.mean(wins))
-        avg_within_std = float(np.std(wins))
-        between = 0.0
-        #################################
-        wins_k2 = [compute_kth_entropy(reordered_stream_C[i:i + 256], k=2)
-                   for i in range(0, len(reordered_stream_C), 256)]
-        avg_within_k2 = float(np.mean(wins_k2))
-        avg_within_k2_std = float(np.std(wins_k2))
+        mi = max(sum(compute_entropy(c) for c in cluster_streams) - jh, 0.0)
+        kth = np.mean([compute_kth_entropy(c, 2) for c in cluster_streams])
 
+        cluster_entropy_means, cluster_entropy_stds = [], []
+        for c in cluster_streams:
+            wins = [compute_entropy(c[i:i + 256]) for i in range(0, len(c), 256)]
+            cluster_entropy_means.append(np.mean(wins))
+            cluster_entropy_stds.append(np.std(wins))
+
+        avg_within = float(np.mean(cluster_entropy_means))
+        avg_within_std = float(np.mean(cluster_entropy_stds))
+        between = float(np.std(cluster_entropy_means))
+        #-------------------------
+        cluster_entropy_means_H2, cluster_entropy_stds_H2 = [], []
+        for c in cluster_streams:
+            wins = [compute_kth_entropy(c[i:i + 256],2) for i in range(0, len(c), 256)]
+            cluster_entropy_means_H2.append(np.mean(wins))
+            cluster_entropy_stds_H2.append(np.std(wins))
+
+        avg_within_H2 = float(np.mean(cluster_entropy_means_H2))
+        avg_within_std_H2 = float(np.mean(cluster_entropy_stds_H2))
+        between_H2 = float(np.std(cluster_entropy_means_H2))
+        # ---- Davies–Bouldin index for this ClusterConfig -------------------
+        num_clusters = len(cluster_config)
+        n_samples = feats.shape[0]  # here: 4
+
+        if 1 < num_clusters < n_samples:  # valid range: 2 .. n_samples-1
+            lane_labels = np.zeros(n_samples, dtype=int)
+            for cid, idxs in enumerate(cluster_config):
+                lane_labels[list(idxs)] = cid
+            db_index = davies_bouldin_score(feats, lane_labels)
+        else:
+            db_index = float("nan")  # undefined for 1 or 4 clusters
+        # --------------------------------------------------------------------
+        # ------------------------------------------------------------------
+        #     A) Dunn index  (works for k = n; ∞ when intra = 0)
+        # ------------------------------------------------------------------
+        # Represent each lane by its feature vector from `feats`
         lane_labels = np.zeros(feats.shape[0], dtype=int)
         for cid, idxs in enumerate(cluster_config):
             lane_labels[list(idxs)] = cid
+
+        # Full Euclidean distance matrix for the 4 feature vectors
         D_feat = squareform(pdist(feats))
         dunn_val = _dunn_index(D_feat, lane_labels)
 
-        # Divergence
+        # ------------------------------------------------------------------
+        #     B) Divergence between cluster byte-distributions
+        # ------------------------------------------------------------------
+        # Pre-compute histograms
         hists = [_hist256(c) for c in cluster_streams]
+
         ce_vals, js_vals = [], []
         for i, j in combinations(range(len(hists)), 2):
             p, q = hists[i], hists[j]
+            # Cross-entropy H(P,Q) = H(P) + KL(P‖Q)
             ce_vals.append(-(p * np.log2(q + 1e-12)).sum())
+            # Jensen–Shannon divergence (base-2): ½ KL(P‖M)+½ KL(Q‖M)
             m = 0.5 * (p + q)
-            kl_pm = rel_entr(p, m).sum() / np.log(2)
+            kl_pm = rel_entr(p, m).sum() / np.log(2)  # convert nats → bits
             kl_qm = rel_entr(q, m).sum() / np.log(2)
             js_vals.append(0.5 * (kl_pm + kl_qm))
 
         avg_ce = float(np.mean(ce_vals)) if ce_vals else float("nan")
         avg_js = float(np.mean(js_vals)) if js_vals else float("nan")
-
-        num_clusters = len(cluster_config)
-        n_samples = feats.shape[0]
-        if 1 < num_clusters < n_samples:
-            db_index = davies_bouldin_score(feats, lane_labels)
-        else:
-            db_index = float("nan")
 
         rec = {
             "Dataset": "synthetic",
@@ -281,87 +316,95 @@ def test_synthetic_reorder_only(SIZE=1024, ENT=[6, 2, 4, 1], mode="frequency", c
             "ConfigType": label_type,
             "HC_H1": ",".join(map(str, HC_H1)),
             "HC_H2": ",".join(map(str, HC_H2)),
-            "HC_H3": ",".join(map(str, HC_H3)),
-            "HC_H4": ",".join(map(str, HC_H4)),
-            "WithinSTD": avg_within_std,
-            "WithinSTD_global": avg_within_std_global,
-
-            "Global_H1": global_H1,
-            "Global_H2": global_H2,
-            "Delta_H2": global_H2 - HC_H2[0],
-            "Delta_H1": global_H1 - HC_H1[0],
-            # "HC_H1_F": ",".join(map(str, HC_H1_F)),
-            # "HC_H2_F": ",".join(map(str, HC_H2_F)),
+            "HC_H1_weighted": round(weighted_entropy / total_bytes, 5),
+            "HC_H2_weighted": round(weighted_kth_entropy / total_bytes, 5),
+            "BetweenClusterEntropySTD": between,
             "StandardRatio": r_std,
+            "DecomposedRatio_Row_C": r_dec_row_C,
+            "DecomposedRatio_Row_F": r_dec_row_F,
             "ReorderedRatio_Row_C": r_re_row_C,
             "ReorderedRatio_Row_F": r_re_row_F,
             "JointEntropy": jh,
             "MutualInfo": mi,
             "KthEntropy": float(kth),
-            "BetweenSTD": between,
+            "WithinSTD": avg_within_std,
+            "BetweenSTD_H2": between,
+            "WithinSTD_H2": avg_within_std_H2,
+            "BetweenSTD": between_H2,
             "DaviesBouldin": db_index,
             "Dunn": dunn_val,
-            "WithinSTD_H2": avg_within_k2_std,
-            "WithinMean_H2": avg_within_k2,
-
+            "AvgCrossEntropy": avg_ce,
+            "AvgJSDivergence": avg_js,
+            "DeltaMatchEntropy": delta_match,
+            "DeltaH0": delta_h0,
         }
         records.append(rec)
 
+
+
     df = pd.DataFrame(records)
-    out_csv = f"synthetic_reorder_only_{comp_name}.csv"
+
+    if comp_name.lower() in {"fastlz", "lz4", "snappy"}:
+        df["SeparationScore_final"] = df["DeltaMatchEntropy"]
+    else:
+        df["SeparationScore_final"] = df["DeltaH0"]
+
+    rho_final = df["SeparationScore_final"].corr(df["DecomposedRatio_Row_F"])
+    print(f"ρ(SeparationScore_final, ratio) = {rho_final:.3f}")
+
+
+    out_csv = f"synthetic_all_partitions_{comp_name}.csv"
     df.to_csv(out_csv, index=False)
     print(f"Written {out_csv}")
     return df
 
+
 ###################################
-def plot_corr_to_ratios_re(df,
-    metrics=(
-
-            #"HC_H1",
-            "HC_H2",
-            "HC_H3",
-            "HC_H4",
-          #  "Global_H1",
-           # "Global_H2",
-            #"HC_H1_F",
-           # "HC_H2_F",
-          #  "Delta_H2",
-           # "Delta_H1",
-           # "WithinSTD",
-#"WithinSTD_H2",
-#"WithinMean_H2",
-#"WithinSTD_global",
 
 
 
-         ),  # optionally add "Delta_H1", "Delta_H2" if computed
-    # ratio_cols=("ReorderedRatio_Row_C",
-    #             "ReorderedRatio_Row_F"),
-   ratio_cols=("ReorderedRatio_Row_C",),
-    codec_tag="FastLZ",
-    save_dir="/home/jamalids/Documents"):
+# ────────────────────────────────────────────────────────────────
+#  0.  put these imports once, near your other matplotlib imports
+# ────────────────────────────────────────────────────────────────
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+
+def plot_corr_to_ratios(df,
+                        metrics=("WithinSTD",
+                                 "BetweenSTD",
+                                 "WithinSTD_H2",
+                                 "BetweenSTD_H2",),
+                        ratio_cols=("DecomposedRatio_Row_C",
+                                    ),
+                        codec_tag="FastLZ",
+                        save_dir="/home/jamalids/Documents"):
     """
-    Compute Pearson correlations and save a heat-map.
+    Compute Pearson correlations and save a  heat-map.
     Returns the PNG path.
     """
-
-    # ---------- Build a tidy DataFrame of correlations ----------
+    # ---------- build a tidy DF of correlations -------------------
     rows = []
     for m in metrics:
         for r in ratio_cols:
+            # guard against constant columns → corr = NaN
             rho = df[m].corr(df[r])
             rows.append((m, r, 0.0 if np.isnan(rho) else rho))
-
     corr_df = pd.DataFrame(rows, columns=["Metric", "Ratio", "ρ"])
 
-    # ---------- Pivot to wide format and rename columns ----------
+    # ---------- print exact values --------------------------------
+    # ---------- print exact values & rename the two ratio columns -----
     wide = corr_df.pivot(index="Metric", columns="Ratio", values="ρ")
 
+    # ✨ NEW – nicer labels for the two ratios
+
     ratio_alias = {
-        "ReorderedRatio_Row_C": "Reordered-Row",
-        "ReorderedRatio_Row_F": "Reordered-Col",
+        "DecomposedRatio_Row_C": "Decomposed compression ratio",
     }
-    wide = wide.rename(columns=ratio_alias)
+
+    # ---------- Apply renaming ----------
+    wide = wide.rename( columns=ratio_alias)
 
     # ---------- Print correlation values ----------
     print(f"\n=== Pearson correlations – {codec_tag} ===")
@@ -379,16 +422,27 @@ def plot_corr_to_ratios_re(df,
     plt.savefig(png_path, dpi=300)
     plt.close()
     print("saved →", png_path)
+
     return png_path
 
 
 if __name__=="__main__":
    # recs = test_synthetic_all_modes()
-   df_result = test_synthetic_reorder_only(compress_method=fastlz_compress, comp_name="FastLZ")
-   plot_corr_to_ratios_re(df_result, codec_tag="FastLZ")
-   df_result = test_synthetic_reorder_only(compress_method= huffman_compress, comp_name="Huffman")
-   plot_corr_to_ratios_re(df_result, codec_tag="Huffman")
-   df_result = test_synthetic_reorder_only(compress_method=zstd_comp, comp_name="Zstd")
-   plot_corr_to_ratios_re(df_result, codec_tag="Zstd")
+   df_result = test_synthetic_all_modes()
+
+    # Run with Zstd
+   df_zstd = test_synthetic_all_modes(compress_method=zstd_comp, comp_name="Zstd")
+
+
+    # Run with Huffman
+   df_huffman = test_synthetic_all_modes(compress_method=huffman_compress, comp_name="Huffman")
+
+
+   #############################################################################
+   plot_corr_to_ratios(df_result, codec_tag="FastLZ")
+   plot_corr_to_ratios(df_huffman, codec_tag="Huffman")
+   plot_corr_to_ratios(df_zstd, codec_tag="ZSTD")
+
+
 
 
