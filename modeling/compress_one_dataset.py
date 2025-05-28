@@ -291,6 +291,7 @@ def process_feature(dataset_name, feature_idx, feature_data3):
 
     result = process_and_compress_by_chunks(feature_data1, chunk_size, m, n, pattern_list)
     
+    
     # Calculate compression ratios
     min_bits = calculate_min_bits(pattern_list)
     ratios = calculate_compression_ratios(result, pattern_list, min_bits)
