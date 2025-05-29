@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 # Replace this import with your actual fastlz_compress location
-from compressiojn_tools import fastlz_compress, huffman_compress,zstd_comp,zlib_comp,bz2_comp,snappy_comp,lzma_compress
+from modeling.compression_tools import fastlz_compress, huffman_compress,zstd_comp,zlib_comp,bz2_comp,snappy_comp
 
 # ---------------------- SYNTHETIC DATA GENERATION ---------------------- #
 
@@ -174,7 +174,7 @@ def delta_H0(global_stream, cluster_streams):
     return H0_global - H0_weight
 # Rewriting the `test_synthetic_all_modes` function to compute all metrics after reordering only
 
-def test_synthetic_reorder_only(SIZE=1024, ENT=[6, 2, 4, 1], mode="frequency", compress_method=None, comp_name=""):
+def test_synthetic_reorder_only(SIZE=1024, ENT=[6, 2, 4, 5], mode="frequency", compress_method=None, comp_name=""):
     if compress_method is None:
         compress_method = fastlz_compress
         comp_name = "FastLZ"
@@ -318,11 +318,11 @@ def plot_corr_to_ratios_re(df,
     metrics=(
         "HC_H2",
         "HC_H3",
-        "HC_H4",
+       # "HC_H4",
     ),
     ratio_cols=("ReorderedRatio_Row_C",),
     codec_tag="FastLZ",
-    save_dir="/home/jamalids/Documents"):
+    save_dir="/mnt/c/Users/jamalids/Downloads"):
     """
     Compute Pearson correlations and save a heat-map.
     Returns the PNG path.
@@ -344,7 +344,7 @@ def plot_corr_to_ratios_re(df,
     metric_alias = {
         "HC_H2": "2nd reordered entropy",
         "HC_H3": "3rd reordered entropy",
-        "HC_H4": "4th reordered entropy",
+        #"HC_H4": "4th reordered entropy",
     }
     ratio_alias = {
         "ReorderedRatio_Row_C": "Reordered compression ratio",
@@ -365,20 +365,92 @@ def plot_corr_to_ratios_re(df,
     plt.tight_layout()
 
     os.makedirs(save_dir, exist_ok=True)
-    png_path = os.path.join(save_dir, f"corr_ratios_re_{codec_tag.lower()}.png")
-    plt.savefig(png_path, dpi=300)
+    png_path = os.path.join( f"corr_ratios_re_{codec_tag.lower()}.png")
+    plt.savefig(f"corr_ratios_{codec_tag.lower()}.png", dpi=300)
     plt.close()
     print("saved →", png_path)
 
     return png_path
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.stats import pearsonr
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.stats import pearsonr
+
+def plot_corr_and_p_side_by_side(
+    dfs, tags,
+    metrics=("HC_H2", "HC_H3"),
+    ratio_col="ReorderedRatio_Row_C",
+    save_path="corr_and_p_reordering.png"
+):
+    # human-readable labels for the metrics
+    metric_labels = {
+        "HC_H2": "2nd order entropy",
+        "HC_H3": "3rd order entropy",
+    }
+
+    # 1) Build DataFrames of r and p
+    r_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
+    p_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
+    for df, tag in zip(dfs, tags):
+        for m in metrics:
+            r, p = pearsonr(df[m].astype(float), df[ratio_col].astype(float))
+            r_mat.at[m, tag] = r
+            p_mat.at[m, tag] = p
+
+    # 2) Plot side by side
+    fig, (ax1, ax2) = plt.subplots(
+        1, 2,
+        figsize=(12, 0.6 * len(metrics) + 1),
+        gridspec_kw={"width_ratios": [1, 1], "wspace": 0.4}
+    )
+
+    # ρ heatmap
+    sns.heatmap(
+        r_mat.rename(index=metric_labels),
+        annot=True, fmt=".2f",
+        cmap="vlag", center=0,
+        cbar_kws={"label": "ρ"},
+        ax=ax1
+    )
+    ax1.set_title("Pearson ρ", fontsize=14)
+    ax1.set_xlabel("")
+    ax1.set_ylabel("")
+
+    # p-value heatmap
+    sns.heatmap(
+        p_mat.rename(index=metric_labels),
+        annot=True, fmt=".2g",
+        cmap="YlGnBu", center=0.05,
+        cbar_kws={"label": "p-value"},
+        ax=ax2
+    )
+    ax2.set_title("p-value", fontsize=14)
+    ax2.set_xlabel("")
+    ax2.set_ylabel("")
+
+    plt.suptitle("Correlation and Significance", fontsize=16, y=1.02)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+    print(f"Saved side-by-side ρ and p-value plot → {save_path}")
+
 if __name__=="__main__":
    # recs = test_synthetic_all_modes()
    df_result = test_synthetic_reorder_only(compress_method=fastlz_compress, comp_name="FastLZ")
    plot_corr_to_ratios_re(df_result, codec_tag="FastLZ")
-   df_result = test_synthetic_reorder_only(compress_method= huffman_compress, comp_name="Huffman")
-   plot_corr_to_ratios_re(df_result, codec_tag="Huffman")
-   df_result = test_synthetic_reorder_only(compress_method=zstd_comp, comp_name="Zstd")
+   # df_result = test_synthetic_reorder_only(compress_method= huffman_compress, comp_name="Huffman")
+   # plot_corr_to_ratios_re(df_result, codec_tag="Huffman")
+   df_zstd = test_synthetic_reorder_only(compress_method=zstd_comp, comp_name="Zstd")
    plot_corr_to_ratios_re(df_result, codec_tag="Zstd")
+   plot_corr_and_p_side_by_side(
+       [df_result, df_zstd],
+       ["FastLZ", "Zstd"]
+   )
+
 
 
