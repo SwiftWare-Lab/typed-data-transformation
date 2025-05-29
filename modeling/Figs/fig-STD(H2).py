@@ -468,110 +468,48 @@ def plot_three_corr_heatmaps(dfs, tags,
     print(f"Saved combined heatmap to {save_path}")
 
 ##################
-
-############################
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-
-def plot_correlation_clustermap1(dfs, tags,
-                                metrics=("WithinSTD","BetweenSTD","WithinSTD_H2","BetweenSTD_H2"),
-                                ratio_col="DecomposedRatio_Row_C",
-                                save_path="corr_clustermap.png"):
-    """
-    Builds a small (metrics × methods) matrix of Pearson ρ values,
-    then draws a seaborn clustermap to cluster similar metrics/methods.
-    """
-    # build DataFrame: rows=metrics, cols=methods
-    mat = pd.DataFrame({
-        tag: [df[m].corr(df[ratio_col]) for m in metrics]
-        for df, tag in zip(dfs, tags)
-    }, index=metrics)
-
-    cg = sns.clustermap(
-        mat,
-        annot=True,
-        fmt=".2f",
-        cmap="vlag",
-        linewidths=0.5,
-        figsize=(6,5),
-        cbar_kws={"label": "ρ"}
-    )
-    # 3) Hide the dendrogram axes (the “tree” lines)
-    cg.ax_row_dendrogram.set_visible(False)
-    cg.ax_col_dendrogram.set_visible(False)
-
-    plt.suptitle("Clustered Correlation Matrix", y=1.02, fontsize=14)
-    cg.fig.tight_layout()
-    cg.savefig(save_path, dpi=300)
-    plt.close()
-    print(f"Saved clustermap → {save_path}")
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.stats import pearsonr
-
-def plot_corr_and_p_side_by_side(
-    dfs, tags,
-    metrics=("WithinSTD","BetweenSTD","WithinSTD_H2","BetweenSTD_H2"),
-    ratio_col="DecomposedRatio_Row_C",
-    save_path="corr_and_p.png"
-):
-    """
-    Computes r and p for each (metric, method), then draws two heatmaps
-    side by side: ρ on the left, p-value on the right.
-    """
-    # 1) Build dataframes of r and p
-    r_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
-    p_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
-    for df, tag in zip(dfs, tags):
-        for m in metrics:
-            r, p = pearsonr(df[m].astype(float), df[ratio_col].astype(float))
-            r_mat.at[m, tag] = r
-            p_mat.at[m, tag] = p
-
-    # 2) Plot side by side
-    fig, (ax1, ax2) = plt.subplots(
-        1, 2,
-        figsize=(12, 0.6 * len(metrics) + 1),
-        gridspec_kw={"width_ratios": [1, 1], "wspace": 0.4}
-    )
-
-    # ρ heatmap
-    sns.heatmap(
-        r_mat,
-        annot=True, fmt=".2f",
-        cmap="vlag", center=0,
-        cbar_kws={"label": "ρ"},
-        ax=ax1
-    )
-    ax1.set_title("Pearson ρ", fontsize=14)
-    ax1.set_ylabel("")
-    ax1.set_xlabel("")
-
-    # p-value heatmap
-    sns.heatmap(
-        p_mat,
-        annot=True, fmt=".2g",
-        cmap="YlGnBu", center=0.05,
-        cbar_kws={"label": "p-value"},
-        ax=ax2
-    )
-    ax2.set_title("p-value", fontsize=14)
-    ax2.set_ylabel("")
-    ax2.set_xlabel("")
-
-    plt.suptitle("Correlation and Significance", fontsize=16, y=1.02)
-    plt.tight_layout(rect=[0,0,1,0.95])
-    plt.savefig(save_path, dpi=300)
-    plt.close()
-    print(f"Saved side-by-side ρ and p-value plot → {save_path}")
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.stats import pearsonr
+#
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+# import pandas as pd
+# from scipy.stats import pearsonr
+#
+# def plot_rho_heatmap(
+#     dfs, tags,
+#     metrics=("WithinSTD_H2","BetweenSTD_H2"),
+#     ratio_col="DecomposedRatio_Row_C",
+#     save_path="rho_heatmap.png"
+# ):
+#     """
+#     Computes Pearson r for each (metric, method) and draws a single heatmap of ρ.
+#     """
+#     # Build the r-matrix
+#     r_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
+#     for df, tag in zip(dfs, tags):
+#         for m in metrics:
+#             r, _ = pearsonr(df[m].astype(float), df[ratio_col].astype(float))
+#             r_mat.at[m, tag] = r
+#
+#
+#     # Plot
+#     plt.figure(figsize=(12, 0.6 * len(metrics) + 1))
+#     sns.heatmap(
+#         r_mat,
+#         annot=True, fmt=".2f",
+#         cmap="vlag", center=0,
+#         cbar_kws={"label": "ρ"},
+#         linewidths=0.5,
+#         linecolor="white"
+#     )
+#     plt.title("Pearson ρ", fontsize=16, pad=12)
+#     plt.ylabel("")
+#     plt.xlabel("")
+#     plt.xticks(rotation=45, ha="right", fontsize=12)
+#     plt.yticks(rotation=0, fontsize=12)
+#     plt.tight_layout()
+#     plt.savefig(save_path, dpi=300)
+#     plt.close()
+#     print(f"Saved Pearson ρ heatmap → {save_path}")
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -581,10 +519,10 @@ def plot_rho_heatmap(
     dfs, tags,
     metrics=("WithinSTD_H2","BetweenSTD_H2"),
     ratio_col="DecomposedRatio_Row_C",
-    save_path="rho_heatmap.png"
+    save_path="rho_heatmap_vldb.pdf"
 ):
     """
-    Computes Pearson r for each (metric, method) and draws a single heatmap of ρ.
+    VLDB-style Pearson ρ heatmap with figsize=(6.8, 3)
     """
     # Build the r-matrix
     r_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
@@ -593,26 +531,47 @@ def plot_rho_heatmap(
             r, _ = pearsonr(df[m].astype(float), df[ratio_col].astype(float))
             r_mat.at[m, tag] = r
 
+    # VLDB styling
+    plt.rcParams.update({
+        "text.usetex": False,
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Latin Modern Roman", "Times", "DejaVu Serif"],
+        "font.size": 9,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "legend.fontsize": 8,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    })
 
     # Plot
-    plt.figure(figsize=(12, 0.6 * len(metrics) + 1))
+    fig, ax = plt.subplots(figsize=(6.8, 3))
     sns.heatmap(
         r_mat,
         annot=True, fmt=".2f",
         cmap="vlag", center=0,
         cbar_kws={"label": "ρ"},
         linewidths=0.5,
-        linecolor="white"
+        linecolor="white",
+        ax=ax
     )
-    plt.title("Pearson ρ", fontsize=16, pad=12)
-    plt.ylabel("")
-    plt.xlabel("")
-    plt.xticks(rotation=45, ha="right", fontsize=12)
-    plt.yticks(rotation=0, fontsize=12)
+    ax.set_title("Pearson ρ", fontsize=9, pad=6)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_xticklabels(tags, rotation=45, ha="right")
+    ax.set_yticklabels(metrics, rotation=0)
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
-    plt.close()
-    print(f"Saved Pearson ρ heatmap → {save_path}")
+    fig.savefig(save_path, format='pdf', dpi=300)
+    plt.close(fig)
+    print(f"Saved VLDB-format heatmap → {save_path}")
+
+# Usage example:
+# plot_rho_heatmap_vldb(
+#     [df_result, df_zstd, df_huffman],
+#     ["FastLZ", "Zstd", "Huffman"]
+# )
+
 
 if __name__=="__main__":
    # recs = test_synthetic_all_modes()
@@ -631,11 +590,6 @@ if __name__=="__main__":
    )
 
 
-   # Usage:
-   plot_corr_and_p_side_by_side(
-       [df_result, df_zstd, df_huffman],
-       ["FastLZ","Zstd","Huffman"]
-   )
 
    plot_rho_heatmap(
        [df_result, df_huffman, df_zstd],
