@@ -168,7 +168,7 @@ def delta_H0(global_stream, cluster_streams):
     H0_weight = sum(len(c) * compute_entropy(c) for c in cluster_streams) / total
     return H0_global - H0_weight
 
-def test_synthetic_all_modes(SIZE=65534,  ENT=[6, 2, 4, 5], mode="frequency", compress_method=None, comp_name=""):
+def test_synthetic_all_modes(SIZE=1024,  ENT=[6, 2, 4, 5], mode="frequency", compress_method=None, comp_name=""):
 
 
     if compress_method is None:
@@ -376,11 +376,11 @@ def plot_corr_to_ratios(df,
                                  "BetweenSTD",
                                  "WithinSTD_H2",
                                  "BetweenSTD_H2",
-                                 "DeltaH0",),
+                                 "DeltaH0", "DeltaMatchEntropy"),
                         ratio_cols=("DecomposedRatio_Row_C",
                                     ),
                         codec_tag="FastLZ",
-                        save_dir="/home/jamalids/Documents"):
+                        save_dir=""):
     """
     Compute Pearson correlations and save a  heat-map.
     Returns the PNG path.
@@ -415,16 +415,172 @@ def plot_corr_to_ratios(df,
     plt.figure(figsize=(6, 0.6 * len(metrics) + 1))
     sns.heatmap(wide, annot=True, fmt=".2f",
                 center=0, cmap="vlag", cbar_kws=dict(label="ρ"))
-    plt.title(f"{codec_tag}: Correlation with Reordered Ratios")
+    plt.title(f"{codec_tag}: Correlation ")
     plt.tight_layout()
 
-    os.makedirs(save_dir, exist_ok=True)
-    png_path = os.path.join(save_dir, f"corr_ratios_re_{codec_tag.lower()}.png")
-    plt.savefig(png_path, dpi=300)
-    plt.close()
-    print("saved →", png_path)
 
-    return png_path
+
+    plt.savefig(f"corr_ratios_re_{codec_tag.lower()}.png", dpi=300)
+    plt.close()
+
+
+    return "2"
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+def plot_three_corr_heatmaps(dfs, tags,
+                             metrics=("WithinSTD",
+                                      "BetweenSTD",
+                                      "WithinSTD_H2",
+                                      "BetweenSTD_H2",
+                                      "DeltaH0", "DeltaMatchEntropy"),
+                             ratio_cols=("DecomposedRatio_Row_C",),
+                             save_path="/home/jamalids/Documents/corr_three_methods.png"):
+    """
+    Given a list of DataFrames [df_result, df_zstd, df_huffman] and matching tags,
+    compute the same correlation heatmap for each (using your metrics & ratio_cols),
+    and lay them out in a single row.
+    """
+    n = len(dfs)
+    fig, axes = plt.subplots(1, n, figsize=(6*n, 0.6*len(metrics) + 1), sharey=True)
+    if n == 1:
+        axes = [axes]
+    for ax, df, tag in zip(axes, dfs, tags):
+        # build tidy DF of correlations
+        rows = []
+        for m in metrics:
+            for r in ratio_cols:
+                rho = df[m].corr(df[r])
+                rows.append((m, r, 0.0 if np.isnan(rho) else rho))
+        corr_df = pd.DataFrame(rows, columns=["Metric", "Ratio", "ρ"])
+        wide = corr_df.pivot(index="Metric", columns="Ratio", values="ρ")
+        # rename ratio column
+        wide = wide.rename(columns={"DecomposedRatio_Row_C": "Decomposed compression ratio"})
+
+        # plot
+        sns.heatmap(wide, annot=True, fmt=".2f", center=0, cmap="vlag",
+                    cbar_kws=dict(label="ρ"), ax=ax)
+        ax.set_title(f"{tag}: Correlation")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+    print(f"Saved combined heatmap to {save_path}")
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.stats import pearsonr
+
+def plot_rho_heatmap(
+    dfs, tags,
+    metrics=("WithinSTD_H2","BetweenSTD_H2"),
+    ratio_col="DecomposedRatio_Row_C",
+    save_path="/home/jamalids/Documents/rho_heatmap_vldb.pdf"
+):
+    """
+    VLDB-style Pearson ρ heatmap with figsize=(6.8, 3)
+    """
+    # Build the r-matrix
+    r_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
+    for df, tag in zip(dfs, tags):
+        for m in metrics:
+            r, _ = pearsonr(df[m].astype(float), df[ratio_col].astype(float))
+            r_mat.at[m, tag] = r
+
+    # VLDB styling
+    plt.rcParams.update({
+        "text.usetex": False,
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Latin Modern Roman", "Times", "DejaVu Serif"],
+        "font.size": 9,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "legend.fontsize": 8,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    })
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(6.8, 3))
+    sns.heatmap(
+        r_mat,
+        annot=True, fmt=".2f",
+        cmap="vlag", center=0,
+        cbar_kws={"label": "ρ"},
+        linewidths=0.5,
+        linecolor="white",
+        ax=ax
+    )
+    ax.set_title("Pearson ρ", fontsize=9, pad=6)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_xticklabels(tags, rotation=45, ha="right")
+    ax.set_yticklabels(metrics, rotation=0)
+    plt.tight_layout()
+    fig.savefig(save_path, format='pdf', dpi=300)
+    plt.close(fig)
+    print(f"Saved VLDB-format heatmap → {save_path}")
+
+# Usage example:
+# plot_rho_heatmap_vldb(
+#     [df_result, df_zstd, df_huffman],
+#     ["FastLZ", "Zstd", "Huffman"]
+# )
+def plot_rho_heatmap_min_max(
+    dfs, tags,
+    metrics=("WithinSTD_H2","BetweenSTD_H2"),
+    ratio_col="KthEntropy",
+    save_path="/home/jamalids/Documents/rho_min-maxb.pdf"
+):
+    """
+    VLDB-style Pearson ρ heatmap with figsize=(6.8, 3)
+    """
+    # Build the r-matrix
+    r_mat = pd.DataFrame(index=metrics, columns=tags, dtype=float)
+    for df, tag in zip(dfs, tags):
+        for m in metrics:
+            r, _ = pearsonr(df[m].astype(float), df[ratio_col].astype(float))
+            r_mat.at[m, tag] = r
+
+    # VLDB styling
+    plt.rcParams.update({
+        "text.usetex": False,
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Latin Modern Roman", "Times", "DejaVu Serif"],
+        "font.size": 9,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "legend.fontsize": 8,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    })
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(6.8, 3))
+    sns.heatmap(
+        r_mat,
+        annot=True, fmt=".2f",
+        cmap="vlag", center=0,
+        cbar_kws={"label": "ρ"},
+        linewidths=0.5,
+        linecolor="white",
+        ax=ax
+    )
+    ax.set_title("Pearson ρ", fontsize=9, pad=6)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_xticklabels(tags, rotation=45, ha="right")
+    ax.set_yticklabels(metrics, rotation=0)
+    plt.tight_layout()
+    fig.savefig(save_path, format='pdf', dpi=300)
+    plt.close(fig)
+    print(f"Saved VLDB-format heatmap → {save_path}")
+
 
 
 if __name__=="__main__":
@@ -438,11 +594,23 @@ if __name__=="__main__":
     # Run with Huffman
    df_huffman = test_synthetic_all_modes(compress_method=huffman_compress, comp_name="Huffman")
 
+   plot_three_corr_heatmaps(
+       [ df_huffman,df_result, df_zstd],
+       ["Huffman","FastLZ", "Zstd"]
+   )
 
-   #############################################################################
-   plot_corr_to_ratios(df_result, codec_tag="FastLZ")
-   plot_corr_to_ratios(df_huffman, codec_tag="Huffman")
-   plot_corr_to_ratios(df_zstd, codec_tag="ZSTD")
+
+
+   plot_rho_heatmap(
+       [df_result, df_huffman, df_zstd],
+       ["FastLZ", "Huffman", "Zstd"]
+   )
+   plot_rho_heatmap_min_max(
+       [df_result, df_huffman, df_zstd],
+       ["H2(Huffman)","H2(FastLZ)", "H2(Zstd)"]
+   )
+
+
 
 
 
