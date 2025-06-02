@@ -15,7 +15,7 @@ import subprocess
 
 # Import custom compression utilities
 from modeling.utils import compute_entropy, find_max_consecutive_similar_values
-from modeling.compression_tools import zstd_comp, zlib_comp, bz2_comp
+from modeling.compression_tools1 import zstd_comp, zlib_comp, bz2_comp
 
 ################## Compression Helper ##################
 
