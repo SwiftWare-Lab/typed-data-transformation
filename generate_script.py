@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description="Generate SBATCH job scripts for ea
 parser.add_argument("--dataset", required=True, help="Path to the dataset directory containing .tsv files.")
 parser.add_argument("--outcsv", required=True, help="Directory where output CSV files will be stored.")
 parser.add_argument("--threads", type=int, default=10, help="Number of threads to use for processing each dataset.")
-parser.add_argument("--bits", type=int, default=32, help="Number of bits for  each dataset.")
+parser.add_argument("--bits", type=int, default=64, help="Number of bits for  each dataset.")
 # Parse arguments
 args = parser.parse_args()
 DATASET_DIR = os.path.abspath(args.dataset)  # Use absolute path
