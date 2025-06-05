@@ -111,10 +111,11 @@ add_executable(parallel-test
 target_include_directories(parallel-test PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/profiles
 )
-add_library(fastlz STATIC fastlz.c
+add_library(fastlz STATIC
+        fastlz.c
         bzib_parallel.h
-        dataset_loaders.h
 )
+
 target_link_libraries(parallel-test PRIVATE fastlz)
 target_link_libraries(parallel-test
         PRIVATE

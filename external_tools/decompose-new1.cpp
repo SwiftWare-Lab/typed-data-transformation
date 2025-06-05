@@ -309,13 +309,16 @@ std::vector<std::vector<uint8_t>> blockData(const std::vector<uint8_t>& data, si
 int main(int argc, char* argv[]) {
   // Setup command line options.
   cxxopts::Options options("DataCompressor", "Compress datasets and profile the compression");
+
   options.add_options()
-      ("d,dataset",   "Path to the dataset file", cxxopts::value<std::string>())
-          ("o,outcsv",    "Output CSV file path",     cxxopts::value<std::string>())
-              ("t,threads",   "Number of threads to use", cxxopts::value<int>()->default_value("10"))
-                  ("b,bits",      "Floating-point precision (32 or 64 bits)", cxxopts::value<int>()->default_value("64"))
-                      ("m,method",    "Compression method (fastlz or zstd)", cxxopts::value<std::string>()->default_value("fastlz"))
-                          ("h,help",      "Print help");
+      ("d,dataset", "Path to the dataset file", cxxopts::value<std::string>())
+      ("o,outcsv", "Output CSV file path", cxxopts::value<std::string>())
+      ("c,config", "Path to the configuration file", cxxopts::value<std::string>())
+      ("t,threads", "Number of threads to use", cxxopts::value<int>()->default_value("10"))
+      ("b,bits", "Floating-point precision (32 or 64 bits)", cxxopts::value<int>()->default_value("64"))
+      ("m,method", "Compression method (fastlz or zstd)", cxxopts::value<std::string>()->default_value("fastlz"))
+      ("h,help", "Print help");
+
   auto result = options.parse(argc, argv);
   if (result.count("help")) {
     std::cout << options.help() << std::endl;
@@ -329,12 +332,21 @@ int main(int argc, char* argv[]) {
   int precisionBits       = result["bits"].as<int>();
   std::string method      = result["method"].as<std::string>();
   ///read path to the clustering .csv                                                               /
-  std::ifstream file("/home/jamalids/Downloads/64-config-S.csv");
-  if (!file.is_open()) {
-    std::cerr << "Cannot open cluster config CSV." << std::endl;
-    exit(1);
+  std::ifstream file;
+  //read path to the clustering .csv
+  if (result.count("config")) {
+    std::string configPath = result["config"].as<std::string>();
+    file.open(configPath);
+    if (!file.is_open()) {
+      std::cerr << "Error: Could not open config file: " << configPath << std::endl;
+      return 1;
+    }
+  } else {
+    std::cerr << "Error: Config file path is required. Use --config option." << std::endl;
+    return 1;
   }
 
+  // Now you can use 'file' here
   std::string headerLine;
   std::getline(file, headerLine);  // Skip header
 

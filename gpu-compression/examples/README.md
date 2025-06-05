@@ -1,265 +1,146 @@
-# nvCOMP Examples
+# nvCOMP Examples & Batch-Run Guide
+*(CUDA-accelerated compression demos with a ready-to-launch SLURM script)*
 
-## Description
 
-This folder contains examples demonstrating the usage of the nvCOMP C++ and Python APIs.
+---
 
-## Examples
+## 1  Overview
+This repository now contains **only the official nvCOMP ** supplied by NVIDIA **plus a single SLURM batch script** (`bash1.slurm`) that automates running the **`nvcomp_gds`** sample across a directory of `.tsv` datasets .
 
-* [LZ4 CPU compression](lz4_cpu_compression.cu)
+> **Removed content:** All custom benchmarks and extra tools have been stripped. What remains is the stock nvCOMP sample tree plus the helper batch script.
 
-    The sample demonstrates CPU compression via lz4::LZ4_compress_HC, and subseqent GPU decompression via nvCOMP.
+---
 
-    ```
-    lz4_cpu_compression -f <input file(s)>
-    ```
+## 2  Directory Structure
+```
+.
+├── examples/                    # nvCOMP stock samples
 
-* [LZ4 CPU decompression](lz4_cpu_decompression.cu)
-
-    The sample demonstrates GPU compression via nvCOMP, and subsequent CPU decompression via lz4.
-
-    ```
-    lz4_cpu_decompression -f <input file(s)>
-    ```
-
-* [nvCOMP with GPUDirect Storage (GDS)](nvcomp_gds.cu)
-
-    The sample demonstrates the usage of GPUDirect Storage with nvCOMP.
-
-    ```
-    nvcomp_gds <compressed sample output file>
-    ```
-
-* [Deflate CPU compression](deflate_cpu_compression.cu)
-
-    The sample demonstrates CPU compression via libdeflate/zlib::compress2/zlib::deflate, and subsequent GPU decompression via nvCOMP.
-
-    ```
-    deflate_cpu_compression -a {0|1|2} -f <input file(s)>
-    ```
-
-* [Deflate CPU decompression](deflate_cpu_decompression.cu)
-
-    The sample demonstrates GPU compression via nvCOMP, and subsequent CPU decompression via libdeflate/zlib::inflate.
-
-    ```
-    deflate_cpu_decompression -a {0|1} -f <input file(s)>
-    ```
-
-* [GDeflate CPU compression](gdeflate_cpu_compression.cu)
-
-    The sample demonstrates CPU compression via gdeflate, and subsequent GPU decompression via nvCOMP.
-
-    ```
-    gdeflate_cpu_compression -f <input file(s)>
-    ```
-
-* [GZIP GPU decompression](gzpip_gpu_decompression.cu)
-
-    The sample demonstrates CPU compression via zlib::deflate, and subsequent GPU decompression via nvCOMP.
-
-    ```
-    gzip_gpu_decompression -f <input file(s)>
-    ```
-
-* [High-level quickstart example](high_level_quickstart_example.cpp)
-
-    The sample demonstrates the usage of the high-level nvCOMP API.
-
-    ```
-    high_level_quickstart_example
-    ```
-
-* [Low-level quickstart example](low_level_quickstart_example.cpp)
-
-    The sample demonstrates the usage of the low-level nvCOMP API.
-
-    ```
-    low_level_quickstart_example
-    ```
-
-* [Python API usage example](python/nvcomp_basic.ipynb)
-
-    The sample demonstrates the usage of the nvCOMP Python API.
-
-## Building (x86-64, or aarch64)
-
-The samples require the following external libraries to be installed prior to compilation: `libdeflate`, `zlib`, and `lz4`.
-
-### Linux
-
-The external libraries can be installed via a package manager (both on ARM and on x86):
-
-```sh
-# LZ4
-sudo apt-get install liblz4-dev
-sudo apt-get install liblz4-1
-# ZLib
-sudo apt-get install zlib1g-dev
-sudo apt-get install zlib1g
-# Libdeflate
-sudo apt-get install libdeflate-dev
-sudo apt-get install libdeflate0
+│   ├── nvcomp_gds.cu            ← GPUDirect-Storage demo
+│  │
+├── bash1.slurm                 ← ★ Batch script (see § 6)
+├── CMakeLists.txt
+└── README.md                   ← this file
 ```
 
-Alternatively, they can also be compiled from source.
+---
 
-Afterwards, the example compilation via CMake is relatively simple:
+## 3  Prerequisites
+| Requirement                | Notes                                                    |
+|----------------------------|----------------------------------------------------------|
+| **CUDA ≥ 12.3**            | `nvcc --version` must report 12.3 or newer               |
+| **nvCOMP ≥ 4.1.1.1**       | Download from NVIDIA or install via pkg-manager          |
+| **CPU helper libs**        | `zlib`, `lz4`, `libdeflate` headers & libs at build time |
 
-```sh
-cd <nvCOMP example folder>
-mkdir build
-cd build
+### 3.1  Quick install on Ubuntu
+```bash
+sudo apt-get update
+sudo apt-get install liblz4-dev liblz4-1 \
+                     zlib1g-dev zlib1g \
+                     libdeflate-dev libdeflate0
+```
 
-cmake .. -DCMAKE_PREFIX_PATH=<nvCOMP sysroot path> \
+---
+
+## 4  Building the Examples (Linux)
+```bash
+git clone <repo-url>
+cd nvcomp-examples
+
+mkdir build && cd build
+cmake .. -DCMAKE_PREFIX_PATH=<path-to-nvcomp> \
          -DCMAKE_BUILD_TYPE=Release \
-         -DBUILD_GDS_EXAMPLE=ON
-
-cmake --build .
+         -DBUILD_GDS_EXAMPLE=ON        # builds nvcomp_gds sample
+cmake --build . --parallel $(nproc)
+```
+The GPUDirect sample ends up at:
+```
+build/nvcomp_gds
 ```
 
-### Windows
+---
 
-To the best of our knowledge, one needs to compile the dependencies from source before compiling the nvCOMP examples. This guide will help in preparing the necessary external libraries and header files using the [MSVC compiler](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history#release-dates-and-build-numbers).
+## 5  Quick Manual Test
+```bash
+# decompress a .gz file via GPUDirect Storage
+./build/nvcomp_gds compressed_sample.gz
+```
+Add `-h` to view all flags.
 
-#### Preparing a sysroot folder
+---
 
-```sh
-mkdir sysroot && cd sysroot
-mkdir include
-mkdir lib
-mkdir bin
+## 6  Batch Processing with **bash1.slurm**
+`bash1.slurm` loops over every `.tsv` file in `$DATASET_DIR`, calls **`nvcomp_gds`** with precision 32, and records per-file runtime into `$RESULTS_DIR`.
+
+```
+#!/bin/bash
+#SBATCH --job-name="gdeflate_cpu_compression"
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=24
+#SBATCH --constraint=rome
+#SBATCH --mem=254000M
+#SBATCH --time=47:59:00
+#SBATCH --output="gdeflate_cpu_compression.%j.%N.out"
+#SBATCH --mail-user=jamalids@mcmaster.ca
+#SBATCH --mail-type=begin
+#SBATCH --mail-type=end
+#SBATCH --export=ALL
+
+module load StdEnv/2023
+module load gcc/13.3
+module load cmake/3.27.7
+export LD_LIBRARY_PATH=/usr/local/cuda-12.3/targets/x86_64-linux/lib:$LD_LIBRARY_PATH
+
+# ---------- user paths ----------
+DATASET_DIR="/home/jamalids/Documents/2D/data1/Fcbench/Fcbench-dataset/32"
+EXECUTABLE="/home/jamalids/nvcomp-examples/build/nvcomp_gds"
+RESULTS_DIR="/home/jamalids/Documents/results1"
+mkdir -p "$RESULTS_DIR"
+
+echo "=====> Starting nvcomp_gds batch <====="
+
+for dataset in "$DATASET_DIR"/*.tsv; do
+  if [ -f "$dataset" ]; then
+    base=$(basename "$dataset" .tsv)
+    log="$RESULTS_DIR/${base}_run.log"
+
+    echo "Processing $dataset" | tee "$log"
+    start=$(date +%s.%N)
+
+    "$EXECUTABLE" "$dataset" 32            # run nvcomp_gds
+
+    end=$(date +%s.%N)
+    echo "Execution Time: $(echo "$end - $start" | bc) s" >> "$log"
+  fi
+done
+
+echo "=====> All datasets processed successfully <====="
 ```
 
-#### ZLib
-
-```sh
-# ZLib v1.3.1 (released on January 22, 2024)
-# Website with latest source: https://zlib.net/
-# Note: version available in Ubuntu's apt as of now:
-#       - zlib1g-dev/jammy-updates,jammy-security,now 1:1.2.11.dfsg-2ubuntu9.2 amd64
-#       - zlib1g/jammy-updates,jammy-security,now 1:1.2.11.dfsg-2ubuntu9.2 amd64
-#
-curl -LO https://zlib.net/zlib131.zip
-tar -xf zlib131.zip
-cd zlib-1.3.1
-mkdir build && cd build
-
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=<path to planned sysroot folder>
-cmake --build . --config Release --target install --parallel 14
+### 6.1  Submit the job
+```bash
+sbatch bash1.slurm
 ```
 
-#### LZ4
+### 6.2  Things you should edit
+| Setting                | Variable / directive inside script |
+|------------------------|-------------------------------------|
+| Dataset folder         | `DATASET_DIR`                      |
+| Output logs folder     | `RESULTS_DIR`                      |
+| nvCOMP binary path     | `EXECUTABLE`                       |
+| CUDA library path      | `LD_LIBRARY_PATH` export           |
+| Wall-time, RAM, CPUs   | `#SBATCH --time`, `--mem`, `--cpus-per-task` |
 
-```sh
-# LZ4 v1.9.4 (released on August 16, 2022)
-# Website with latest source: https://github.com/lz4/lz4
-# Note: version available in Ubuntu's apt as of now:
-#       - liblz4-1/jammy,now 1.9.3-2build2 amd64
-#       - liblz4-dev/jammy,now 1.9.3-2build2 amd64
-#
-curl -LO https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.zip
-tar -xf v1.9.4.zip
-cd lz4-1.9.4/build/cmake
-mkdir build && cd build
+---
 
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=<path to planned sysroot folder>
-cmake --build . --config Release --target install --parallel 14
-```
+## 7  Outputs
+| File                                     | Produced by           | Content                               |
+|------------------------------------------|-----------------------|---------------------------------------|
+| `results1/<dataset>_run.log`             | `bash1.slurm` loop    | start line + total execution time     |
+| `gdeflate_cpu_compression.<job>.<node>.out` | Slurm stdout/stderr   | whole-job console output              |
 
-#### Libdeflate
+---
 
-```sh
-# Libdeflate v1.10
-# Website with latest source: https://github.com/ebiggers/libdeflate
-# Note: version available in Ubuntu's apt as of now:
-#       - libdeflate-dev/jammy,now 1.10-2 amd64
-#       - libdeflate0/jammy,now 1.10-2 amd64
-#
-curl -LO https://github.com/ebiggers/libdeflate/releases/download/v1.10/libdeflate-1.10-windows-x86_64-bin.zip
-mkdir libdeflate-1.10
-tar -xf libdeflate-1.10-windows-x86_64-bin.zip -C libdeflate-1.10
-cd libdeflate-1.10
-mv libdeflate.h <sysroot path>/include/.
-mv libdeflate.dll <sysroot path>/bin/.
-mv libdeflate.def <sysroot path>/lib/deflate.def
-mv libdeflate.lib <sysroot path>/lib/deflate.lib
-mv libdeflatestatic.lib <sysroot path>/lib/deflatestatic.lib
-```
-
-The resulting sysroot tree should look as follows:
-
-```sh
-sysroot
-├───bin
-│       libdeflate.dll
-│       lz4.dll
-│       lz4.exe
-│       lz4c.exe
-│       zlib.dll
-│
-├───include
-│       libdeflate.h
-│       lz4.h
-│       lz4frame.h
-│       lz4hc.h
-│       zconf.h
-│       zlib.h
-│
-├───lib
-│   │   deflate.def
-│   │   deflate.lib
-│   │   deflatestatic.lib
-│   │   lz4.lib
-│   │   zlib.lib
-│   │   zlibstatic.lib
-│   │
-│   ├───cmake
-│   │   └───lz4
-│   │           lz4Config.cmake
-│   │           lz4ConfigVersion.cmake
-│   │           lz4Targets-release.cmake
-│   │           lz4Targets.cmake
-│   │
-│   └───pkgconfig
-│           liblz4.pc
-│
-└───share
-    ├───man
-    │   ├───man1
-    │   │       lz4.1
-    │   │
-    │   └───man3
-    │           zlib.3
-    │
-    └───pkgconfig
-            zlib.pc
-```
-
-Afterwards, the example compilation via CMake is relatively simple:
-
-```sh
-cd <nvCOMP example folder>
-mkdir build
-cd build
-
-# Run CMake configuration
-cmake .. -DCMAKE_PREFIX_PATH=<nvCOMP sysroot path> \
-         -DCMAKE_BUILD_TYPE=Release
-
-# Run the actual build
-cmake --build . --parallel 14
-```
-
-
-## Building on jetson
-Install nvcomp from this link:
-https://developer.download.nvidia.com/compute/nvcomp/redist/nvcomp/linux-sbsa/
-    
-Then run the following command to build the examples:
-
-
-
-```sh
-cmake .. -DCMAKE_PREFIX_PATH=/home/jetson-micro/Desktop/Kazem/programs/nvcomp-linux-sbsa-4.1.1.1_cuda12-archive/          -DCMAKE_BUILD_TYPE=Release          -DBUILD_GDS_EXAMPLE=ON -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12.6/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=80 
-```
+## 9  License
+nvCOMP and its examples are © NVIDIA Corporation, distributed under the license in the original nvCOMP package.  
+The batch script (`bash1.slurm`) and this README are released under the MIT License.
