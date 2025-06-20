@@ -102,7 +102,7 @@ for dataset in "$DATASET_DIR"/*; do
             --outcsv  "$result_file" \
             --threads 16 \
             --bits    32 \
-            --method  snappy \
+            --method  zlib \
             --config  "$CONFIG_FILE"
 
         end_time=$(date +%s.%N)

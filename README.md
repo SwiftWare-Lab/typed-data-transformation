@@ -54,7 +54,7 @@ EXTERNAL LIBRARIES (automatically fetched by CMake):
    bash build1.sh
 
    This script will:
-   - Build the project using 24 threads
+   - Build the project using 16 threads
    - Process each dataset in DATASET_DIR
    - Save results to RESULTS_DIR as .csv files
 
@@ -76,10 +76,13 @@ Place the downloaded datasets into your `DATASET_DIR` before running the benchma
 
 Each result CSV file includes:
 - Dataset name
-- Compression method used
-- Execution time
-- Compression ratio
 - Threads used
+- Block Size
+- Type of runnig
+- Compression ratio
+- Execution time
+ -Throughput
+
 
 -----------------------------------------------
  CLI PARAMETERS

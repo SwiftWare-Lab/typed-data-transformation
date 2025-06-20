@@ -435,7 +435,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   outputFile << "Index;DatasetName;Threads;BlockSize;ConfigString;RunType;CompressionRatio;"
-             << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput;TotalValues;Num-Block;Compressedsize\n";
+             << "TotalTimeCompressed;TotalTimeDecompressed;CompressionThroughput;DecompressionThroughput\n";
 
   int recordIndex = 1;
   auto componentConfigurationsList = getComponentConfigurationsForDataset(datasetName);
@@ -510,8 +510,8 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
 
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
-                     << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks << ";" << totalCompressedSize <<"\n";
+                     << "Standard_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+                     << compThroughput << ";" << decompThroughput  <<"\n";
         }
 
         // ------------------------------
@@ -536,8 +536,8 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
 
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
-                     << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";" << pi_full.total_time_decompressed << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1<< ";" << compressedSize <<"\n";
+                     << "Standard" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";" << pi_full.total_time_decompressed << ";"
+                     << compThroughput << ";" << decompThroughput  <<"\n";
         }
 
         // ------------------------------
@@ -604,8 +604,8 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
-                       << "Decompose_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks<< ";" << totalCompressedSize <<"\n";
+                       << "TDT_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+                       << compThroughput << ";" << decompThroughput <<"\n";
           }
           // (ii) Decompose-Then-Chunk Version:
           for (size_t bs : blockSizes) {
@@ -645,8 +645,8 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
-                       << "Decompose_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks <<";" << totalCompressedSize <<"\n";
+                       << "TDT_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
+                       << compThroughput << ";" << decompThroughput <<"\n";
           }
         }
       } else if (method == "zstd") {
@@ -707,9 +707,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] =
               calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                     << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
+                     << "N/A" << ";" << "Standard_Chunked_parallel" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes << ";" << numBlocks<< ";" << totalCompressedSize <<"\n";
+                     << compThroughput << ";" << decompThroughput  <<"\n";
         }
 
         // ------------------------------
@@ -732,9 +732,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
               totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
-                     << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
-                     << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
-                     << ";" << totalBytes << ";" << 1 << ";" << compressedSize <<"\n";
+                     << "Standard(Non-blocking)" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
+                     << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput<<
+                     "\n";
         }
 
         // ------------------------------
@@ -819,9 +819,9 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "Chunked_TDT_Parallel" << ";" << compRatio << ";"
                        << totalCompTime << ";" << totalDecompTime << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
+                       << compThroughput << ";" << decompThroughput << "\n";
           }
         }
         //----------------------------------------
@@ -873,9 +873,9 @@ int main(int argc, char* argv[]) {
 
           // Record the results (using "N/A" or similar for block size since no chunking is used).
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
-                     << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
+                     << configStr << ";" << "TDT_NonChunked" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";"  << totalBytes <<";" << 1 << ";" << totalCompressedSize << "\n";
+                     << compThroughput << ";" << decompThroughput << "\n";
         }
 
         // ------------------------------
@@ -924,9 +924,9 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "TDT_Chunk_Parallel" << ";" << compRatio << ";"
                        << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                       << compThroughput << ";" << decompThroughput << ";"  << totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
+                       << compThroughput << ";" << decompThroughput <<  "\n";
           }
         }
       }
@@ -991,9 +991,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] =
               calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                     << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
+                     << "N/A" << ";" << "Standard_parallel" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";"  << totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
+                     << compThroughput << ";" << decompThroughput <<  "\n";
         }
 
         // ------------------------------
@@ -1017,9 +1017,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
               totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
-                     << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
+                     << "Standard(Non-blocking)" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                      << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
-                     << ";" << totalBytes <<";" << 1 << ";" << compressedSize <<  "\n";
+                     <<  "\n";
         }
 
         // ------------------------------
@@ -1100,9 +1100,9 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "Chunked_TDT_Parallel" << ";" << compRatio << ";"
                        << totalCompTime << ";" << totalDecompTime << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
+                       << compThroughput << ";" << decompThroughput<<  "\n";
           }
         }
         //----------------------------------------
@@ -1151,9 +1151,9 @@ int main(int argc, char* argv[]) {
 
           // Record the results (using "N/A" or similar for block size since no chunking is used).
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
-                     << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
+                     << configStr << ";" << "TDT_NonChunked" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize <<  "\n";
+                     << compThroughput << ";" << decompThroughput  <<  "\n";
         }
 
         // ------------------------------
@@ -1199,9 +1199,9 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "TDT_Chunk_Parallel" << ";" << compRatio << ";"
                        << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << -1 << ";" << totalCompressedSize <<  "\n";
+                       << compThroughput << ";" << decompThroughput  <<  "\n";
           }
         }
       }
@@ -1263,8 +1263,8 @@ int main(int argc, char* argv[]) {
           double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << "N/A" << ";"
-                     << "Full_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";"
-                     << totalDecompTime << ";" << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << numBlocks << ";" << totalCompressedSize <<  "\n";
+                     << "Standard_Block_Parallel" << ";" << compRatio << ";" << totalCompTime << ";"
+                     << totalDecompTime << ";" << compThroughput << ";" << decompThroughput <<  "\n";
         }
 
         // [B] Full Compression Without Blocking (Non-blocking) - Snappy
@@ -1287,8 +1287,8 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
               totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
-                     << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
-                     << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << compressedSize << "\n";
+                     << "Standard(Non-blocking)" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
+                     << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput  << "\n";
         }
 
         // [C] Decomposed Compression with Blocking Parallel (Snappy)
@@ -1357,8 +1357,8 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
-                       << "Chunk-decompose_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
+                       << "Chunk-TDT_Parallel" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+                       << compThroughput << ";" << decompThroughput << "\n";
           }
         }
         // [D] Decomposed Compression without Chunking (Snappy)
@@ -1394,8 +1394,8 @@ int main(int argc, char* argv[]) {
           double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << configStr << ";"
-                     << "Decompose_NonChunked" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize << "\n";
+                     << "TDT_NonChunked" << ";" << compRatio << ";" << totalCompTime << ";" << totalDecompTime << ";"
+                     << compThroughput << ";" << decompThroughput<< "\n";
         }
         // [E] Decomposed Then Chunked Parallel Compression (Snappy)
         for (const auto& componentConfig : componentConfigurationsList) {
@@ -1438,8 +1438,8 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";" << configStr << ";"
-                       << "Decompose_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << -1 << ";" << totalCompressedSize << "\n";
+                       << "TDT_Chunk_Parallel" << ";" << compRatio << ";" << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
+                       << compThroughput << ";" << decompThroughput << "\n";
           }
         }
       }
@@ -1501,9 +1501,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] =
               calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                     << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
+                     << "N/A" << ";" << "Standard_Chunked_parallel" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
+                     << compThroughput << ";" << decompThroughput  << "\n";
         }
 
         // ------------------------------
@@ -1526,9 +1526,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
               totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
-                     << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
+                     << "Standard(Non-blocking)" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                      << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
-                     << ";" << totalBytes <<";" << 1 << ";" << compressedSize << "\n";
+                     << "\n";
         }
 
         // ------------------------------
@@ -1607,9 +1607,9 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "Chunked_TDT_Parallel" << ";" << compRatio << ";"
                        << totalCompTime << ";" << totalDecompTime << ";"
-                       << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
+                       << compThroughput << ";" << decompThroughput << "\n";
           }
         }
 
@@ -1658,9 +1658,9 @@ int main(int argc, char* argv[]) {
           double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
-                     << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
+                     << configStr << ";" << "TDT_NonChunked" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize << "\n";
+                     << compThroughput << ";" << decompThroughput  << "\n";
         }
 
         // ------------------------------
@@ -1706,9 +1706,9 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "TDT_Chunk_Parallel" << ";" << compRatio << ";"
                        << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" <<-1 << ";" << totalCompressedSize << "\n";
+                       << compThroughput << ";" << decompThroughput << "\n";
           }
         }
       }
@@ -1770,9 +1770,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] =
               calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                     << "N/A" << ";" << "Chunked_parallel" << ";" << compRatio << ";"
+                     << "N/A" << ";" << "Standard_Chunked_parallel" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
+                     << compThroughput << ";" << decompThroughput << "\n";
         }
 
         // ------------------------------
@@ -1795,9 +1795,9 @@ int main(int argc, char* argv[]) {
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
               totalBytes, pi_full.total_time_compressed, pi_full.total_time_decompressed);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";" << "N/A" << ";"
-                     << "Full" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
+                     << "Standard(Non-blocking)" << ";" << compRatio << ";" << pi_full.total_time_compressed << ";"
                      << pi_full.total_time_decompressed << ";" << compThroughput << ";" << decompThroughput
-                     << ";" << rowCount << "\n";
+                    << "\n";
         }
 
         // ------------------------------
@@ -1877,9 +1877,9 @@ int main(int argc, char* argv[]) {
             double compRatio = calculateCompressionRatio(totalBytes, totalCompressedSize);
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalBytes, totalCompTime, totalDecompTime);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Chunked_Decompose_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "Chunked_TDT_Parallel" << ";" << compRatio << ";"
                        << totalCompTime << ";" << totalDecompTime << ";"
-                       << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << numBlocks << ";" << totalCompressedSize << "\n";
+                       << compThroughput << ";" << decompThroughput  << "\n";
           }
         }
 
@@ -1925,9 +1925,9 @@ int main(int argc, char* argv[]) {
           double compRatio = calculateCompressionRatio(totalSize, totalCompressedSize);
           auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(totalSize, totalCompTime, totalDecompTime);
           outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << "N/A" << ";"
-                     << configStr << ";" << "Decompose_NonChunked" << ";" << compRatio << ";"
+                     << configStr << ";" << "TDT_NonChunked" << ";" << compRatio << ";"
                      << totalCompTime << ";" << totalDecompTime << ";"
-                     << compThroughput << ";" << decompThroughput << ";" << totalBytes <<";" << 1 << ";" << totalCompressedSize <<"\n";
+                     << compThroughput << ";" << decompThroughput <<"\n";
         }
 
         // ------------------------------
@@ -1973,9 +1973,9 @@ int main(int argc, char* argv[]) {
             auto [compThroughput, decompThroughput] = calculateCompDecomThroughput(
                 totalSize, pi_chunk.total_time_compressed, pi_chunk.total_time_decompressed);
             outputFile << recordIndex++ << ";" << datasetName << ";" << numThreads << ";" << bs << ";"
-                       << configStr << ";" << "Decompose_Chunk_Parallel" << ";" << compRatio << ";"
+                       << configStr << ";" << "TDT_Chunk_Parallel" << ";" << compRatio << ";"
                        << pi_chunk.total_time_compressed << ";" << pi_chunk.total_time_decompressed << ";"
-                       << compThroughput << ";" << decompThroughput << ";"<< totalBytes <<";" << -1 << ";" << totalCompressedSize <<"\n";
+                       << compThroughput << ";" << decompThroughput  <<"\n";
           }
         }
       }
